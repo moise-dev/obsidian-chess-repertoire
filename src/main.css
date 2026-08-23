@@ -216,34 +216,68 @@
 	font-weight: 700;
 }
 
-/* Variants */
+/* Variations, nested as indented sublists */
 
-.chess-study .variants-container {
+.chess-study .cs-variations {
 	grid-column: 1 / -1;
 	display: flex;
 	flex-direction: column;
+	gap: 2px;
 	margin: 2px 0;
 }
 
-.chess-study .variant-container {
+/* Each level steps in and takes its own rail, so depth is readable at a glance
+   rather than having to be counted from brackets. */
+.chess-study .cs-variation {
 	display: flex;
 	flex-direction: column;
+	margin-left: 6px;
+	padding-left: 7px;
+	border-left: 2px solid var(--cs-variation-rail, var(--cs-border));
+}
+
+.chess-study .cs-variations[data-depth='1'] .cs-variation {
+	--cs-variation-rail: var(--color-base-40, #6b7280);
+}
+.chess-study .cs-variations[data-depth='2'] .cs-variation {
+	--cs-variation-rail: var(--color-blue, #5c8bb0);
+}
+.chess-study .cs-variations[data-depth='3'] .cs-variation {
+	--cs-variation-rail: var(--color-purple, #9d7cd8);
+}
+.chess-study .cs-variations[data-depth='4'] .cs-variation {
+	--cs-variation-rail: var(--color-cyan, #4aa8a1);
+}
+
+/* Deeper lines are set slightly smaller, which keeps a depth-4 line from
+   crowding the panel while staying readable. */
+.chess-study .cs-variations[data-depth='1'] {
+	font-size: 12px;
+}
+.chess-study .cs-variations[data-depth='2'] {
+	font-size: 11.5px;
+}
+.chess-study .cs-variations[data-depth='3'],
+.chess-study .cs-variations[data-depth='4'] {
+	font-size: 11px;
 }
 
 .chess-study .variant-move-item-container {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
 	gap: 0 2px;
-	margin-left: 6px;
-	padding: 3px 4px 3px 8px;
-	border-left: 2px solid var(--cs-border);
-	font-size: 12px;
+	padding: 2px 0;
+	font-size: inherit;
 }
 
 .chess-study .variant-move-item {
+	display: inline-flex;
+	align-items: center;
 	padding: 1px 3px;
 	border-radius: 3px;
 	color: var(--text-muted);
+	font-family: var(--font-monospace);
 	user-select: none;
 	cursor: pointer;
 }
@@ -273,16 +307,17 @@
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: center;
-	gap: 2px;
+	gap: 1px;
 	margin-top: auto;
 	padding-top: 8px;
 	border-top: 1px solid var(--cs-border);
 }
 
 .chess-study .cs-controls-divider {
+	flex: 0 0 1px;
 	width: 1px;
 	height: 16px;
-	margin: 0 4px;
+	margin: 0 3px;
 	background-color: var(--cs-border);
 }
 
@@ -290,7 +325,11 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	/* Compress before wrapping: eight buttons at a fixed 28px overflow the side
+	   panel once the widget is resized down, dropping Save onto its own row. */
+	flex: 0 1 28px;
 	width: 28px;
+	min-width: 21px;
 	height: 28px;
 	padding: 0;
 	border: none;

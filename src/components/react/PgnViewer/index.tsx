@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import { MoveClassification } from 'src/lib/classification';
-import { ChessStudyMove } from 'src/lib/storage';
-import { StudyTitle } from './StudyTitle';
+import { moveNumberAtPly } from 'src/lib/move-tree';
+import { ChessStudyMove, Variant } from 'src/lib/storage';
 import { ControlActions, Controls } from './Controls';
 import { MoveItem, VariantMoveItem } from './MoveItems';
+import { StudyTitle } from './StudyTitle';
 
 const chunkArray = <T,>(array: T[], chunkSize: number, offsetByOne = false) => {
 	return array.reduce((resultArray, item, index) => {
@@ -20,43 +21,129 @@ const chunkArray = <T,>(array: T[], chunkSize: number, offsetByOne = false) => {
 	}, [] as T[][]);
 };
 
-export const VariantMoveItemContainer = ({
-	children,
-}: {
-	children: React.ReactNode;
-}) => {
-	return <div className="variant-move-item-container">{children}</div>;
-};
-
-export const VariantContainer = ({
-	children,
-}: {
-	children: React.ReactNode;
-}) => {
-	return <div className="variant-container">{children}</div>;
-};
-
-export const VariantsContainer = ({
-	children,
-}: {
-	children: React.ReactNode;
-}) => {
-	return <div className="variants-container">{children}</div>;
-};
-
-interface PgnViewerProps extends ControlActions {
-	history: ChessStudyMove[];
+/** Everything the recursive variation rendering needs but does not change. */
+interface MoveListContext {
 	currentMoveId: string | null;
 	firstPlayer: string;
 	initialMoveNumber: number;
-	title: string | null;
-	isDirty: boolean;
-	onTitleChange: (title: string | null) => void;
 	onMoveItemClick: (moveId: string) => void;
 	onClassify: (
 		moveId: string,
 		classification: MoveClassification | null
 	) => void;
+}
+
+interface VariationsProps extends MoveListContext {
+	variants: Variant[];
+	/** Half-move number the variation's first move sits at. */
+	startPly: number;
+	depth: number;
+}
+
+/**
+ * A run of moves inside one variation.
+ *
+ * Moves flow inline until one of them has variations of its own, at which point
+ * the run is closed, the nested variations are rendered as their own indented
+ * block, and a fresh run continues underneath - which is what gives the
+ * chess.com-style sublist shape rather than one long parenthesised line.
+ */
+const VariationMoves = ({
+	moves,
+	startPly,
+	depth,
+	...context
+}: Omit<VariationsProps, 'variants'> & { moves: ChessStudyMove[] }) => {
+	const blocks: React.ReactNode[] = [];
+	let run: React.ReactNode[] = [];
+	// The first move after any break restates the move number, so a line never
+	// starts with a bare move you cannot place.
+	let restateNumber = true;
+
+	moves.forEach((move, index) => {
+		const ply = startPly + index;
+		const moveNumber = moveNumberAtPly(
+			ply,
+			context.firstPlayer,
+			context.initialMoveNumber
+		);
+
+		const moveIndicator =
+			move.color === 'w'
+				? `${moveNumber}. `
+				: restateNumber
+				? `${moveNumber}... `
+				: null;
+
+		restateNumber = false;
+
+		run.push(
+			<VariantMoveItem
+				key={move.moveId}
+				isCurrentMove={move.moveId === context.currentMoveId}
+				san={move.san}
+				comment={move.comment}
+				shapes={move.shapes}
+				classification={move.classification}
+				moveIndicator={moveIndicator}
+				onMoveItemClick={() => context.onMoveItemClick(move.moveId)}
+				onClassify={(classification) =>
+					context.onClassify(move.moveId, classification)
+				}
+			/>
+		);
+
+		if (move.variants?.length) {
+			blocks.push(
+				<div className="variant-move-item-container" key={`run-${move.moveId}`}>
+					{run}
+				</div>
+			);
+			run = [];
+
+			blocks.push(
+				<Variations
+					key={`variants-${move.moveId}`}
+					variants={move.variants}
+					startPly={ply + 1}
+					depth={depth + 1}
+					{...context}
+				/>
+			);
+
+			restateNumber = true;
+		}
+	});
+
+	if (run.length) {
+		blocks.push(
+			<div className="variant-move-item-container" key="run-tail">
+				{run}
+			</div>
+		);
+	}
+
+	return <>{blocks}</>;
+};
+
+const Variations = ({ variants, depth, ...rest }: VariationsProps) => {
+	if (!variants.length) return null;
+
+	return (
+		<div className="cs-variations" data-depth={Math.min(depth, 4)}>
+			{variants.map((variant) => (
+				<div className="cs-variation" key={variant.variantId}>
+					<VariationMoves moves={variant.moves} depth={depth} {...rest} />
+				</div>
+			))}
+		</div>
+	);
+};
+
+interface PgnViewerProps extends ControlActions, MoveListContext {
+	history: ChessStudyMove[];
+	title: string | null;
+	onTitleChange: (title: string | null) => void;
 }
 
 export const PgnViewer = React.memo((props: PgnViewerProps) => {
@@ -72,8 +159,23 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		...controlActions
 	} = props;
 
+	const context: MoveListContext = {
+		currentMoveId,
+		firstPlayer,
+		initialMoveNumber,
+		onMoveItemClick,
+		onClassify,
+	};
+
+	// Pair the moves up by move number, carrying each one's index along so the
+	// variations underneath know which ply they branch from.
 	const movePairs = useMemo(
-		() => chunkArray(history, 2, firstPlayer === 'b'),
+		() =>
+			chunkArray(
+				history.map((move, index) => ({ move, index })),
+				2,
+				firstPlayer === 'b'
+			),
 		[firstPlayer, history]
 	);
 
@@ -90,159 +192,52 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 					</p>
 				)}
 				<div className="move-item-container">
-					{movePairs.map((pair, currentMoveIndex) => {
-						const [wMove, bMove] = pair;
+					{movePairs.map((pair, pairIndex) => {
+						const [white, black] = pair;
+						const variations = [white, black].filter(
+							(entry) => entry?.move.variants?.length
+						);
 
 						return (
-							<React.Fragment key={wMove.san + bMove?.san + currentMoveIndex}>
+							<React.Fragment key={white.move.moveId}>
 								<p className="move-indicator center">
-									{currentMoveIndex + initialMoveNumber}
+									{pairIndex + initialMoveNumber}
 								</p>
-								{firstPlayer === 'b' && !bMove && currentMoveIndex === 0 && (
+								{firstPlayer === 'b' && !black && pairIndex === 0 && (
 									<MoveItem
 										san={'...'}
 										isCurrentMove={false}
 										onMoveItemClick={() => {}}
 									/>
 								)}
-								<MoveItem
-									san={wMove.san}
-									comment={wMove.comment}
-									shapes={wMove.shapes}
-									classification={wMove.classification}
-									onClassify={(classification) =>
-										onClassify(wMove.moveId, classification)
-									}
-									isCurrentMove={wMove.moveId === currentMoveId}
-									onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
-								/>
-								{bMove && (
-									<MoveItem
-										san={bMove.san}
-										comment={bMove.comment}
-										shapes={bMove.shapes}
-										classification={bMove.classification}
-										onClassify={(classification) =>
-											onClassify(bMove.moveId, classification)
-										}
-										isCurrentMove={bMove.moveId === currentMoveId}
-										onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
+								{[white, black].map(
+									(entry) =>
+										entry && (
+											<MoveItem
+												key={entry.move.moveId}
+												san={entry.move.san}
+												comment={entry.move.comment}
+												shapes={entry.move.shapes}
+												classification={entry.move.classification}
+												isCurrentMove={entry.move.moveId === currentMoveId}
+												onMoveItemClick={() =>
+													onMoveItemClick(entry.move.moveId)
+												}
+												onClassify={(classification) =>
+													onClassify(entry.move.moveId, classification)
+												}
+											/>
+										)
+								)}
+								{variations.map((entry) => (
+									<Variations
+										key={`variants-${entry.move.moveId}`}
+										variants={entry.move.variants}
+										startPly={entry.index + 1}
+										depth={1}
+										{...context}
 									/>
-								)}
-								{!!wMove.variants.concat(bMove?.variants || []).length && (
-									<VariantsContainer>
-										{!!wMove.variants.length && (
-											<VariantContainer>
-												{wMove.variants.map((variant) => {
-													return (
-														<VariantMoveItemContainer key={variant.variantId}>
-															{chunkArray(variant.moves, 2).map((pair, wMoveVarianti) => {
-																const [bMove, wMove] = pair;
-
-																return (
-																	<React.Fragment
-																		key={bMove.san + wMove?.san + currentMoveIndex}
-																	>
-																		<VariantMoveItem
-																			isCurrentMove={bMove.moveId === currentMoveId}
-																			san={bMove.san}
-																			comment={bMove.comment}
-																			shapes={bMove.shapes}
-																			classification={bMove.classification}
-																			onClassify={(classification) =>
-																				onClassify(bMove.moveId, classification)
-																			}
-																			onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
-																			moveIndicator={
-																				(wMoveVarianti === 0 &&
-																					(firstPlayer === 'w' || currentMoveIndex > 0) &&
-																					`${
-																						currentMoveIndex + initialMoveNumber + wMoveVarianti
-																					}... `) ||
-																				(firstPlayer === 'b' &&
-																					currentMoveIndex === 0 &&
-																					`${
-																						currentMoveIndex + initialMoveNumber + wMoveVarianti
-																					}. `) ||
-																				null
-																			}
-																		/>
-																		{wMove && (
-																			<VariantMoveItem
-																				isCurrentMove={wMove.moveId === currentMoveId}
-																				san={wMove.san}
-																				comment={wMove.comment}
-																				shapes={wMove.shapes}
-																				classification={wMove.classification}
-																				onClassify={(classification) =>
-																					onClassify(wMove.moveId, classification)
-																				}
-																				onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
-																				moveIndicator={
-																					((firstPlayer === 'w' || currentMoveIndex > 0) &&
-																						`${
-																							currentMoveIndex + initialMoveNumber + 1 + wMoveVarianti
-																						}. `) ||
-																					null
-																				}
-																			/>
-																		)}
-																	</React.Fragment>
-																);
-															})}
-														</VariantMoveItemContainer>
-													);
-												})}
-											</VariantContainer>
-										)}
-										{!!bMove?.variants.length && (
-											<VariantContainer>
-												{bMove.variants.map((variant) => {
-													return (
-														<VariantMoveItemContainer key={variant.variantId}>
-															{chunkArray(variant.moves, 2).map((pair, bMoveVarianti) => {
-																const [wMove, bMove] = pair;
-																return (
-																	<React.Fragment
-																		key={wMove.san + bMove?.san + currentMoveIndex}
-																	>
-																		<VariantMoveItem
-																			isCurrentMove={wMove.moveId === currentMoveId}
-																			san={wMove.san}
-																			comment={wMove.comment}
-																			shapes={wMove.shapes}
-																			classification={wMove.classification}
-																			onClassify={(classification) =>
-																				onClassify(wMove.moveId, classification)
-																			}
-																			onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
-																			moveIndicator={`${
-																				currentMoveIndex + initialMoveNumber + 1 + bMoveVarianti
-																			}. `}
-																		/>
-																		{bMove && (
-																			<VariantMoveItem
-																				isCurrentMove={bMove.moveId === currentMoveId}
-																				san={bMove.san}
-																				comment={bMove.comment}
-																				shapes={bMove.shapes}
-																				classification={bMove.classification}
-																				onClassify={(classification) =>
-																					onClassify(bMove.moveId, classification)
-																				}
-																				onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
-																			/>
-																		)}
-																	</React.Fragment>
-																);
-															})}
-														</VariantMoveItemContainer>
-													);
-												})}
-											</VariantContainer>
-										)}
-									</VariantsContainer>
-								)}
+								))}
 							</React.Fragment>
 						);
 					})}

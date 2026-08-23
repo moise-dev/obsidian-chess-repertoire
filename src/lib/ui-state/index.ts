@@ -3,157 +3,29 @@ import { Api as ChessgroundApi } from 'chessground/api';
 import { Draft } from 'immer';
 import { GameState } from 'src/components/react/ChessStudy';
 import { toColor, toDests } from '../chess-logic';
+import {
+	MovePath,
+	findMovePath,
+	getListAtPath,
+	getMoveAtPath,
+	getParentMovePath,
+	moveNumberAtPly,
+	plyAtPath,
+} from '../move-tree';
 import { ChessStudyMove, VariantMove } from '../storage';
 
-interface MovePosition {
-	variant: { parentMoveIndex: number; variantIndex: number } | null;
-	moveIndex: number;
-}
-
-export const findMoveIndex = (
+export const findMovePathById = (
 	moves: ChessStudyMove[],
 	moveId: string
-): MovePosition => {
-	for (const [iMainLine, move] of moves.entries()) {
-		if (move.moveId === moveId) return { variant: null, moveIndex: iMainLine };
+): MovePath | null => findMovePath(moves, moveId);
 
-		for (const [iVariant, variant] of move.variants.entries()) {
-			const moveIndex = variant.moves.findIndex((move) => move.moveId === moveId);
-
-			if (moveIndex >= 0)
-				return {
-					variant: { parentMoveIndex: iMainLine, variantIndex: iVariant },
-					moveIndex: moveIndex,
-				};
-		}
-	}
-
-	return { variant: null, moveIndex: -1 };
-};
-
-export const displayMoveInHistory = (
-	draft: Draft<GameState>,
+/** Puts a position on the board and syncs the chess.js logic to match. */
+const showPosition = (
 	chessView: ChessgroundApi,
 	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
-	options: { offset: number; selectedMoveId: string | null } = {
-		offset: 0,
-		selectedMoveId: null,
-	}
-): Draft<GameState> => {
-	let moveToDisplay: ChessStudyMove | VariantMove | null = null;
-
-	const { offset, selectedMoveId } = options;
-
-	//Figure out where we are
-	const currentMove = draft.currentMove;
-
-	if (currentMove) {
-		const currentMoveId = currentMove.moveId;
-
-		const moves = draft.study.moves;
-
-		//If we pass a moveId, find out where that is and offset from there, otherwise take current moveId
-		const baseMoveId = selectedMoveId || currentMoveId;
-
-		const { variant, moveIndex } = findMoveIndex(moves, baseMoveId);
-		//Are we in a variant? Are we not? Decide which move to display
-
-		if (variant) {
-			const variantMoves =
-				moves[variant.parentMoveIndex].variants[variant.variantIndex].moves;
-
-			if (typeof variantMoves[moveIndex + offset] !== 'undefined') {
-				moveToDisplay = variantMoves[moveIndex + offset];
-			}
-
-			if (typeof moveToDisplay === 'undefined') {
-				moveToDisplay = moves[variant.parentMoveIndex + offset];
-			}
-		} else {
-			if (typeof moves[moveIndex + offset] !== 'undefined') {
-				moveToDisplay = moves[moveIndex + offset];
-			}
-		}
-	} else if (offset < 0) {
-	  moveToDisplay = draft.study.moves[draft.study.moves.length - 1];
-	} else if (offset > 0) {
-	  moveToDisplay = draft.study.moves[0];
-	}
-
-	if (moveToDisplay) {
-		const chess = new Chess(moveToDisplay.after);
-
-		chessView.set({
-			fen: moveToDisplay.after,
-			check: chess.isCheck(),
-			movable: {
-				free: false,
-				color: toColor(chess),
-				dests: toDests(chess),
-			},
-			turnColor: toColor(chess),
-		});
-
-		draft.currentMove = moveToDisplay;
-
-		setChessLogic(chess);
-	} else if (offset !== 0){
-		const chess = new Chess(draft.study.rootFEN);
-
-		chessView.set({
-		  fen: chess.fen(),
-			check: chess.isCheck(),
-			movable: {
-				free: false,
-				color: toColor(chess),
-				dests: toDests(chess),
-			},
-			turnColor: toColor(chess),
-		});
-
-		draft.currentMove = null;
-
-		setChessLogic(chess);
-	} else {
-		console.log(`No move to display found`);
-		return draft;
-	}
-
-	return draft;
-};
-
-export const getCurrentMove = (
-	draft: Draft<GameState>
-): Draft<ChessStudyMove> | Draft<VariantMove> | null => {
-	const currentMoveId = draft.currentMove?.moveId;
-	const moves = draft.study.moves;
-
-	if (currentMoveId) {
-		const { variant, moveIndex } = findMoveIndex(moves, currentMoveId);
-
-		if (variant) {
-			return moves[variant.parentMoveIndex].variants[variant.variantIndex].moves[
-				moveIndex
-			];
-		} else {
-			return moves[moveIndex];
-		}
-	}
-
-	return null;
-};
-
-/**
- * Jump straight to a position instead of stepping relative to the current one.
- * Passing `null` shows the root position, i.e. before the first move.
- */
-export const displayPosition = (
-	draft: Draft<GameState>,
-	chessView: ChessgroundApi,
-	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
-	move: Draft<ChessStudyMove> | Draft<VariantMove> | null
-): Draft<GameState> => {
-	const chess = new Chess(move ? move.after : draft.study.rootFEN);
+	fen: string
+): Chess => {
+	const chess = new Chess(fen);
 
 	chessView.set({
 		fen: chess.fen(),
@@ -166,16 +38,110 @@ export const displayPosition = (
 		turnColor: toColor(chess),
 	});
 
-	draft.currentMove = move;
-
 	setChessLogic(chess);
+
+	return chess;
+};
+
+/**
+ * Steps `offset` moves from the current position, or jumps to `selectedMoveId`.
+ *
+ * Stepping back off the start of a variation lands on the move it hangs off,
+ * which is what makes a nested line navigable with the arrow keys alone.
+ */
+export const displayMoveInHistory = (
+	draft: Draft<GameState>,
+	chessView: ChessgroundApi,
+	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
+	options: { offset: number; selectedMoveId: string | null } = {
+		offset: 0,
+		selectedMoveId: null,
+	}
+): Draft<GameState> => {
+	const { offset, selectedMoveId } = options;
+	const moves = draft.study.moves;
+
+	let moveToDisplay: Draft<ChessStudyMove> | null = null;
+
+	const baseMoveId = selectedMoveId || draft.currentMove?.moveId;
+
+	if (baseMoveId) {
+		const path = findMovePath(moves, baseMoveId);
+
+		if (path) {
+			const list = getListAtPath(moves, path);
+			const index = path[path.length - 1];
+			const target = list?.[index + offset];
+
+			if (target) {
+				moveToDisplay = target as Draft<ChessStudyMove>;
+			} else if (offset < 0) {
+				// Off the front of a variation: fall back to its parent move. On the
+				// mainline there is no parent, so this leaves the root position.
+				const parentPath = getParentMovePath(path);
+
+				moveToDisplay = parentPath
+					? (getMoveAtPath(moves, parentPath) as Draft<ChessStudyMove>)
+					: null;
+			} else {
+				// Off the end of a line: stay put rather than jumping somewhere
+				// unrelated.
+				return draft;
+			}
+		}
+	} else if (offset > 0) {
+		moveToDisplay = (moves[0] as Draft<ChessStudyMove>) ?? null;
+	} else if (offset < 0) {
+		return draft;
+	}
+
+	if (moveToDisplay) {
+		showPosition(chessView, setChessLogic, moveToDisplay.after);
+		draft.currentMove = moveToDisplay;
+	} else if (offset !== 0) {
+		showPosition(chessView, setChessLogic, draft.study.rootFEN);
+		draft.currentMove = null;
+	} else {
+		return draft;
+	}
 
 	return draft;
 };
 
 /**
+ * Jump straight to a position instead of stepping relative to the current one.
+ * Passing `null` shows the root position, i.e. before the first move.
+ */
+export const displayPosition = (
+	draft: Draft<GameState>,
+	chessView: ChessgroundApi,
+	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
+	move: Draft<ChessStudyMove> | Draft<VariantMove> | null
+): Draft<GameState> => {
+	showPosition(chessView, setChessLogic, move ? move.after : draft.study.rootFEN);
+
+	draft.currentMove = move;
+
+	return draft;
+};
+
+export const getCurrentMove = (
+	draft: Draft<GameState>
+): Draft<ChessStudyMove> | null => {
+	const currentMoveId = draft.currentMove?.moveId;
+
+	if (!currentMoveId) return null;
+
+	const path = findMovePath(draft.study.moves, currentMoveId);
+
+	return path
+		? (getMoveAtPath(draft.study.moves, path) as Draft<ChessStudyMove>)
+		: null;
+};
+
+/**
  * Human-readable label for a move, e.g. `4. c3` or `4... h6`, used as the
- * heading of the notes panel. Variant moves are numbered from their parent.
+ * heading of the notes panel.
  */
 export const getMoveLabel = (
 	moves: ChessStudyMove[],
@@ -185,20 +151,16 @@ export const getMoveLabel = (
 ): string | null => {
 	if (!moveId) return null;
 
-	const { variant, moveIndex } = findMoveIndex(moves, moveId);
+	const path = findMovePath(moves, moveId);
+	const move = path && getMoveAtPath(moves, path);
 
-	if (moveIndex < 0) return null;
+	if (!move || !path) return null;
 
-	const move = variant
-		? moves[variant.parentMoveIndex].variants[variant.variantIndex].moves[
-				moveIndex
-		  ]
-		: moves[moveIndex];
-
-	const mainLineIndex = variant ? variant.parentMoveIndex : moveIndex;
-	const offset = firstPlayer === 'b' ? 1 : 0;
-	const moveNumber =
-		initialMoveNumber + Math.floor((mainLineIndex + offset) / 2);
+	const moveNumber = moveNumberAtPly(
+		plyAtPath(path),
+		firstPlayer,
+		initialMoveNumber
+	);
 
 	return `${moveNumber}${move.color === 'b' ? '...' : '.'} ${move.san}`;
 };

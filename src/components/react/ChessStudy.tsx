@@ -2,6 +2,7 @@ import { JSONContent } from '@tiptap/react';
 import { Chess, Move } from 'chess.js';
 import { Api } from 'chessground/api';
 import { DrawShape } from 'chessground/draw';
+import { Draft } from 'immer';
 import { nanoid } from 'nanoid';
 import { App, MarkdownPostProcessorContext, Notice, TFile } from 'obsidian';
 import * as React from 'react';
@@ -15,15 +16,22 @@ import {
 } from 'src/lib/classification';
 import { parseUserConfig } from 'src/lib/obsidian';
 import {
+	getListAtPath,
+	getMoveAtPath,
+	pathDepth,
+	removeMoveAtPath,
+} from 'src/lib/move-tree';
+import {
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
 	ChessStudyMove,
+	MAX_VARIATION_DEPTH,
 	VariantMove,
 } from 'src/lib/storage';
 import {
 	displayMoveInHistory,
 	displayPosition,
-	findMoveIndex,
+	findMovePathById,
 	getCurrentMove,
 	getMoveLabel,
 } from 'src/lib/ui-state';
@@ -155,53 +163,28 @@ export const ChessStudy = ({
 					if (!chessView || hasNoMoves) return draft;
 
 					const moves = draft.study.moves;
-
 					const currentMoveId = draft.currentMove?.moveId;
 
-					if (currentMoveId) {
-						const { variant, moveIndex } = findMoveIndex(moves, currentMoveId);
+					if (!currentMoveId) return draft;
 
-						if (variant) {
-							const parent = moves[variant.parentMoveIndex];
-							const variantMoves = parent.variants[variant.variantIndex].moves;
+					const path = findMovePathById(moves, currentMoveId);
+					const list = path && getListAtPath(moves, path);
 
-							const isLastMove = moveIndex === variantMoves.length - 1;
+					if (!path || !list) return draft;
 
-							if (isLastMove) {
-								displayMoveInHistory(draft, chessView, setChessLogic, {
-									offset: -1,
-									selectedMoveId: currentMoveId,
-								});
-							}
+					const moveIndex = path[path.length - 1];
 
-							variantMoves.pop();
-							if (variantMoves.length === 0) {
-								parent.variants.splice(variant.variantIndex, 1);
-							}
+					// Only the last move of a line can be taken back; deleting from the
+					// middle would orphan everything after it.
+					if (moveIndex !== list.length - 1) return draft;
 
-							if (isLastMove) {
-								draft.currentMove =
-									variantMoves.length > 0
-										? variantMoves[variantMoves.length - 1]
-										: moves[variant.parentMoveIndex];
-							}
-						} else {
-							const isLastMove = moveIndex === moves.length - 1;
+					// Step back before the move disappears, so the board follows.
+					displayMoveInHistory(draft, chessView, setChessLogic, {
+						offset: -1,
+						selectedMoveId: currentMoveId,
+					});
 
-							if (isLastMove) {
-								displayMoveInHistory(draft, chessView, setChessLogic, {
-									offset: -1,
-									selectedMoveId: currentMoveId,
-								});
-							}
-
-							moves.pop();
-
-							if (isLastMove) {
-								draft.currentMove = moves.length > 0 ? moves[moves.length - 1] : null;
-							}
-						}
-					}
+					removeMoveAtPath(moves, path);
 
 					return draft;
 				}
@@ -279,14 +262,10 @@ export const ChessStudy = ({
 					}
 
 					const moves = draft.study.moves;
-					const { variant, moveIndex } = findMoveIndex(moves, moveId);
+					const path = findMovePathById(moves, moveId);
+					const move = path && getMoveAtPath(moves, path);
 
-					if (moveIndex < 0) return draft;
-
-					const move = variant
-						? moves[variant.parentMoveIndex].variants[variant.variantIndex]
-								.moves[moveIndex]
-						: moves[moveIndex];
+					if (!move) return draft;
 
 					move.classification = action.classification;
 
@@ -304,99 +283,87 @@ export const ChessStudy = ({
 				}
 				case 'ADD_MOVE_TO_HISTORY': {
 					const newMove = action.move;
-
 					const moves = draft.study.moves;
 					const currentMoveId = draft.currentMove?.moveId;
 
-					const moveId = nanoid();
-
-					if (currentMoveId) {
-						const currentMoveIndex = moves.findIndex(
-							(move) => move.moveId === currentMoveId
-						);
-
-						const { variant, moveIndex } = findMoveIndex(moves, currentMoveId);
-
-						if (variant) {
-							//handle variant
-							const parent = moves[variant.parentMoveIndex];
-							const variantMoves = parent.variants[variant.variantIndex].moves;
-
-							const isLastMove = moveIndex === variantMoves.length - 1;
-
-							//Only push if its the last move in the variant because depth can only be 1
-							if (isLastMove) {
-								const move = {
-									...newMove,
-									moveId: moveId,
-									shapes: [],
-									comment: null,
-								};
-								variantMoves.push(move);
-
-								const tempChess = new Chess(newMove.after);
-
-								draft.currentMove = move;
-
-								chessView?.set({
-									fen: newMove.after,
-									check: tempChess.isCheck(),
-								});
-							}
-						} else {
-							//handle main line
-							const isLastMove = currentMoveIndex === moves.length - 1;
-
-							if (isLastMove) {
-								const move = {
-									...newMove,
-									moveId: moveId,
-									variants: [],
-									shapes: [],
-									comment: null,
-								};
-								moves.push(move);
-
-								draft.currentMove = move;
-							} else {
-								const currentMove = moves[moveIndex];
-
-								// check if the next move is the same move
-								const nextMove = moves[moveIndex + 1];
-
-								if (nextMove.san === newMove.san) {
-									draft.currentMove = nextMove;
-									return draft;
-								}
-
-								const move = {
-									...newMove,
-									moveId: moveId,
-									shapes: [],
-									comment: null,
-								};
-
-								currentMove.variants.push({
-									parentMoveId: currentMove.moveId,
-									variantId: nanoid(),
-									moves: [move],
-								});
-
-								draft.currentMove = move;
-							}
-						}
-					} else {
-						const move = {
+					const makeMove = (): Draft<ChessStudyMove> =>
+						({
 							...newMove,
-							moveId: moveId,
+							moveId: nanoid(),
 							variants: [],
 							shapes: [],
 							comment: null,
-						};
-						moves.push(move);
+							classification: null,
+						} as Draft<ChessStudyMove>);
 
-						draft.currentMove = move;
+					// Nothing selected: we are at the root position.
+					if (!currentMoveId) {
+						// Replaying the mainline from the start should follow it, not
+						// append a duplicate at the end.
+						if (moves[0]?.san === newMove.san) {
+							draft.currentMove = moves[0];
+							return draft;
+						}
+
+						if (!moves.length) {
+							const move = makeMove();
+							moves.push(move);
+							draft.currentMove = move;
+						}
+
+						return draft;
 					}
+
+					const path = findMovePathById(moves, currentMoveId);
+					const list = path && getListAtPath(moves, path);
+					const currentMove = path && getMoveAtPath(moves, path);
+
+					if (!path || !list || !currentMove) return draft;
+
+					const moveIndex = path[path.length - 1];
+					const nextMove = list[moveIndex + 1];
+
+					// End of the line: just continue it, at whatever depth we are.
+					if (!nextMove) {
+						const move = makeMove();
+						list.push(move);
+						draft.currentMove = move;
+						return draft;
+					}
+
+					// The move already continues this line.
+					if (nextMove.san === newMove.san) {
+						draft.currentMove = nextMove;
+						return draft;
+					}
+
+					// An existing variation already starts with this move - follow it
+					// rather than creating a second one saying the same thing.
+					const existing = currentMove.variants.find(
+						(variant) => variant.moves[0]?.san === newMove.san
+					);
+
+					if (existing) {
+						draft.currentMove = existing.moves[0];
+						return draft;
+					}
+
+					if (pathDepth(path) + 1 > MAX_VARIATION_DEPTH) {
+						new Notice(
+							`Variations can only nest ${MAX_VARIATION_DEPTH} deep.`
+						);
+						return draft;
+					}
+
+					const move = makeMove();
+
+					currentMove.variants.push({
+						parentMoveId: currentMove.moveId,
+						variantId: nanoid(),
+						moves: [move],
+					});
+
+					draft.currentMove = move;
 
 					return draft;
 				}

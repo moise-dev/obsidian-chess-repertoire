@@ -6,23 +6,24 @@ import { DataAdapter, normalizePath } from 'obsidian';
 import { MoveClassification } from 'src/lib/classification';
 import { ROOT_FEN } from 'src/main';
 
-// 0.0.3 adds the optional per-move `classification`. An absent field reads as
-// undefined, so older files load unchanged.
-export const CURRENT_STORAGE_VERSION = '0.0.3';
+// 0.0.4 makes variations recursive: every move, wherever it sits, carries its
+// own `variants`. Older files are normalised on load.
+export const CURRENT_STORAGE_VERSION = '0.0.4';
+
+/** How deep variations may nest. The mainline is depth 0. */
+export const MAX_VARIATION_DEPTH = 4;
 
 export interface Variant {
 	variantId: string;
 	parentMoveId: string;
-	moves: VariantMove[];
+	moves: ChessStudyMove[];
 }
 
-export interface VariantMove extends Move {
-	moveId: string;
-	shapes: DrawShape[];
-	comment: JSONContent | null;
-	classification?: MoveClassification | null;
-}
-
+/**
+ * One move, anywhere in the tree. Mainline moves and variation moves used to be
+ * separate types, which is what limited variations to a single level: only the
+ * mainline kind carried `variants`.
+ */
 export interface ChessStudyMove extends Move {
 	moveId: string;
 	variants: Variant[];
@@ -31,12 +32,25 @@ export interface ChessStudyMove extends Move {
 	classification?: MoveClassification | null;
 }
 
+/** Kept as an alias so existing imports keep working. */
+export type VariantMove = ChessStudyMove;
+
 export interface ChessStudyFileData {
 	version: string;
 	header: { title: string | null };
 	moves: ChessStudyMove[];
 	rootFEN: string;
 }
+
+const normaliseMoves = (moves: ChessStudyMove[] | undefined): void => {
+	if (!Array.isArray(moves)) return;
+
+	for (const move of moves) {
+		if (!Array.isArray(move.variants)) move.variants = [];
+
+		for (const variant of move.variants) normaliseMoves(variant.moves);
+	}
+};
 
 export class ChessStudyDataAdapter {
 	adapter: DataAdapter;
@@ -78,8 +92,12 @@ export class ChessStudyDataAdapter {
 
 		//Make sure data is compatible with storage version 0.0.1.
 		if (!jsonData.rootFEN) {
-			return { ...jsonData, rootFEN: ROOT_FEN };
+			jsonData.rootFEN = ROOT_FEN;
 		}
+
+		//Storage versions before 0.0.4 gave `variants` only to mainline moves.
+		//Filling it in here means nothing downstream has to test for it.
+		normaliseMoves(jsonData.moves);
 
 		return jsonData;
 	}
