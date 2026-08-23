@@ -223,7 +223,15 @@
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-	margin: 2px 0;
+	/* Each nested block steps in again, so the indents compound with depth. */
+	margin: 2px 0 2px 4px;
+}
+
+/* The first level clears the mainline's move-number column, so a variation
+   starts under the moves rather than lining up with the numbers and reading as
+   another mainline row. */
+.chess-study .cs-variations[data-depth='1'] {
+	margin-left: 2.2em;
 }
 
 /* Each level steps in and takes its own rail, so depth is readable at a glance
@@ -231,8 +239,7 @@
 .chess-study .cs-variation {
 	display: flex;
 	flex-direction: column;
-	margin-left: 6px;
-	padding-left: 7px;
+	padding-left: 11px;
 	border-left: 2px solid var(--cs-variation-rail, var(--cs-border));
 }
 
