@@ -11,6 +11,9 @@ import {
 import * as React from 'react';
 
 export interface ControlActions {
+	/** Unsaved changes exist. Nothing is lost - autosave is debounced - but the
+	 *  save button shows it so the state is never invisible. */
+	isDirty: boolean;
 	onUndoButtonClick: () => void;
 	onFirstButtonClick: () => void;
 	onBackButtonClick: () => void;
@@ -84,8 +87,10 @@ export const Controls = (props: ControlActions) => {
 				<Copy size={18} />
 			</button>
 			<button
-				className="cs-icon-button cs-icon-button--primary"
-				title="Save study"
+				className={`cs-icon-button cs-icon-button--primary${
+					props.isDirty ? ' is-dirty' : ''
+				}`}
+				title={props.isDirty ? 'Save study (unsaved changes)' : 'Save study'}
 				aria-label="Save the study"
 				onClick={() => props.onSaveButtonClick()}
 			>

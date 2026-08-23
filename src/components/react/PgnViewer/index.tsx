@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useMemo } from 'react';
+import { MoveClassification } from 'src/lib/classification';
 import { ChessStudyMove } from 'src/lib/storage';
+import { StudyTitle } from './StudyTitle';
 import { ControlActions, Controls } from './Controls';
 import { MoveItem, VariantMoveItem } from './MoveItems';
 
@@ -48,7 +50,13 @@ interface PgnViewerProps extends ControlActions {
 	firstPlayer: string;
 	initialMoveNumber: number;
 	title: string | null;
+	isDirty: boolean;
+	onTitleChange: (title: string | null) => void;
 	onMoveItemClick: (moveId: string) => void;
+	onClassify: (
+		moveId: string,
+		classification: MoveClassification | null
+	) => void;
 }
 
 export const PgnViewer = React.memo((props: PgnViewerProps) => {
@@ -58,7 +66,9 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		firstPlayer,
 		initialMoveNumber,
 		title,
+		onTitleChange,
 		onMoveItemClick,
+		onClassify,
 		...controlActions
 	} = props;
 
@@ -71,7 +81,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		<div className="cs-side">
 			<div className="cs-side-header">
 				<span className="cs-side-title">Moves</span>
-				{title && <span className="cs-side-subtitle">{title}</span>}
+				<StudyTitle title={title} onTitleChange={onTitleChange} />
 			</div>
 			<div className="move-item-section">
 				{!history.length && (
@@ -99,6 +109,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 									san={wMove.san}
 									comment={wMove.comment}
 									shapes={wMove.shapes}
+									classification={wMove.classification}
+									onClassify={(classification) =>
+										onClassify(wMove.moveId, classification)
+									}
 									isCurrentMove={wMove.moveId === currentMoveId}
 									onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
 								/>
@@ -107,6 +121,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 										san={bMove.san}
 										comment={bMove.comment}
 										shapes={bMove.shapes}
+										classification={bMove.classification}
+										onClassify={(classification) =>
+											onClassify(bMove.moveId, classification)
+										}
 										isCurrentMove={bMove.moveId === currentMoveId}
 										onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
 									/>
@@ -130,6 +148,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																			san={bMove.san}
 																			comment={bMove.comment}
 																			shapes={bMove.shapes}
+																			classification={bMove.classification}
+																			onClassify={(classification) =>
+																				onClassify(bMove.moveId, classification)
+																			}
 																			onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
 																			moveIndicator={
 																				(wMoveVarianti === 0 &&
@@ -151,6 +173,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																				san={wMove.san}
 																				comment={wMove.comment}
 																				shapes={wMove.shapes}
+																				classification={wMove.classification}
+																				onClassify={(classification) =>
+																					onClassify(wMove.moveId, classification)
+																				}
 																				onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
 																				moveIndicator={
 																					((firstPlayer === 'w' || currentMoveIndex > 0) &&
@@ -185,6 +211,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																			san={wMove.san}
 																			comment={wMove.comment}
 																			shapes={wMove.shapes}
+																			classification={wMove.classification}
+																			onClassify={(classification) =>
+																				onClassify(wMove.moveId, classification)
+																			}
 																			onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
 																			moveIndicator={`${
 																				currentMoveIndex + initialMoveNumber + 1 + bMoveVarianti
@@ -196,6 +226,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																				san={bMove.san}
 																				comment={bMove.comment}
 																				shapes={bMove.shapes}
+																				classification={bMove.classification}
+																				onClassify={(classification) =>
+																					onClassify(bMove.moveId, classification)
+																				}
 																				onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
 																			/>
 																		)}

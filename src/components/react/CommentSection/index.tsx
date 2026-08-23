@@ -3,7 +3,9 @@ import StarterKit from '@tiptap/starter-kit';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { MoveClassification } from 'src/lib/classification';
 import { hasComment } from 'src/lib/comments';
+import { ClassificationPicker } from '../ClassificationPicker';
 
 interface CommentSectionProps {
 	currentComment: JSONContent | null;
@@ -11,6 +13,8 @@ interface CommentSectionProps {
 	/** e.g. `4... h6` — which move the note belongs to. */
 	moveLabel: string | null;
 	defaultOpen: boolean;
+	classification: MoveClassification | null;
+	onClassify: (classification: MoveClassification | null) => void;
 }
 
 export const CommentSection = React.memo(
@@ -19,6 +23,8 @@ export const CommentSection = React.memo(
 		setComments,
 		moveLabel,
 		defaultOpen,
+		classification,
+		onClassify,
 	}: CommentSectionProps) => {
 		const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -66,11 +72,16 @@ export const CommentSection = React.memo(
 					{hasNote && !isOpen && <span className="cs-notes-dot" />}
 				</button>
 				{isOpen && (
-					<div
-						className={`cs-notes-body${isEditable ? '' : ' is-disabled'}`}
-					>
-						<EditorContent editor={editor} />
-					</div>
+					<>
+						<ClassificationPicker
+							classification={classification}
+							onClassify={onClassify}
+							disabled={!isEditable}
+						/>
+						<div className={`cs-notes-body${isEditable ? '' : ' is-disabled'}`}>
+							<EditorContent editor={editor} />
+						</div>
+					</>
 				)}
 			</div>
 		);

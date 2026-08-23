@@ -5,8 +5,14 @@ import { DrawShape } from 'chessground/draw';
 import { nanoid } from 'nanoid';
 import { App, MarkdownPostProcessorContext, Notice, TFile } from 'obsidian';
 import * as React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChessStudyPluginSettings } from 'src/components/obsidian/SettingsTab';
+import {
+	MoveClassification,
+	classificationBadgeSvg,
+	classificationForKey,
+	readClassification,
+} from 'src/lib/classification';
 import { parseUserConfig } from 'src/lib/obsidian';
 import {
 	ChessStudyDataAdapter,
@@ -56,7 +62,14 @@ export type GameActions =
 	| { type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' }
 	| { type: 'DISPLAY_LAST_MOVE_IN_HISTORY' }
 	| { type: 'SYNC_SHAPES'; shapes: DrawShape[] }
-	| { type: 'SYNC_COMMENT'; comment: JSONContent | null };
+	| { type: 'SYNC_COMMENT'; comment: JSONContent | null }
+	| {
+			type: 'SET_CLASSIFICATION';
+			classification: MoveClassification | null;
+			/** Defaults to the current move; the context menu passes an explicit one. */
+			moveId?: string;
+	  }
+	| { type: 'SET_TITLE'; title: string | null };
 
 export const ChessStudy = ({
 	source,
@@ -249,6 +262,46 @@ export const ChessStudy = ({
 
 					return draft;
 				}
+				case 'SET_CLASSIFICATION': {
+					if (hasNoMoves) return draft;
+
+					const moveId = action.moveId;
+
+					if (!moveId) {
+						const move = getCurrentMove(draft);
+
+						if (move) {
+							move.classification = action.classification;
+							draft.currentMove = move;
+						}
+
+						return draft;
+					}
+
+					const moves = draft.study.moves;
+					const { variant, moveIndex } = findMoveIndex(moves, moveId);
+
+					if (moveIndex < 0) return draft;
+
+					const move = variant
+						? moves[variant.parentMoveIndex].variants[variant.variantIndex]
+								.moves[moveIndex]
+						: moves[moveIndex];
+
+					move.classification = action.classification;
+
+					if (draft.currentMove?.moveId === moveId) draft.currentMove = move;
+
+					return draft;
+				}
+				case 'SET_TITLE': {
+					draft.study.header = {
+						...draft.study.header,
+						title: action.title,
+					};
+
+					return draft;
+				}
 				case 'ADD_MOVE_TO_HISTORY': {
 					const newMove = action.move;
 
@@ -358,10 +411,25 @@ export const ChessStudy = ({
 		}
 	);
 
-	const saveStudy = useCallback(
-		() => dataAdapter.saveFile(gameState.study, chessStudyId),
-		[chessStudyId, dataAdapter, gameState.study]
-	);
+	// Serialised form of what is currently on disk, so a save that would be a
+	// no-op is skipped. Navigation does not touch `study`, but this keeps the
+	// autosave correct even if some future action touches it without changing it.
+	const savedSnapshot = useRef(JSON.stringify(chessStudyData));
+	const [isDirty, setIsDirty] = useState(false);
+
+	const saveStudy = useCallback(async () => {
+		const snapshot = JSON.stringify(gameState.study);
+
+		if (snapshot === savedSnapshot.current) {
+			setIsDirty(false);
+			return;
+		}
+
+		await dataAdapter.saveFile(gameState.study, chessStudyId);
+
+		savedSnapshot.current = snapshot;
+		setIsDirty(false);
+	}, [chessStudyId, dataAdapter, gameState.study]);
 
 	const onSaveButtonClick = useCallback(async () => {
 		try {
@@ -371,6 +439,34 @@ export const ChessStudy = ({
 			new Notice('Something went wrong during saving:', e);
 		}
 	}, [saveStudy]);
+
+	// Autosave. `saveStudy` is held in a ref so the debounce timer always calls
+	// the latest version without restarting every time the study changes.
+	const saveStudyRef = useRef(saveStudy);
+	saveStudyRef.current = saveStudy;
+
+	// A failed autosave stays silent: the dirty dot is the signal, and a notice
+	// on every retry would be worse than the problem.
+	const autosave = () =>
+		saveStudyRef
+			.current()
+			.catch((e) => console.error('chess-study: autosave failed', e));
+
+	useEffect(() => {
+		if (JSON.stringify(gameState.study) === savedSnapshot.current) return;
+
+		setIsDirty(true);
+
+		const timer = window.setTimeout(autosave, 1200);
+
+		// Only cancels the pending save - this cleanup runs on every change, so
+		// flushing here would fire on each one and defeat the debounce.
+		return () => window.clearTimeout(timer);
+	}, [gameState.study]);
+
+	// Flush on unmount, so closing the note commits whatever is still pending.
+	// Empty deps, so this cleanup runs once and only when the widget goes away.
+	useEffect(() => () => void autosave(), []);
 
 	/**
 	 * Write the dragged width back into the code block so the study keeps its
@@ -479,8 +575,27 @@ export const ChessStudy = ({
 
 	const onKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
-			// Never hijack the arrow keys while a note is being written.
-			if ((event.target as HTMLElement).closest('.ProseMirror')) return;
+			// Never hijack keys while anything is being typed into. ProseMirror is
+			// a contenteditable div, so this one check covers the notes editor and
+			// the title field both.
+			if (
+				(event.target as HTMLElement).closest(
+					'input, textarea, [contenteditable="true"]'
+				)
+			)
+				return;
+
+			const shortcut = classificationForKey(event.key);
+
+			if (shortcut) {
+				dispatch({
+					type: 'SET_CLASSIFICATION',
+					classification: shortcut.classification,
+				});
+				event.preventDefault();
+				event.stopPropagation();
+				return;
+			}
 
 			switch (event.key) {
 				case 'ArrowLeft':
@@ -506,6 +621,24 @@ export const ChessStudy = ({
 	);
 
 	const currentMoveId = gameState.currentMove?.moveId ?? null;
+
+	// chess.com-style badge on the destination square of the current move. This
+	// goes to setAutoShapes, never setShapes, so it can never end up in the
+	// user's saved arrows.
+	const classificationShapes: DrawShape[] = useMemo(() => {
+		const move = gameState.currentMove;
+		const classification = readClassification(move?.classification);
+
+		if (!move || !classification) return [];
+
+		return [
+			{
+				orig: move.to,
+				brush: 'green',
+				customSvg: classificationBadgeSvg(classification),
+			},
+		];
+	}, [gameState.currentMove]);
 
 	const moveLabel = useMemo(
 		() =>
@@ -547,6 +680,7 @@ export const ChessStudy = ({
 							dispatch({ type: 'SYNC_SHAPES', shapes })
 						}
 						shapes={gameState.currentMove?.shapes || []}
+						autoShapes={classificationShapes}
 					/>
 				</div>
 
@@ -555,7 +689,15 @@ export const ChessStudy = ({
 					currentMoveId={currentMoveId}
 					firstPlayer={firstPlayer}
 					initialMoveNumber={initialMoveNumber}
-					title={gameState.study.header.title}
+					title={gameState.study.header?.title ?? null}
+					isDirty={isDirty}
+					onTitleChange={(title: string | null) =>
+						dispatch({ type: 'SET_TITLE', title })
+					}
+					onClassify={(
+						moveId: string,
+						classification: MoveClassification | null
+					) => dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })}
 					onUndoButtonClick={() =>
 						dispatch({ type: 'REMOVE_LAST_MOVE_FROM_HISTORY' })
 					}
@@ -601,6 +743,10 @@ export const ChessStudy = ({
 				}
 				moveLabel={moveLabel}
 				defaultOpen={viewComments}
+				classification={gameState.currentMove?.classification ?? null}
+				onClassify={(classification: MoveClassification | null) =>
+					dispatch({ type: 'SET_CLASSIFICATION', classification })
+				}
 			/>
 
 			<div

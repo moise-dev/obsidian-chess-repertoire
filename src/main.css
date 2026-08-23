@@ -463,3 +463,137 @@
 .chess-study .cs-move-marker--shape {
 	background-color: var(--color-green, #47a065);
 }
+
+/* ------------------------------------------------------------------ *
+ * Move classifications
+ * ------------------------------------------------------------------ */
+
+/*
+ * The classification colours are fixed chess.com hexes rather than theme
+ * variables, so the badge carries its own tinted background and never relies on
+ * contrast against whatever the theme happens to be.
+ */
+.chess-study .cs-move-classification {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 17px;
+	height: 15px;
+	margin-left: 5px;
+	padding: 0 3px;
+	border-radius: 4px;
+	background-color: color-mix(in srgb, var(--cs-classification) 22%, transparent);
+	color: var(--cs-classification);
+	font-family: var(--font-monospace);
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+	vertical-align: middle;
+}
+
+.chess-study .cs-classification-picker {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 3px;
+	padding: 0 10px 7px;
+}
+
+.chess-study .cs-classification-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 22px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 5px;
+	background-color: color-mix(in srgb, var(--cs-classification) 16%, transparent);
+	box-shadow: none;
+	color: var(--cs-classification);
+	font-family: var(--font-monospace);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.chess-study .cs-classification-button:hover:not(:disabled) {
+	background-color: color-mix(in srgb, var(--cs-classification) 32%, transparent);
+}
+
+.chess-study .cs-classification-button.is-active {
+	border-color: var(--cs-classification);
+	background-color: var(--cs-classification);
+	color: #ffffff;
+}
+
+.chess-study .cs-classification-button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.chess-study .cs-classification-button--clear {
+	--cs-classification: var(--text-faint);
+	margin-left: auto;
+	background-color: transparent;
+	color: var(--text-muted);
+}
+
+.chess-study .cs-classification-button--clear:hover:not(:disabled) {
+	background-color: var(--background-modifier-hover);
+}
+
+/* ------------------------------------------------------------------ *
+ * Study title and unsaved state
+ * ------------------------------------------------------------------ */
+
+.chess-study .cs-side-subtitle {
+	height: auto;
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background-color: transparent;
+	box-shadow: none;
+	text-align: left;
+	cursor: text;
+}
+
+.chess-study .cs-side-subtitle:hover {
+	color: var(--text-normal);
+	text-decoration: underline dotted;
+}
+
+.chess-study .cs-side-subtitle.is-empty {
+	font-style: italic;
+	opacity: 0.7;
+}
+
+.chess-study .cs-side-subtitle-input {
+	flex: 1;
+	min-width: 0;
+	height: auto;
+	padding: 1px 4px;
+	border: 1px solid var(--cs-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 11px;
+}
+
+.chess-study .cs-icon-button--primary.is-dirty {
+	position: relative;
+}
+
+.chess-study .cs-icon-button--primary.is-dirty::after {
+	content: '';
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	width: 6px;
+	height: 6px;
+	border: 1px solid var(--background-secondary);
+	border-radius: 50%;
+	background-color: var(--text-accent);
+}

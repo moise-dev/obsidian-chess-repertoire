@@ -16,6 +16,12 @@ export interface ChessgroundProps {
 	syncShapes: (shapes: DrawShape[]) => void;
 	isViewOnly: boolean;
 	shapes: DrawShape[];
+	/**
+	 * Decorations owned by the plugin rather than the user. These go to
+	 * setAutoShapes, a separate array that never fires drawable.onChange, so they
+	 * can never leak into the arrows saved with the study.
+	 */
+	autoShapes?: DrawShape[];
 	config?: Config;
 	boardColor?: BoardColor;
 }
@@ -29,6 +35,7 @@ export const ChessgroundWrapper = React.memo(
 		syncShapes: setShapes,
 		isViewOnly,
 		shapes,
+		autoShapes,
 		boardColor = 'blue',
 		config = {},
 	}: ChessgroundProps) => {
@@ -91,6 +98,11 @@ export const ChessgroundWrapper = React.memo(
 				api?.setShapes([...shapes]);
 			}
 		}, [api, shapes]);
+
+		// Plugin-owned decorations, kept apart from the user's own shapes.
+		useEffect(() => {
+			api?.setAutoShapes([...(autoShapes ?? [])]);
+		}, [api, autoShapes]);
 
 		return (
 			<div className={`cs-board ${boardColor}-board`}>

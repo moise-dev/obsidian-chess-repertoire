@@ -3,9 +3,12 @@ import { Move } from 'chess.js';
 import { DrawShape } from 'chessground/draw';
 import { nanoid } from 'nanoid';
 import { DataAdapter, normalizePath } from 'obsidian';
+import { MoveClassification } from 'src/lib/classification';
 import { ROOT_FEN } from 'src/main';
 
-export const CURRENT_STORAGE_VERSION = '0.0.2';
+// 0.0.3 adds the optional per-move `classification`. An absent field reads as
+// undefined, so older files load unchanged.
+export const CURRENT_STORAGE_VERSION = '0.0.3';
 
 export interface Variant {
 	variantId: string;
@@ -17,6 +20,7 @@ export interface VariantMove extends Move {
 	moveId: string;
 	shapes: DrawShape[];
 	comment: JSONContent | null;
+	classification?: MoveClassification | null;
 }
 
 export interface ChessStudyMove extends Move {
@@ -24,6 +28,7 @@ export interface ChessStudyMove extends Move {
 	variants: Variant[];
 	shapes: DrawShape[];
 	comment: JSONContent | null;
+	classification?: MoveClassification | null;
 }
 
 export interface ChessStudyFileData {
