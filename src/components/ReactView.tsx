@@ -1,4 +1,4 @@
-import { App, MarkdownRenderChild } from 'obsidian';
+import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { ChessStudyDataAdapter, ChessStudyFileData } from 'src/lib/storage';
@@ -9,6 +9,7 @@ export class ReactView extends MarkdownRenderChild {
 	root: ReactDOM.Root;
 	source: string;
 	app: App;
+	ctx: MarkdownPostProcessorContext;
 	settings: ChessStudyPluginSettings;
 	data: ChessStudyFileData;
 	dataAdapter: ChessStudyDataAdapter;
@@ -17,6 +18,7 @@ export class ReactView extends MarkdownRenderChild {
 		containerEL: HTMLElement,
 		source: string,
 		app: App,
+		ctx: MarkdownPostProcessorContext,
 		settings: ChessStudyPluginSettings,
 		data: ChessStudyFileData,
 		dataAdapter: ChessStudyDataAdapter
@@ -24,6 +26,7 @@ export class ReactView extends MarkdownRenderChild {
 		super(containerEL);
 		this.source = source;
 		this.app = app;
+		this.ctx = ctx;
 		this.settings = settings;
 		this.data = data;
 		this.dataAdapter = dataAdapter;
@@ -36,6 +39,8 @@ export class ReactView extends MarkdownRenderChild {
 				<ChessStudy
 					source={this.source}
 					app={this.app}
+					ctx={this.ctx}
+					containerEl={this.containerEl}
 					pluginSettings={this.settings}
 					chessStudyData={this.data}
 					dataAdapter={this.dataAdapter}

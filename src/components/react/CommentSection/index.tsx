@@ -1,15 +1,29 @@
 import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface CommentSectionProps {
 	currentComment: JSONContent | null;
 	setComments: (comment: JSONContent) => void;
+	/** e.g. `4... h6` — which move the note belongs to. */
+	moveLabel: string | null;
+	defaultOpen: boolean;
 }
 
 export const CommentSection = React.memo(
-	({ currentComment, setComments }: CommentSectionProps) => {
+	({
+		currentComment,
+		setComments,
+		moveLabel,
+		defaultOpen,
+	}: CommentSectionProps) => {
+		const [isOpen, setIsOpen] = useState(defaultOpen);
+
+		// The root position has no move to hang a note on.
+		const isEditable = Boolean(moveLabel);
+
 		const editor = useEditor({
 			extensions: [StarterKit],
 			onUpdate: (state) => {
@@ -17,6 +31,10 @@ export const CommentSection = React.memo(
 				if (comment) setComments(comment);
 			},
 		});
+
+		useEffect(() => {
+			editor?.setEditable(isEditable);
+		}, [editor, isEditable]);
 
 		useEffect(() => {
 			if (!editor) return;
@@ -31,7 +49,36 @@ export const CommentSection = React.memo(
 			editor.commands.setTextSelection({ from, to });
 		}, [currentComment, editor]);
 
-		return <EditorContent editor={editor} />;
+		// `currentComment` is a TipTap document that is never truly empty: an
+		// untouched editor still serialises to a single blank paragraph.
+		const hasNote = Boolean(
+			currentComment?.content?.some(
+				(node) => node.content?.length || node.type === 'horizontalRule'
+			)
+		);
+
+		return (
+			<div className={`cs-notes ${isOpen ? 'is-open' : 'is-collapsed'}`}>
+				<button
+					className="cs-notes-header"
+					onClick={() => setIsOpen((open) => !open)}
+					aria-expanded={isOpen}
+					title={isOpen ? 'Hide notes' : 'Show notes'}
+				>
+					{isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+					<span className="cs-notes-title">Notes</span>
+					{moveLabel && <span className="cs-notes-chip">{moveLabel}</span>}
+					{hasNote && !isOpen && <span className="cs-notes-dot" />}
+				</button>
+				{isOpen && (
+					<div
+						className={`cs-notes-body${isEditable ? '' : ' is-disabled'}`}
+					>
+						<EditorContent editor={editor} />
+					</div>
+				)}
+			</div>
+		);
 	}
 );
 

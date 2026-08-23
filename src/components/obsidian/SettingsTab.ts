@@ -1,16 +1,30 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import ChessStudyPlugin from 'src/main';
 
+export const BOARD_COLORS = {
+	blue: 'Blue',
+	'blue-soft': 'Blue (soft)',
+	green: 'Green',
+	brown: 'Brown',
+} as const;
+
+export type BoardColor = keyof typeof BOARD_COLORS;
+
 export interface ChessStudyPluginSettings {
 	boardOrientation: 'white' | 'black';
-	boardColor: 'green' | 'brown';
+	boardColor: BoardColor;
 	viewComments: true | false;
+	/** Width of the widget in px. `null` means "fill the available width". */
+	boardSize: number | null;
+	showCoordinates: true | false;
 }
 
 export const DEFAULT_SETTINGS: ChessStudyPluginSettings = {
 	boardOrientation: 'white',
-	boardColor: 'green',
+	boardColor: 'blue',
 	viewComments: true,
+	boardSize: null,
+	showCoordinates: true,
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -36,7 +50,9 @@ export class SettingsTab extends PluginSettingTab {
 				dropdown
 					.setValue(this.plugin.settings.boardOrientation)
 					.onChange((orientation) => {
-						this.plugin.settings.boardOrientation = orientation as 'white' | 'black';
+						this.plugin.settings.boardOrientation = orientation as
+							| 'white'
+							| 'black';
 						this.plugin.saveSettings();
 					});
 			});
@@ -45,27 +61,56 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Board color')
 			.setDesc('Sets the default color of the board')
 			.addDropdown((dropdown) => {
-				dropdown.addOption('green', 'Green');
-				dropdown.addOption('brown', 'Brown');
+				for (const [value, label] of Object.entries(BOARD_COLORS)) {
+					dropdown.addOption(value, label);
+				}
 
 				dropdown
 					.setValue(this.plugin.settings.boardColor)
 					.onChange((boardColor) => {
-						this.plugin.settings.boardColor = boardColor as 'green' | 'brown';
+						this.plugin.settings.boardColor = boardColor as BoardColor;
 						this.plugin.saveSettings();
 					});
 			});
 
 		new Setting(containerEl)
-			.setName('View Comments')
-			.setDesc('Sets the default view of the comments')
-			.addDropdown((dropdown) => {
-				dropdown.addOption('true', 'True');
-				dropdown.addOption('false', 'False');
-				dropdown
-					.setValue(this.plugin.settings.viewComments.toString())
+			.setName('Board coordinates')
+			.setDesc('Show the a-h / 1-8 labels on the board')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showCoordinates)
+					.onChange((showCoordinates) => {
+						this.plugin.settings.showCoordinates = showCoordinates;
+						this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Default width')
+			.setDesc(
+				'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual studies can be resized by dragging their bottom-right corner.'
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder('fill available width')
+					.setValue(this.plugin.settings.boardSize?.toString() ?? '')
+					.onChange((value) => {
+						const parsed = Number.parseInt(value, 10);
+						this.plugin.settings.boardSize = Number.isFinite(parsed)
+							? parsed
+							: null;
+						this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Show comments')
+			.setDesc('Show the notes panel underneath the board by default')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.viewComments)
 					.onChange((viewComments) => {
-						this.plugin.settings.viewComments = viewComments === 'true';
+						this.plugin.settings.viewComments = viewComments;
 						this.plugin.saveSettings();
 					});
 			});

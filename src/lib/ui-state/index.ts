@@ -142,3 +142,63 @@ export const getCurrentMove = (
 
 	return null;
 };
+
+/**
+ * Jump straight to a position instead of stepping relative to the current one.
+ * Passing `null` shows the root position, i.e. before the first move.
+ */
+export const displayPosition = (
+	draft: Draft<GameState>,
+	chessView: ChessgroundApi,
+	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
+	move: Draft<ChessStudyMove> | Draft<VariantMove> | null
+): Draft<GameState> => {
+	const chess = new Chess(move ? move.after : draft.study.rootFEN);
+
+	chessView.set({
+		fen: chess.fen(),
+		check: chess.isCheck(),
+		movable: {
+			free: false,
+			color: toColor(chess),
+			dests: toDests(chess),
+		},
+		turnColor: toColor(chess),
+	});
+
+	draft.currentMove = move;
+
+	setChessLogic(chess);
+
+	return draft;
+};
+
+/**
+ * Human-readable label for a move, e.g. `4. c3` or `4... h6`, used as the
+ * heading of the notes panel. Variant moves are numbered from their parent.
+ */
+export const getMoveLabel = (
+	moves: ChessStudyMove[],
+	moveId: string | null,
+	firstPlayer: string,
+	initialMoveNumber: number
+): string | null => {
+	if (!moveId) return null;
+
+	const { variant, moveIndex } = findMoveIndex(moves, moveId);
+
+	if (moveIndex < 0) return null;
+
+	const move = variant
+		? moves[variant.parentMoveIndex].variants[variant.variantIndex].moves[
+				moveIndex
+		  ]
+		: moves[moveIndex];
+
+	const mainLineIndex = variant ? variant.parentMoveIndex : moveIndex;
+	const offset = firstPlayer === 'b' ? 1 : 0;
+	const moveNumber =
+		initialMoveNumber + Math.floor((mainLineIndex + offset) / 2);
+
+	return `${moveNumber}${move.color === 'b' ? '...' : '.'} ${move.san}`;
+};

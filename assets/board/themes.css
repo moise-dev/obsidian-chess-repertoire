@@ -1,0 +1,157 @@
+/*
+ * Board themes.
+ *
+ * Each theme is just two colours. The checkerboard itself is drawn with a
+ * conic-gradient (a 25% tile holds a 2x2 block of squares, so the 8x8 grid
+ * falls out of it) rather than the base64 SVGs chessground ships, which means
+ * a new theme costs two custom properties instead of an encoded asset.
+ */
+
+.chess-study .cs-board {
+	--cs-sq-light: #e9edf6;
+	--cs-sq-dark: #4b7399;
+	--cs-hl: 255, 210, 46;
+	--cs-dot: 0, 0, 0;
+}
+
+.chess-study .blue-board {
+	--cs-sq-light: #e9edf6;
+	--cs-sq-dark: #4b7399;
+}
+
+.chess-study .blue-soft-board {
+	--cs-sq-light: #dee3e6;
+	--cs-sq-dark: #8ca2ad;
+}
+
+.chess-study .green-board {
+	--cs-sq-light: #ebecd0;
+	--cs-sq-dark: #779556;
+}
+
+.chess-study .brown-board {
+	--cs-sq-light: #f0d9b5;
+	--cs-sq-dark: #b58863;
+}
+
+.chess-study .cs-board cg-board {
+	background-color: var(--cs-sq-light);
+	background-image: conic-gradient(
+		var(--cs-sq-dark) 0 25%,
+		var(--cs-sq-light) 0 50%,
+		var(--cs-sq-dark) 0 75%,
+		var(--cs-sq-light) 0
+	);
+	background-size: 25% 25%;
+}
+
+/* Square highlights */
+
+.chess-study .cs-board cg-board square.last-move {
+	background-color: rgba(var(--cs-hl), 0.45);
+}
+
+.chess-study .cs-board cg-board square.selected {
+	background-color: rgba(var(--cs-hl), 0.6);
+}
+
+.chess-study .cs-board cg-board square.move-dest {
+	background: radial-gradient(
+		rgba(var(--cs-dot), 0.18) 19%,
+		rgba(var(--cs-dot), 0) 20%
+	);
+}
+
+.chess-study .cs-board cg-board square.move-dest:hover {
+	background: rgba(var(--cs-dot), 0.14);
+}
+
+/* Occupied destination: a ring around the piece instead of a dot. */
+.chess-study .cs-board cg-board square.oc.move-dest {
+	background: radial-gradient(
+		transparent 0%,
+		transparent 78%,
+		rgba(var(--cs-dot), 0.18) 79%
+	);
+}
+
+.chess-study .cs-board cg-board square.check {
+	background: radial-gradient(
+		ellipse at center,
+		rgba(255, 0, 0, 1) 0%,
+		rgba(231, 0, 0, 1) 25%,
+		rgba(169, 0, 0, 0) 89%,
+		rgba(158, 0, 0, 0) 100%
+	);
+}
+
+/*
+ * Coordinates, chess.com style: ranks in the top-left of the a-file, files in
+ * the bottom-right of the first rank, both *inside* the board. Upstream
+ * chessground positions them outside it (top: -20px), where the widget clips
+ * them and they are never seen.
+ */
+
+.chess-study .cs-board .cg-wrap coords {
+	position: absolute;
+	display: flex;
+	pointer-events: none;
+	opacity: 1;
+	font-family: inherit;
+	font-size: clamp(7px, 2.2cqw, 13px);
+	font-weight: 600;
+	line-height: 1.1;
+}
+
+.chess-study .cs-board .cg-wrap coords.ranks,
+.chess-study .cs-board .cg-wrap coords.ranks.left {
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	align-items: flex-start;
+	flex-flow: column-reverse;
+}
+
+.chess-study .cs-board .cg-wrap coords.ranks.black {
+	flex-flow: column;
+}
+
+.chess-study .cs-board .cg-wrap coords.ranks coord {
+	transform: none;
+	padding: 0.35em 0 0 0.4em;
+}
+
+.chess-study .cs-board .cg-wrap coords.files {
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	align-items: flex-end;
+	flex-flow: row;
+	text-transform: lowercase;
+}
+
+.chess-study .cs-board .cg-wrap coords.files.black {
+	flex-flow: row-reverse;
+}
+
+.chess-study .cs-board .cg-wrap coords.files coord {
+	text-align: right;
+	padding: 0 0.4em 0.3em 0;
+}
+
+/* A coordinate sits on the opposite colour of the square underneath it. */
+.chess-study .cs-board .cg-wrap.orientation-white coords.ranks coord:nth-child(2n),
+.chess-study .cs-board .cg-wrap.orientation-white coords.files coord:nth-child(2n),
+.chess-study .cs-board .cg-wrap.orientation-black coords.ranks coord:nth-child(2n + 1),
+.chess-study .cs-board .cg-wrap.orientation-black coords.files coord:nth-child(2n + 1) {
+	color: var(--cs-sq-dark);
+}
+
+.chess-study .cs-board .cg-wrap.orientation-black coords.ranks coord:nth-child(2n),
+.chess-study .cs-board .cg-wrap.orientation-black coords.files coord:nth-child(2n),
+.chess-study .cs-board .cg-wrap.orientation-white coords.ranks coord:nth-child(2n + 1),
+.chess-study .cs-board .cg-wrap.orientation-white coords.files coord:nth-child(2n + 1) {
+	color: var(--cs-sq-light);
+}

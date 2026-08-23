@@ -14,10 +14,9 @@ import {
 } from './components/obsidian/SettingsTab';
 
 // these styles must be imported somewhere
-import 'assets/board/green.css';
 import 'chessground/assets/chessground.base.css';
-import 'chessground/assets/chessground.brown.css';
 import 'chessground/assets/chessground.cburnett.css';
+import 'assets/board/themes.css';
 import { nanoid } from 'nanoid';
 import { parseUserConfig } from './lib/obsidian';
 import './main.css';
@@ -126,7 +125,15 @@ export default class ChessStudyPlugin extends Plugin {
 					const data = await this.dataAdapter.loadFile(chessStudyId);
 
 					ctx.addChild(
-						new ReactView(el, source, this.app, this.settings, data, this.dataAdapter)
+						new ReactView(
+							el,
+							source,
+							this.app,
+							ctx,
+							this.settings,
+							data,
+							this.dataAdapter
+						)
 					);
 				} catch (e) {
 					new Notice(

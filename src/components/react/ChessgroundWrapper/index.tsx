@@ -5,6 +5,7 @@ import { Config } from 'chessground/config';
 import { DrawShape } from 'chessground/draw';
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
+import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { playOtherSide, toColor, toDests } from 'src/lib/chess-logic';
 
 export interface ChessgroundProps {
@@ -16,7 +17,7 @@ export interface ChessgroundProps {
 	isViewOnly: boolean;
 	shapes: DrawShape[];
 	config?: Config;
-	boardColor?: 'brown' | 'green';
+	boardColor?: BoardColor;
 }
 
 export const ChessgroundWrapper = React.memo(
@@ -28,7 +29,7 @@ export const ChessgroundWrapper = React.memo(
 		syncShapes: setShapes,
 		isViewOnly,
 		shapes,
-		boardColor = 'green',
+		boardColor = 'blue',
 		config = {},
 	}: ChessgroundProps) => {
 		const ref = useRef<HTMLDivElement>(null);
@@ -92,8 +93,8 @@ export const ChessgroundWrapper = React.memo(
 		}, [api, shapes]);
 
 		return (
-			<div className={`${boardColor}-board height-width-100 table`}>
-				<div ref={ref} className={`height-width-100`} />
+			<div className={`cs-board ${boardColor}-board`}>
+				<div ref={ref} className="height-width-100" />
 			</div>
 		);
 	}

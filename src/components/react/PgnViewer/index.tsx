@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import { ChessStudyMove } from 'src/lib/storage';
-import { Controls } from './Controls';
+import { ControlActions, Controls } from './Controls';
 import { MoveItem, VariantMoveItem } from './MoveItems';
 
 const chunkArray = <T,>(array: T[], chunkSize: number, offsetByOne = false) => {
@@ -42,17 +42,13 @@ export const VariantsContainer = ({
 	return <div className="variants-container">{children}</div>;
 };
 
-interface PgnViewerProps {
+interface PgnViewerProps extends ControlActions {
 	history: ChessStudyMove[];
 	currentMoveId: string | null;
 	firstPlayer: string;
 	initialMoveNumber: number;
+	title: string | null;
 	onMoveItemClick: (moveId: string) => void;
-	onUndoButtonClick: () => void;
-	onBackButtonClick: () => void;
-	onForwardButtonClick: () => void;
-	onSaveButtonClick: () => void;
-	onCopyButtonClick: () => void;
 }
 
 export const PgnViewer = React.memo((props: PgnViewerProps) => {
@@ -61,6 +57,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		currentMoveId,
 		firstPlayer,
 		initialMoveNumber,
+		title,
 		onMoveItemClick,
 		...controlActions
 	} = props;
@@ -71,8 +68,17 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 	);
 
 	return (
-		<div className="height-width-100">
+		<div className="cs-side">
+			<div className="cs-side-header">
+				<span className="cs-side-title">Moves</span>
+				{title && <span className="cs-side-subtitle">{title}</span>}
+			</div>
 			<div className="move-item-section">
+				{!history.length && (
+					<p className="cs-empty-state">
+						No moves yet. Play a move on the board to start the line.
+					</p>
+				)}
 				<div className="move-item-container">
 					{movePairs.map((pair, currentMoveIndex) => {
 						const [wMove, bMove] = pair;

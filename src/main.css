@@ -1,36 +1,36 @@
-/* General */
-.chess-study button:active {
-	transform: translateY(1px);
-}
-
-.chess-study .vertical-align {
-	display: flex;
-	align-items: center;
-}
-
-.chess-study .center {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.chess-study .height-width-100 {
-	width: 100%;
-	height: 100%;
-}
-
-.chess-study .table {
-	display: table;
-}
+/* ------------------------------------------------------------------ *
+ * Shell
+ * ------------------------------------------------------------------ */
 
 .chess-study {
-	height: 100%;
-	max-width: 750px;
+	--cs-radius: 10px;
+	--cs-gap: 10px;
+	--cs-border: var(--background-modifier-border);
+
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: var(--cs-gap);
+	/* --cs-width is set inline by the resize handle. */
+	width: var(--cs-width, 100%);
+	max-width: 100%;
+	padding: var(--cs-gap);
+	background-color: var(--background-secondary);
+	border: 1px solid var(--cs-border);
+	border-radius: var(--cs-radius);
 	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-secondary-alt);
-	border-radius: 5px;
+	/* Lets the layout and the board coordinates respond to the widget's own
+	   width rather than the width of the note. */
+	container-type: inline-size;
+}
+
+.chess-study:focus {
+	outline: none;
+}
+
+.chess-study:focus-visible {
+	box-shadow: 0 0 0 2px var(--interactive-accent);
 }
 
 .chess-study *,
@@ -38,6 +38,7 @@
 .chess-study *::after {
 	box-sizing: border-box;
 }
+
 .chess-study * {
 	margin: 0;
 }
@@ -59,141 +60,383 @@
 	overflow-wrap: break-word;
 }
 
-/* Container */
-.chess-study .chessground-pgn-container {
+.chess-study button:active {
+	transform: translateY(1px);
+}
+
+/* Helpers */
+
+.chess-study .vertical-align {
 	display: flex;
-	height: 450px;
+	align-items: center;
 }
 
-.chess-study .chessground-pgn-container .chessground-container {
-	flex: 0 0 450px;
+.chess-study .center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.chess-study .height-width-100 {
+	width: 100%;
 	height: 100%;
 }
 
-.chess-study .chessground-pgn-container .pgn-container {
+.chess-study .cs-empty-state {
+	padding: 10px 4px;
+	color: var(--text-faint);
+	font-size: 12px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Layout: board next to the move list, notes underneath
+ * ------------------------------------------------------------------ */
+
+.chess-study .cs-main {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(150px, 0.52fr);
+	gap: var(--cs-gap);
+}
+
+.chess-study .cs-board-wrap {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	border-radius: 6px;
+	overflow: hidden;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+	/* Board coordinates size themselves off this. */
+	container-type: inline-size;
+}
+
+.chess-study .cs-board {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* Stack once the widget itself gets narrow, not once the note does. */
+@container (max-width: 470px) {
+	.chess-study .cs-main {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.chess-study .cs-side {
+		max-height: 240px;
+	}
+}
+
+/* ------------------------------------------------------------------ *
+ * Move list
+ * ------------------------------------------------------------------ */
+
+.chess-study .cs-side {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.chess-study .cs-side-header {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	padding: 0 2px 6px;
+	border-bottom: 1px solid var(--cs-border);
+}
+
+.chess-study .cs-side-title {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.chess-study .cs-side-subtitle {
 	flex: 1;
-	height: 100%;
+	min-width: 0;
+	font-size: 11px;
+	color: var(--text-faint);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
-
-/* PGN Viewer */
 
 .chess-study .move-item-section {
-	height: 380px;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 4px 0;
 }
-
-.chess-study .button-section {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	gap: 4px;
-	height: 32px;
-}
-
-/* Move Items */
 
 .chess-study .move-item-container {
 	display: grid;
-	grid-template-columns: 0.15fr 0.425fr 0.425fr;
-	grid-auto-rows: minmax(35px, auto);
+	grid-template-columns: 2.2em 1fr 1fr;
+	grid-auto-rows: minmax(26px, auto);
+	align-content: start;
 	width: 100%;
-	max-height: 380px;
-	overflow-y: scroll;
-}
-
-.chess-study .move-item-container > * {
-	margin: 0;
-}
-
-.chess-study .move-item {
-	padding-left: 8px;
-	user-select: none;
-}
-
-.chess-study .move-item:hover {
-	background-color: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l)));
-	color: var(--text-on-accent);
-	cursor: pointer;
-}
-
-.chess-study .move-item.active {
-	background-color: hsl(
-		var(--accent-h),
-		var(--accent-s),
-		calc(var(--accent-l) - 10%)
-	);
-	color: var(--text-on-accent);
-	font-weight: bold;
-}
-
-/* Variant Move Items */
-
-.chess-study .variants-container {
-	grid-column: span 3 / auto;
-	display: flex;
-	flex-direction: column;
-	border-bottom: 1px solid var(--color-base-50);
-}
-
-.chess-study .variant-container {
-	grid-column: span 3 / auto;
-	display: flex;
-	flex-direction: column;
+	font-family: var(--font-monospace);
+	font-size: 13px;
 }
 
 .chess-study .move-indicator {
-	color: var(--color-base-60);
-	text-align: center;
-	background-color: var(--color-base-10);
+	justify-content: flex-end;
+	padding-right: 6px;
+	color: var(--text-faint);
+	font-size: 12px;
 	user-select: none;
 	cursor: default;
 }
 
-.chess-study .variant-move-item {
-	padding-left: 6px;
+.chess-study .move-item {
+	display: flex;
+	align-items: center;
+	padding: 2px 6px;
+	border-radius: 4px;
+	color: var(--text-normal);
 	user-select: none;
 	cursor: pointer;
+}
+
+.chess-study .move-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.chess-study .move-item.active {
+	background-color: var(
+		--background-modifier-active-hover,
+		var(--background-modifier-hover)
+	);
+	box-shadow: inset 2px 0 0 var(--text-accent);
+	color: var(--text-accent);
+	font-weight: 700;
+}
+
+/* Variants */
+
+.chess-study .variants-container {
+	grid-column: 1 / -1;
+	display: flex;
+	flex-direction: column;
+	margin: 2px 0;
+}
+
+.chess-study .variant-container {
+	display: flex;
+	flex-direction: column;
 }
 
 .chess-study .variant-move-item-container {
 	display: flex;
 	flex-wrap: wrap;
-	padding: 4px 0;
-	border-top: 1px solid var(--color-base-50);
+	gap: 0 2px;
+	margin-left: 6px;
+	padding: 3px 4px 3px 8px;
+	border-left: 2px solid var(--cs-border);
+	font-size: 12px;
 }
 
-.chess-study .variant-move-item.active,
+.chess-study .variant-move-item {
+	padding: 1px 3px;
+	border-radius: 3px;
+	color: var(--text-muted);
+	user-select: none;
+	cursor: pointer;
+}
+
 .chess-study .variant-move-item:hover {
-	color: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 10%));
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.chess-study .variant-move-item.active {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-accent);
+	font-weight: 700;
 }
 
 .chess-study .variant-move-indicator {
-	font-weight: bold;
+	color: var(--text-faint);
+	font-weight: 600;
 }
 
-/* Comment Section */
+/* ------------------------------------------------------------------ *
+ * Controls
+ * ------------------------------------------------------------------ */
 
-.chess-study .editor-input {
-	min-height: 150px;
-	resize: none;
-	font-size: 15px;
-	caret-color: rgb(5, 5, 5);
-	position: relative;
-	tab-size: 1;
-	outline: 0;
-	padding: 15px 10px;
-	caret-color: #444;
+.chess-study .cs-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	margin-top: auto;
+	padding-top: 8px;
+	border-top: 1px solid var(--cs-border);
 }
 
-.chess-study .CommentSection {
-	height: 250px;
-	padding-top: 5px;
-	overflow: scroll;
-	border-top: 1px solid var(--background-secondary-alt);
+.chess-study .cs-controls-divider {
+	width: 1px;
+	height: 16px;
+	margin: 0 4px;
+	background-color: var(--cs-border);
 }
 
-.chess-study .ProseMirror,
-.chess-study .CommentSection > div {
+.chess-study .cs-icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: none;
+	border-radius: 6px;
+	background-color: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.chess-study .cs-icon-button:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.chess-study .cs-icon-button--primary {
+	color: var(--text-accent);
+}
+
+.chess-study .cs-icon-button--primary:hover {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+/* ------------------------------------------------------------------ *
+ * Notes
+ * ------------------------------------------------------------------ */
+
+.chess-study .cs-notes {
+	border: 1px solid var(--cs-border);
+	border-radius: 8px;
+	background-color: var(--background-primary);
+	overflow: hidden;
+}
+
+.chess-study .cs-notes-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 	width: 100%;
-	height: 100%;
+	height: auto;
+	padding: 6px 10px;
+	border: none;
+	border-radius: 0;
+	background-color: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	text-align: left;
+	cursor: pointer;
+}
+
+.chess-study .cs-notes-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.chess-study .cs-notes-title {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.chess-study .cs-notes-chip {
+	padding: 1px 7px;
+	border-radius: 999px;
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: 11px;
+}
+
+.chess-study .cs-notes-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: var(--text-accent);
+}
+
+.chess-study .cs-notes-body {
+	min-height: 76px;
+	max-height: 40vh;
+	padding: 8px 10px;
+	border-top: 1px solid var(--cs-border);
+	overflow-y: auto;
+}
+
+.chess-study .ProseMirror {
+	outline: none;
+	min-height: 56px;
+	caret-color: var(--text-normal);
+	color: var(--text-normal);
+}
+
+.chess-study .ProseMirror p {
+	margin: 0 0 0.4em;
+}
+
+/*
+ * Placeholder. An "empty" ProseMirror paragraph still holds a trailing <br>,
+ * so :empty alone does not catch it.
+ */
+.chess-study .ProseMirror > p:only-child:empty::before,
+.chess-study
+	.ProseMirror
+	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
+	content: 'Add a note for this move…';
+	float: left;
+	height: 0;
+	color: var(--text-faint);
+	pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Resize handle
+ * ------------------------------------------------------------------ */
+
+.chess-study .cs-resize-handle {
+	position: absolute;
+	right: 2px;
+	bottom: 2px;
+	width: 14px;
+	height: 14px;
+	border-bottom-right-radius: var(--cs-radius);
+	opacity: 0.3;
+	cursor: nwse-resize;
+	touch-action: none;
+	background: linear-gradient(
+		135deg,
+		transparent 0 46%,
+		var(--text-muted) 46% 56%,
+		transparent 56% 70%,
+		var(--text-muted) 70% 80%,
+		transparent 80%
+	);
+}
+
+.chess-study:hover .cs-resize-handle,
+.chess-study .cs-resize-handle:hover {
+	opacity: 0.75;
+}
+
+/* No move selected: the note has nothing to attach to. */
+.chess-study .cs-notes-body.is-disabled {
+	opacity: 0.7;
+}
+
+.chess-study .cs-notes-body.is-disabled .ProseMirror > p:only-child:empty::before,
+.chess-study
+	.cs-notes-body.is-disabled
+	.ProseMirror
+	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
+	content: 'Select a move to add a note to it.';
 }

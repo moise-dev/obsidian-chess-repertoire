@@ -1,36 +1,96 @@
-import { ArrowLeft, ArrowRight, Copy, Save, Undo2 } from 'lucide-react';
+import {
+	ArrowLeft,
+	ArrowRight,
+	ChevronsLeft,
+	ChevronsRight,
+	Copy,
+	FlipVertical2,
+	Save,
+	Undo2,
+} from 'lucide-react';
 import * as React from 'react';
 
 export interface ControlActions {
 	onUndoButtonClick: () => void;
+	onFirstButtonClick: () => void;
 	onBackButtonClick: () => void;
 	onForwardButtonClick: () => void;
+	onLastButtonClick: () => void;
+	onFlipButtonClick: () => void;
 	onSaveButtonClick: () => void;
 	onCopyButtonClick: () => void;
 }
 
 export const Controls = (props: ControlActions) => {
 	return (
-		<div>
-			<div className="button-section">
-				<button title="Back" onClick={() => props.onBackButtonClick()}>
-					<ArrowLeft />
-				</button>
-				<button title="Forward" onClick={() => props.onForwardButtonClick()}>
-					<ArrowRight />
-				</button>
-				<button title="Save" onClick={() => props.onSaveButtonClick()}>
-					<Save strokeWidth={'1px'} />
-				</button>
-			</div>
-			<div className="button-section">
-				<button title="Copy FEN" onClick={() => props.onCopyButtonClick()}>
-					<Copy strokeWidth={'1px'} />
-				</button>
-				<button title="Undo" onClick={() => props.onUndoButtonClick()}>
-					<Undo2 />
-				</button>
-			</div>
+		<div className="cs-controls">
+			<button
+				className="cs-icon-button"
+				title="Start position"
+				aria-label="Go to the start position"
+				onClick={() => props.onFirstButtonClick()}
+			>
+				<ChevronsLeft size={18} />
+			</button>
+			<button
+				className="cs-icon-button"
+				title="Previous move"
+				aria-label="Go to the previous move"
+				onClick={() => props.onBackButtonClick()}
+			>
+				<ArrowLeft size={18} />
+			</button>
+			<button
+				className="cs-icon-button"
+				title="Next move"
+				aria-label="Go to the next move"
+				onClick={() => props.onForwardButtonClick()}
+			>
+				<ArrowRight size={18} />
+			</button>
+			<button
+				className="cs-icon-button"
+				title="Last move"
+				aria-label="Go to the last move"
+				onClick={() => props.onLastButtonClick()}
+			>
+				<ChevronsRight size={18} />
+			</button>
+
+			<span className="cs-controls-divider" />
+
+			<button
+				className="cs-icon-button"
+				title="Flip board"
+				aria-label="Flip the board"
+				onClick={() => props.onFlipButtonClick()}
+			>
+				<FlipVertical2 size={18} />
+			</button>
+			<button
+				className="cs-icon-button"
+				title="Undo last move"
+				aria-label="Undo the last move"
+				onClick={() => props.onUndoButtonClick()}
+			>
+				<Undo2 size={18} />
+			</button>
+			<button
+				className="cs-icon-button"
+				title="Copy FEN"
+				aria-label="Copy the current position as FEN"
+				onClick={() => props.onCopyButtonClick()}
+			>
+				<Copy size={18} />
+			</button>
+			<button
+				className="cs-icon-button cs-icon-button--primary"
+				title="Save study"
+				aria-label="Save the study"
+				onClick={() => props.onSaveButtonClick()}
+			>
+				<Save size={18} />
+			</button>
 		</div>
 	);
 };

@@ -35,6 +35,10 @@ const context = await esbuild.context({
 	],
 	format: 'cjs',
 	target: 'es2018',
+	// Without this React keeps its development build, which is both much
+	// larger and measurably slower.
+	define: prod ? { 'process.env.NODE_ENV': '"production"' } : {},
+	minify: prod,
 	logLevel: 'info',
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
