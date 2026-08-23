@@ -98,7 +98,7 @@ export const displayMoveInHistory = (
 
 		setChessLogic(chess);
 	} else if (offset !== 0){
-		const chess = draft.study.root.fen ? new Chess(draft.study.root.fen) : new Chess();
+		const chess = new Chess(draft.study.rootFEN);
 
 		chessView.set({
 		  fen: chess.fen(),
