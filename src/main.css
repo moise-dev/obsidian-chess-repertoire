@@ -169,10 +169,14 @@
 	padding: 4px 0;
 }
 
+.chess-study .move-item-container > * {
+	margin: 0;
+}
+
 .chess-study .move-item-container {
 	display: grid;
 	grid-template-columns: 2.2em 1fr 1fr;
-	grid-auto-rows: minmax(26px, auto);
+	grid-auto-rows: minmax(24px, auto);
 	align-content: start;
 	width: 100%;
 	font-family: var(--font-monospace);
@@ -441,14 +445,21 @@
 	content: 'Select a move to add a note to it.';
 }
 
-/* Marks a move that carries a note. */
-.chess-study .cs-move-note {
+/* Marks moves carrying a note or board arrows. */
+.chess-study .cs-move-marker {
 	flex: 0 0 auto;
 	display: inline-block;
 	width: 5px;
 	height: 5px;
 	margin-left: 5px;
 	border-radius: 50%;
-	background-color: var(--text-accent);
 	vertical-align: middle;
+}
+
+.chess-study .cs-move-marker--note {
+	background-color: var(--text-accent);
+}
+
+.chess-study .cs-move-marker--shape {
+	background-color: var(--color-green, #47a065);
 }

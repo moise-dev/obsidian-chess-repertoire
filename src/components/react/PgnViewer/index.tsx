@@ -98,6 +98,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 								<MoveItem
 									san={wMove.san}
 									comment={wMove.comment}
+									shapes={wMove.shapes}
 									isCurrentMove={wMove.moveId === currentMoveId}
 									onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
 								/>
@@ -105,6 +106,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 									<MoveItem
 										san={bMove.san}
 										comment={bMove.comment}
+										shapes={bMove.shapes}
 										isCurrentMove={bMove.moveId === currentMoveId}
 										onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
 									/>
@@ -127,6 +129,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																			isCurrentMove={bMove.moveId === currentMoveId}
 																			san={bMove.san}
 																			comment={bMove.comment}
+																			shapes={bMove.shapes}
 																			onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
 																			moveIndicator={
 																				(wMoveVarianti === 0 &&
@@ -147,6 +150,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																				isCurrentMove={wMove.moveId === currentMoveId}
 																				san={wMove.san}
 																				comment={wMove.comment}
+																				shapes={wMove.shapes}
 																				onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
 																				moveIndicator={
 																					((firstPlayer === 'w' || currentMoveIndex > 0) &&
@@ -180,6 +184,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																			isCurrentMove={wMove.moveId === currentMoveId}
 																			san={wMove.san}
 																			comment={wMove.comment}
+																			shapes={wMove.shapes}
 																			onMoveItemClick={() => onMoveItemClick(wMove.moveId)}
 																			moveIndicator={`${
 																				currentMoveIndex + initialMoveNumber + 1 + bMoveVarianti
@@ -190,6 +195,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 																				isCurrentMove={bMove.moveId === currentMoveId}
 																				san={bMove.san}
 																				comment={bMove.comment}
+																				shapes={bMove.shapes}
 																				onMoveItemClick={() => onMoveItemClick(bMove.moveId)}
 																			/>
 																		)}
