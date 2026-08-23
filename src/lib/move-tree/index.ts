@@ -1,5 +1,8 @@
 import { ChessStudyMove } from 'src/lib/storage';
 
+/** How deep variations may nest. The mainline is depth 0. */
+export const MAX_VARIATION_DEPTH = 4;
+
 /**
  * Address of a move in the tree.
  *
@@ -114,3 +117,142 @@ export const moveNumberAtPly = (
 	initialMoveNumber: number
 ): number =>
 	initialMoveNumber + Math.floor((ply + (firstPlayer === 'b' ? 1 : 0)) / 2);
+
+interface VariationRef {
+	/** Path of the move the variation hangs off. */
+	parentPath: MovePath;
+	parentMove: ChessStudyMove;
+	variantIndex: number;
+}
+
+/**
+ * The variation that directly contains the move at `path`, or null when that
+ * move is on the mainline.
+ */
+export const getVariationRef = (
+	moves: ChessStudyMove[],
+	path: MovePath
+): VariationRef | null => {
+	const parentPath = getParentMovePath(path);
+
+	if (!parentPath) return null;
+
+	const parentMove = getMoveAtPath(moves, parentPath);
+	const variantIndex = path[path.length - 2];
+
+	if (!parentMove?.variants?.[variantIndex]) return null;
+
+	return { parentPath, parentMove, variantIndex };
+};
+
+/** Total moves in a line, nested variations included. */
+export const countMoves = (moves: ChessStudyMove[]): number =>
+	moves.reduce(
+		(total, move) =>
+			total +
+			1 +
+			(move.variants ?? []).reduce(
+				(sub, variant) => sub + countMoves(variant.moves),
+				0
+			),
+		0
+	);
+
+/**
+ * Swaps a variation with the line it branches from, lifting it one level.
+ *
+ * The moves that currently follow the parent move become a variation in the
+ * slot the promoted one vacated, so sibling order is preserved and nothing is
+ * lost. If the parent move had no continuation, the variation simply becomes it.
+ */
+export const promoteVariationAtPath = (
+	moves: ChessStudyMove[],
+	path: MovePath,
+	makeId: () => string
+): boolean => {
+	const ref = getVariationRef(moves, path);
+
+	if (!ref) return false;
+
+	const { parentPath, parentMove, variantIndex } = ref;
+	const parentList = getListAtPath(moves, parentPath);
+
+	if (!parentList) return false;
+
+	const variant = parentMove.variants[variantIndex];
+	const parentIndex = parentPath[parentPath.length - 1];
+
+	const continuation = parentList.splice(parentIndex + 1);
+	parentList.push(...variant.moves);
+
+	if (continuation.length) {
+		parentMove.variants[variantIndex] = {
+			variantId: makeId(),
+			parentMoveId: parentMove.moveId,
+			moves: continuation,
+		};
+	} else {
+		parentMove.variants.splice(variantIndex, 1);
+	}
+
+	return true;
+};
+
+/**
+ * Promotes repeatedly until the move sits on the mainline. The loop is bounded
+ * rather than `while (true)`: a tree that somehow failed to shrink would
+ * otherwise hang the renderer.
+ */
+export const promoteToMainline = (
+	moves: ChessStudyMove[],
+	moveId: string,
+	makeId: () => string
+): boolean => {
+	let promoted = false;
+
+	for (let step = 0; step <= MAX_VARIATION_DEPTH; step++) {
+		const path = findMovePath(moves, moveId);
+
+		if (!path || pathDepth(path) === 0) return promoted;
+		if (!promoteVariationAtPath(moves, path, makeId)) return promoted;
+
+		promoted = true;
+	}
+
+	return promoted;
+};
+
+/** Removes the whole variation containing the move at `path`. */
+export const removeVariationAtPath = (
+	moves: ChessStudyMove[],
+	path: MovePath
+): boolean => {
+	const ref = getVariationRef(moves, path);
+
+	if (!ref) return false;
+
+	ref.parentMove.variants.splice(ref.variantIndex, 1);
+
+	return true;
+};
+
+/** Reorders a variation among its siblings. `delta` is -1 (up) or 1 (down). */
+export const moveVariationAtPath = (
+	moves: ChessStudyMove[],
+	path: MovePath,
+	delta: number
+): boolean => {
+	const ref = getVariationRef(moves, path);
+
+	if (!ref) return false;
+
+	const { parentMove, variantIndex } = ref;
+	const target = variantIndex + delta;
+
+	if (target < 0 || target >= parentMove.variants.length) return false;
+
+	const [variant] = parentMove.variants.splice(variantIndex, 1);
+	parentMove.variants.splice(target, 0, variant);
+
+	return true;
+};

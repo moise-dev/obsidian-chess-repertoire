@@ -16,16 +16,23 @@ import {
 } from 'src/lib/classification';
 import { parseUserConfig } from 'src/lib/obsidian';
 import {
+	MAX_VARIATION_DEPTH,
+	countMoves,
 	getListAtPath,
 	getMoveAtPath,
+	getParentMovePath,
+	getVariationRef,
+	moveVariationAtPath,
 	pathDepth,
+	promoteToMainline,
+	promoteVariationAtPath,
 	removeMoveAtPath,
+	removeVariationAtPath,
 } from 'src/lib/move-tree';
 import {
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
 	ChessStudyMove,
-	MAX_VARIATION_DEPTH,
 	VariantMove,
 } from 'src/lib/storage';
 import {
@@ -38,7 +45,9 @@ import {
 import { useImmerReducer } from 'use-immer';
 import { ChessgroundProps, ChessgroundWrapper } from './ChessgroundWrapper';
 import { CommentSection } from './CommentSection';
+import { ConfirmModal } from '../obsidian/ConfirmModal';
 import { PgnViewer } from './PgnViewer';
+import { VariationAction } from './PgnViewer/MoveItems';
 
 export type ChessStudyConfig = ChessgroundProps;
 
@@ -77,7 +86,10 @@ export type GameActions =
 			/** Defaults to the current move; the context menu passes an explicit one. */
 			moveId?: string;
 	  }
-	| { type: 'SET_TITLE'; title: string | null };
+	| { type: 'SET_TITLE'; title: string | null }
+	| { type: 'PROMOTE_VARIATION'; moveId: string; toMainline: boolean }
+	| { type: 'DELETE_VARIATION'; moveId: string }
+	| { type: 'REORDER_VARIATION'; moveId: string; delta: number };
 
 export const ChessStudy = ({
 	source,
@@ -270,6 +282,52 @@ export const ChessStudy = ({
 					move.classification = action.classification;
 
 					if (draft.currentMove?.moveId === moveId) draft.currentMove = move;
+
+					return draft;
+				}
+				case 'PROMOTE_VARIATION': {
+					const moves = draft.study.moves;
+
+					if (action.toMainline) {
+						promoteToMainline(moves, action.moveId, nanoid);
+					} else {
+						const path = findMovePathById(moves, action.moveId);
+
+						if (path) promoteVariationAtPath(moves, path, nanoid);
+					}
+
+					// Promotion only moves lines around, so the position on the board
+					// is still the one the current move produced.
+					return draft;
+				}
+				case 'DELETE_VARIATION': {
+					if (!chessView) return draft;
+
+					const moves = draft.study.moves;
+					const path = findMovePathById(moves, action.moveId);
+
+					if (!path) return draft;
+
+					// Where to land if the move we are looking at is inside the
+					// variation about to disappear.
+					const parentPath = getParentMovePath(path);
+					const fallback = parentPath ? getMoveAtPath(moves, parentPath) : null;
+
+					if (!removeVariationAtPath(moves, path)) return draft;
+
+					const currentId = draft.currentMove?.moveId;
+
+					if (currentId && !findMovePathById(moves, currentId)) {
+						displayPosition(draft, chessView, setChessLogic, fallback ?? null);
+					}
+
+					return draft;
+				}
+				case 'REORDER_VARIATION': {
+					const moves = draft.study.moves;
+					const path = findMovePathById(moves, action.moveId);
+
+					if (path) moveVariationAtPath(moves, path, action.delta);
 
 					return draft;
 				}
@@ -540,6 +598,47 @@ export const ChessStudy = ({
 		[]
 	);
 
+	const onVariationAction = useCallback(
+		(moveId: string, action: VariationAction) => {
+			switch (action) {
+				case 'promote':
+					dispatch({ type: 'PROMOTE_VARIATION', moveId, toMainline: false });
+					return;
+				case 'promote-to-mainline':
+					dispatch({ type: 'PROMOTE_VARIATION', moveId, toMainline: true });
+					return;
+				case 'move-up':
+					dispatch({ type: 'REORDER_VARIATION', moveId, delta: -1 });
+					return;
+				case 'move-down':
+					dispatch({ type: 'REORDER_VARIATION', moveId, delta: 1 });
+					return;
+				case 'delete': {
+					// There is no undo and autosave commits moments later, so say how
+					// much is about to go and make the user agree to it.
+					const path = findMovePathById(gameState.study.moves, moveId);
+					const ref = path && getVariationRef(gameState.study.moves, path);
+					const moveCount = ref
+						? countMoves(ref.parentMove.variants[ref.variantIndex].moves)
+						: 0;
+
+					if (!moveCount) return;
+
+					new ConfirmModal(app, {
+						title: 'Delete variation?',
+						body: `This removes ${moveCount} ${
+							moveCount === 1 ? 'move' : 'moves'
+						}, including any variations nested inside it. This cannot be undone.`,
+						confirmText: 'Delete',
+						onConfirm: () => dispatch({ type: 'DELETE_VARIATION', moveId }),
+					}).open();
+					return;
+				}
+			}
+		},
+		[app, dispatch, gameState.study.moves]
+	);
+
 	const onKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
 			// Never hijack keys while anything is being typed into. ProseMirror is
@@ -665,6 +764,7 @@ export const ChessStudy = ({
 						moveId: string,
 						classification: MoveClassification | null
 					) => dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })}
+					onVariationAction={onVariationAction}
 					onUndoButtonClick={() =>
 						dispatch({ type: 'REMOVE_LAST_MOVE_FROM_HISTORY' })
 					}

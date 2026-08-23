@@ -26,6 +26,20 @@ const useScrollIntoView = (isCurrentMove: boolean) => {
 	return ref;
 };
 
+export type VariationAction =
+	| 'promote'
+	| 'promote-to-mainline'
+	| 'move-up'
+	| 'move-down'
+	| 'delete';
+
+/** Where a variation move sits, so its menu can offer only what applies. */
+export interface VariationPosition {
+	depth: number;
+	index: number;
+	siblingCount: number;
+}
+
 interface MoveAnnotations {
 	comment?: JSONContent | null;
 	shapes?: DrawShape[];
@@ -80,12 +94,15 @@ const annotationClass = ({ comment, shapes }: MoveAnnotations) =>
 	}`;
 
 /**
- * Right-click menu for labelling a move without going through the notes panel,
- * which may well be collapsed.
+ * Right-click menu: labelling for any move, plus the variation operations for
+ * moves that sit inside one. Reaching these from the move list means they work
+ * whether or not the notes panel is open.
  */
-const useClassificationMenu = (
+const useMoveMenu = (
 	classification: MoveClassification | null | undefined,
-	onClassify?: (classification: MoveClassification | null) => void
+	onClassify?: (classification: MoveClassification | null) => void,
+	variation?: VariationPosition,
+	onVariationAction?: (action: VariationAction) => void
 ) =>
 	React.useCallback(
 		(event: React.MouseEvent) => {
@@ -117,9 +134,56 @@ const useClassificationMenu = (
 					.onClick(() => onClassify(null))
 			);
 
+			if (variation && onVariationAction) {
+				menu.addSeparator();
+
+				menu.addItem((item) =>
+					item
+						.setTitle('Promote to mainline')
+						.setIcon('chevrons-up')
+						.onClick(() => onVariationAction('promote-to-mainline'))
+				);
+
+				// Only meaningful below the first level; at depth 1 it is the same
+				// thing as promoting to the mainline.
+				if (variation.depth > 1) {
+					menu.addItem((item) =>
+						item
+							.setTitle('Promote one level')
+							.setIcon('chevron-up')
+							.onClick(() => onVariationAction('promote'))
+					);
+				}
+
+				if (variation.siblingCount > 1) {
+					menu.addItem((item) =>
+						item
+							.setTitle('Move variation up')
+							.setIcon('arrow-up')
+							.setDisabled(variation.index === 0)
+							.onClick(() => onVariationAction('move-up'))
+					);
+					menu.addItem((item) =>
+						item
+							.setTitle('Move variation down')
+							.setIcon('arrow-down')
+							.setDisabled(variation.index === variation.siblingCount - 1)
+							.onClick(() => onVariationAction('move-down'))
+					);
+				}
+
+				menu.addSeparator();
+				menu.addItem((item) =>
+					item
+						.setTitle('Delete variation')
+						.setIcon('trash-2')
+						.onClick(() => onVariationAction('delete'))
+				);
+			}
+
 			menu.showAtMouseEvent(event.nativeEvent);
 		},
-		[classification, onClassify]
+		[classification, onClassify, onVariationAction, variation]
 	);
 
 interface MoveItemProps extends MoveAnnotations {
@@ -127,6 +191,8 @@ interface MoveItemProps extends MoveAnnotations {
 	san: string;
 	onMoveItemClick: () => void;
 	onClassify?: (classification: MoveClassification | null) => void;
+	variation?: VariationPosition;
+	onVariationAction?: (action: VariationAction) => void;
 }
 
 export const MoveItem = ({
@@ -139,7 +205,7 @@ export const MoveItem = ({
 	onClassify,
 }: MoveItemProps) => {
 	const ref = useScrollIntoView(isCurrentMove);
-	const onContextMenu = useClassificationMenu(classification, onClassify);
+	const onContextMenu = useMoveMenu(classification, onClassify);
 
 	return (
 		<p
@@ -172,10 +238,17 @@ export const VariantMoveItem = ({
 	classification,
 	onMoveItemClick,
 	onClassify,
+	variation,
+	onVariationAction,
 	moveIndicator = null,
 }: VariantMoveItemProps) => {
 	const ref = useScrollIntoView(isCurrentMove);
-	const onContextMenu = useClassificationMenu(classification, onClassify);
+	const onContextMenu = useMoveMenu(
+		classification,
+		onClassify,
+		variation,
+		onVariationAction
+	);
 
 	return (
 		<div

@@ -10,8 +10,6 @@ import { ROOT_FEN } from 'src/main';
 // own `variants`. Older files are normalised on load.
 export const CURRENT_STORAGE_VERSION = '0.0.4';
 
-/** How deep variations may nest. The mainline is depth 0. */
-export const MAX_VARIATION_DEPTH = 4;
 
 export interface Variant {
 	variantId: string;

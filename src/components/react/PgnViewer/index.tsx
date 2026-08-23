@@ -4,7 +4,7 @@ import { MoveClassification } from 'src/lib/classification';
 import { moveNumberAtPly } from 'src/lib/move-tree';
 import { ChessStudyMove, Variant } from 'src/lib/storage';
 import { ControlActions, Controls } from './Controls';
-import { MoveItem, VariantMoveItem } from './MoveItems';
+import { MoveItem, VariantMoveItem, VariationAction } from './MoveItems';
 import { StudyTitle } from './StudyTitle';
 
 const chunkArray = <T,>(array: T[], chunkSize: number, offsetByOne = false) => {
@@ -31,6 +31,7 @@ interface MoveListContext {
 		moveId: string,
 		classification: MoveClassification | null
 	) => void;
+	onVariationAction: (moveId: string, action: VariationAction) => void;
 }
 
 interface VariationsProps extends MoveListContext {
@@ -38,6 +39,13 @@ interface VariationsProps extends MoveListContext {
 	/** Half-move number the variation's first move sits at. */
 	startPly: number;
 	depth: number;
+}
+
+interface VariationMovesProps extends Omit<VariationsProps, 'variants'> {
+	moves: ChessStudyMove[];
+	/** Position of this variation among its siblings, for the context menu. */
+	index: number;
+	siblingCount: number;
 }
 
 /**
@@ -52,8 +60,10 @@ const VariationMoves = ({
 	moves,
 	startPly,
 	depth,
+	index,
+	siblingCount,
 	...context
-}: Omit<VariationsProps, 'variants'> & { moves: ChessStudyMove[] }) => {
+}: VariationMovesProps) => {
 	const blocks: React.ReactNode[] = [];
 	let run: React.ReactNode[] = [];
 	// The first move after any break restates the move number, so a line never
@@ -86,9 +96,13 @@ const VariationMoves = ({
 				shapes={move.shapes}
 				classification={move.classification}
 				moveIndicator={moveIndicator}
+				variation={{ depth, index, siblingCount }}
 				onMoveItemClick={() => context.onMoveItemClick(move.moveId)}
 				onClassify={(classification) =>
 					context.onClassify(move.moveId, classification)
+				}
+				onVariationAction={(action) =>
+					context.onVariationAction(move.moveId, action)
 				}
 			/>
 		);
@@ -131,9 +145,15 @@ const Variations = ({ variants, depth, ...rest }: VariationsProps) => {
 
 	return (
 		<div className="cs-variations" data-depth={Math.min(depth, 4)}>
-			{variants.map((variant) => (
+			{variants.map((variant, index) => (
 				<div className="cs-variation" key={variant.variantId}>
-					<VariationMoves moves={variant.moves} depth={depth} {...rest} />
+					<VariationMoves
+						moves={variant.moves}
+						depth={depth}
+						index={index}
+						siblingCount={variants.length}
+						{...rest}
+					/>
 				</div>
 			))}
 		</div>
@@ -156,6 +176,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onTitleChange,
 		onMoveItemClick,
 		onClassify,
+		onVariationAction,
 		...controlActions
 	} = props;
 
@@ -165,6 +186,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		initialMoveNumber,
 		onMoveItemClick,
 		onClassify,
+		onVariationAction,
 	};
 
 	// Pair the moves up by move number, carrying each one's index along so the
