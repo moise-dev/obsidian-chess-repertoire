@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { hasComment } from 'src/lib/comments';
 
 interface CommentSectionProps {
 	currentComment: JSONContent | null;
@@ -49,13 +50,7 @@ export const CommentSection = React.memo(
 			editor.commands.setTextSelection({ from, to });
 		}, [currentComment, editor]);
 
-		// `currentComment` is a TipTap document that is never truly empty: an
-		// untouched editor still serialises to a single blank paragraph.
-		const hasNote = Boolean(
-			currentComment?.content?.some(
-				(node) => node.content?.length || node.type === 'horizontalRule'
-			)
-		);
+		const hasNote = hasComment(currentComment);
 
 		return (
 			<div className={`cs-notes ${isOpen ? 'is-open' : 'is-collapsed'}`}>

@@ -440,3 +440,15 @@
 	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
 	content: 'Select a move to add a note to it.';
 }
+
+/* Marks a move that carries a note. */
+.chess-study .cs-move-note {
+	flex: 0 0 auto;
+	display: inline-block;
+	width: 5px;
+	height: 5px;
+	margin-left: 5px;
+	border-radius: 50%;
+	background-color: var(--text-accent);
+	vertical-align: middle;
+}
