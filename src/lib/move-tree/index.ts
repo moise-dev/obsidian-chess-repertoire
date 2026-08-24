@@ -256,3 +256,32 @@ export const moveVariationAtPath = (
 
 	return true;
 };
+
+/**
+ * The moves that may follow the move at `moveId`, mainline continuation first.
+ *
+ * A move's `variants` are the alternatives to whatever follows it, so the
+ * candidates after a move are its successor in its own line plus the first move
+ * of each variation hanging off it. Passing `null` asks for the root position,
+ * which only the first mainline move can follow.
+ */
+export const getContinuations = (
+	moves: ChessStudyMove[],
+	moveId: string | null
+): ChessStudyMove[] => {
+	if (!moveId) return moves[0] ? [moves[0]] : [];
+
+	const path = findMovePath(moves, moveId);
+	const move = path && getMoveAtPath(moves, path);
+
+	if (!path || !move) return [];
+
+	const list = getListAtPath(moves, path);
+	const next = list?.[path[path.length - 1] + 1];
+
+	const alternatives = (move.variants ?? [])
+		.map((variant) => variant.moves[0])
+		.filter(Boolean);
+
+	return next ? [next, ...alternatives] : alternatives;
+};

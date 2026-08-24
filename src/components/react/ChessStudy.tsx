@@ -48,6 +48,7 @@ import { CommentSection } from './CommentSection';
 import { ConfirmModal } from '../obsidian/ConfirmModal';
 import { PgnViewer } from './PgnViewer';
 import { VariationAction } from './PgnViewer/MoveItems';
+import { TrainerBar, useTrainer } from './Trainer';
 
 export type ChessStudyConfig = ChessgroundProps;
 
@@ -78,6 +79,9 @@ export type GameActions =
 	| { type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY'; moveId: string }
 	| { type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' }
 	| { type: 'DISPLAY_LAST_MOVE_IN_HISTORY' }
+	/** Put the board back to the move it is already on, undoing what was
+	 *  played on it - the trainer's way of refusing a move. */
+	| { type: 'RESET_BOARD_TO_CURRENT' }
 	| { type: 'SYNC_SHAPES'; shapes: DrawShape[] }
 	| { type: 'SYNC_COMMENT'; comment: JSONContent | null }
 	| {
@@ -230,6 +234,13 @@ export const ChessStudy = ({
 						setChessLogic,
 						moves[moves.length - 1]
 					);
+
+					return draft;
+				}
+				case 'RESET_BOARD_TO_CURRENT': {
+					if (!chessView) return draft;
+
+					displayPosition(draft, chessView, setChessLogic, getCurrentMove(draft));
 
 					return draft;
 				}
@@ -688,6 +699,15 @@ export const ChessStudy = ({
 
 	const currentMoveId = gameState.currentMove?.moveId ?? null;
 
+	const trainer = useTrainer({
+		app,
+		moves: gameState.study.moves,
+		currentMoveId,
+		chess: chessLogic,
+		dispatch,
+		setOrientation,
+	});
+
 	// chess.com-style badge on the destination square of the current move. This
 	// goes to setAutoShapes, never setShapes, so it can never end up in the
 	// user's saved arrows.
@@ -705,6 +725,14 @@ export const ChessStudy = ({
 			},
 		];
 	}, [gameState.currentMove]);
+
+	// Hint marks sit alongside the classification badge rather than replacing
+	// it: the badge belongs to the move already played, never to the one the
+	// drill is asking for, so it gives nothing away.
+	const autoShapes = useMemo(
+		() => [...classificationShapes, ...trainer.shapes],
+		[classificationShapes, trainer.shapes]
+	);
 
 	const moveLabel = useMemo(
 		() =>
@@ -739,14 +767,16 @@ export const ChessStudy = ({
 						boardColor={boardColor}
 						chess={chessLogic}
 						addMoveToHistory={(move: Move) =>
-							dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
+							trainer.isActive
+								? trainer.submitMove(move)
+								: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
 						}
-						isViewOnly={gameState.isViewOnly}
+						isViewOnly={gameState.isViewOnly || trainer.isBoardLocked}
 						syncShapes={(shapes: DrawShape[]) =>
 							dispatch({ type: 'SYNC_SHAPES', shapes })
 						}
 						shapes={gameState.currentMove?.shapes || []}
-						autoShapes={classificationShapes}
+						autoShapes={autoShapes}
 					/>
 				</div>
 
@@ -757,6 +787,10 @@ export const ChessStudy = ({
 					initialMoveNumber={initialMoveNumber}
 					title={gameState.study.header?.title ?? null}
 					isDirty={isDirty}
+					isTraining={trainer.isActive}
+					onTrainButtonClick={() =>
+						trainer.isActive ? trainer.stop() : trainer.start()
+					}
 					onTitleChange={(title: string | null) =>
 						dispatch({ type: 'SET_TITLE', title })
 					}
@@ -803,18 +837,22 @@ export const ChessStudy = ({
 				/>
 			</div>
 
-			<CommentSection
-				currentComment={gameState.currentMove?.comment ?? null}
-				setComments={(comment: JSONContent) =>
-					dispatch({ type: 'SYNC_COMMENT', comment: comment })
-				}
-				moveLabel={moveLabel}
-				defaultOpen={viewComments}
-				classification={gameState.currentMove?.classification ?? null}
-				onClassify={(classification: MoveClassification | null) =>
-					dispatch({ type: 'SET_CLASSIFICATION', classification })
-				}
-			/>
+			{trainer.isActive ? (
+				<TrainerBar {...trainer} />
+			) : (
+				<CommentSection
+					currentComment={gameState.currentMove?.comment ?? null}
+					setComments={(comment: JSONContent) =>
+						dispatch({ type: 'SYNC_COMMENT', comment: comment })
+					}
+					moveLabel={moveLabel}
+					defaultOpen={viewComments}
+					classification={gameState.currentMove?.classification ?? null}
+					onClassify={(classification: MoveClassification | null) =>
+						dispatch({ type: 'SET_CLASSIFICATION', classification })
+					}
+				/>
+			)}
 
 			<div
 				className="cs-resize-handle"

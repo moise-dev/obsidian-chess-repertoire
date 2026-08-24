@@ -352,6 +352,26 @@
 	color: var(--text-normal);
 }
 
+.chess-study .cs-icon-button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.chess-study .cs-icon-button:disabled:hover {
+	background-color: transparent;
+	color: var(--text-muted);
+}
+
+.chess-study .cs-icon-button.is-active {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.chess-study .cs-icon-button.is-active:hover {
+	background-color: var(--interactive-accent-hover, var(--interactive-accent));
+	color: var(--text-on-accent);
+}
+
 .chess-study .cs-icon-button--primary {
 	color: var(--text-accent);
 }
@@ -642,4 +662,113 @@
 	border: 1px solid var(--background-secondary);
 	border-radius: 50%;
 	background-color: var(--text-accent);
+}
+
+/* ------------------------------------------------------------------ *
+ * Trainer
+ * ------------------------------------------------------------------ */
+
+/* Takes the place of the notes panel for the length of a session, so the
+   study's own explanation cannot answer the question being asked. */
+.chess-study .cs-trainer {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 8px 10px;
+	border: 1px solid var(--cs-border);
+	border-left: 3px solid var(--text-accent);
+	border-radius: 8px;
+	background-color: var(--background-primary);
+}
+
+.chess-study .cs-trainer.is-wrong {
+	border-left-color: var(--text-error);
+}
+
+.chess-study .cs-trainer.is-complete {
+	border-left-color: var(--text-success);
+}
+
+.chess-study .cs-trainer-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.chess-study .cs-trainer-chip {
+	padding: 1px 6px;
+	border-radius: 4px;
+	background-color: var(--background-modifier-hover);
+	color: var(--text-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.chess-study .cs-trainer-status {
+	flex: 1;
+	min-width: 0;
+	color: var(--text-normal);
+	font-size: 12px;
+}
+
+.chess-study .cs-trainer.is-wrong .cs-trainer-status {
+	color: var(--text-error);
+}
+
+/* Wrong moves so far. Deliberately quiet - it is a tally, not a telling-off. */
+.chess-study .cs-trainer-errors {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	border-radius: 9px;
+	background-color: var(--background-modifier-error);
+	color: var(--text-error);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.chess-study .cs-trainer-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 24px;
+	padding: 0 8px;
+	border: 1px solid var(--cs-border);
+	border-radius: 6px;
+	background-color: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.chess-study .cs-trainer-button:hover:not(:disabled) {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.chess-study .cs-trainer-button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.chess-study .cs-trainer-hint-count {
+	color: var(--text-faint);
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+/* The first hint: whatever the study already says about this move. */
+.chess-study .cs-trainer-hint {
+	padding: 6px 8px;
+	border-radius: 6px;
+	background-color: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: 12px;
 }

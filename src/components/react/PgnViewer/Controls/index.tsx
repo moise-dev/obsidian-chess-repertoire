@@ -5,6 +5,7 @@ import {
 	ChevronsRight,
 	Copy,
 	FlipVertical2,
+	GraduationCap,
 	Save,
 	Undo2,
 } from 'lucide-react';
@@ -14,6 +15,9 @@ export interface ControlActions {
 	/** Unsaved changes exist. Nothing is lost - autosave is debounced - but the
 	 *  save button shows it so the state is never invisible. */
 	isDirty: boolean;
+	/** A training session is running; the study is read-only while it is. */
+	isTraining: boolean;
+	onTrainButtonClick: () => void;
 	onUndoButtonClick: () => void;
 	onFirstButtonClick: () => void;
 	onBackButtonClick: () => void;
@@ -71,9 +75,19 @@ export const Controls = (props: ControlActions) => {
 				<FlipVertical2 size={18} />
 			</button>
 			<button
+				className={`cs-icon-button${props.isTraining ? ' is-active' : ''}`}
+				title={props.isTraining ? 'Stop training' : 'Train this position'}
+				aria-label="Train this position"
+				aria-pressed={props.isTraining}
+				onClick={() => props.onTrainButtonClick()}
+			>
+				<GraduationCap size={18} />
+			</button>
+			<button
 				className="cs-icon-button"
 				title="Undo last move"
 				aria-label="Undo the last move"
+				disabled={props.isTraining}
 				onClick={() => props.onUndoButtonClick()}
 			>
 				<Undo2 size={18} />
