@@ -32,6 +32,7 @@ interface MoveListContext {
 		classification: MoveClassification | null
 	) => void;
 	onVariationAction: (moveId: string, action: VariationAction) => void;
+	onDeleteMove: (moveId: string) => void;
 }
 
 interface VariationsProps extends MoveListContext {
@@ -101,6 +102,7 @@ const VariationMoves = ({
 				onClassify={(classification) =>
 					context.onClassify(move.moveId, classification)
 				}
+				onDeleteMove={() => context.onDeleteMove(move.moveId)}
 				onVariationAction={(action) =>
 					context.onVariationAction(move.moveId, action)
 				}
@@ -177,6 +179,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onMoveItemClick,
 		onClassify,
 		onVariationAction,
+		onDeleteMove,
 		...controlActions
 	} = props;
 
@@ -189,6 +192,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onMoveItemClick,
 		onClassify,
 		onVariationAction,
+		onDeleteMove,
 	};
 
 	// Pair the moves up by move number, carrying each one's index along so the
@@ -254,6 +258,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 												onClassify={(classification) =>
 													onClassify(entry.move.moveId, classification)
 												}
+												onDeleteMove={() => onDeleteMove(entry.move.moveId)}
 											/>
 										)
 								)}

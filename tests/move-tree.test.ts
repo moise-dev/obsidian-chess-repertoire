@@ -13,6 +13,7 @@ import {
 	promoteToMainline,
 	promoteVariationAtPath,
 	removeMoveAtPath,
+	removeMovesFromPath,
 	removeVariationAtPath,
 } from '../src/lib/move-tree';
 import { ChessStudyMove } from '../src/lib/storage';
@@ -230,6 +231,74 @@ describe('under immer', () => {
 
 		// Identity matters: the autosave effect keys off it, so a refused action
 		// must not look like a change.
+		assert.equal(after, before);
+	});
+});
+
+describe('removeMovesFromPath', () => {
+	it('truncates the mainline from the move down', () => {
+		const after = produce(tree(), (draft) => {
+			removeMovesFromPath(draft, pathOf(draft, 'c'));
+		});
+
+		assert.equal(sans(after), 'a b');
+	});
+
+	it('counts everything it removed, nested variations included', () => {
+		let count = 0;
+
+		produce(tree(), (draft) => {
+			count = removeMovesFromPath(draft, pathOf(draft, 'b'));
+		});
+
+		// b, its two variations (x1, y1, y2, x2 and z1), then c and d.
+		assert.equal(count, 8);
+	});
+
+	it('takes the rest of a variation and leaves the line it branches from', () => {
+		const after = produce(tree(), (draft) => {
+			removeMovesFromPath(draft, pathOf(draft, 'x2'));
+		});
+
+		// The mainline is untouched, and x1 keeps the variation hanging off it.
+		assert.equal(sans(after), 'a b c d');
+		assert.equal(sans(after[1].variants[0].moves), 'x1');
+		assert.notEqual(findMovePath(after, 'y2'), null);
+		assert.equal(findMovePath(after, 'x2'), null);
+	});
+
+	it('removes the variation when it starts at its first move', () => {
+		const after = produce(tree(), (draft) => {
+			removeMovesFromPath(draft, pathOf(draft, 'x1'));
+		});
+
+		assert.equal(after[1].variants.length, 1);
+		assert.equal(sans(after[1].variants[0].moves), 'z1');
+		assert.equal(sans(after), 'a b c d');
+	});
+
+	it('takes a nested variation down with the move it hangs off', () => {
+		const after = produce(tree(), (draft) => {
+			removeMovesFromPath(draft, pathOf(draft, 'x1'));
+		});
+
+		assert.equal(findMovePath(after, 'y1'), null);
+	});
+
+	it('empties the study when it starts at the first move', () => {
+		const after = produce(tree(), (draft) => {
+			removeMovesFromPath(draft, pathOf(draft, 'a'));
+		});
+
+		assert.equal(after.length, 0);
+	});
+
+	it('leaves the study alone when the path is not in it', () => {
+		const before = tree();
+		const after = produce(before, (draft) => {
+			removeMovesFromPath(draft, [9, 9, 9]);
+		});
+
 		assert.equal(after, before);
 	});
 });

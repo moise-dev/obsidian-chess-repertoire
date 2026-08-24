@@ -88,6 +88,8 @@ The original supported one level of variations. This fork makes the move tree re
 
 Right-clicking any variation move opens a menu to **promote** it (one level, or straight to the mainline), **reorder** it among its siblings, or **delete** it, the last behind a confirmation naming how many moves will go, nested ones included.
 
+**Delete move** is on the same menu for every move, mainline included. It removes that move and the rest of the line it sits in: inside a variation that means the rest of that branch and nothing else, so the line it hangs off carries on. Variations growing out of the removed moves go with them, and the count is named before anything happens.
+
 <!-- SCREENSHOT: the move list only (crop it), showing a mainline with a
      variation two or three levels deep so the coloured rails and the stepped
      indents are visible, and the right-click menu open over one of the

@@ -92,17 +92,27 @@ const annotationClass = ({ comment, shapes }: MoveAnnotations) =>
 		shapes?.length ? ' has-shapes' : ''
 	}`;
 
+interface MoveMenuOptions {
+	classification: MoveClassification | null | undefined;
+	onClassify?: (classification: MoveClassification | null) => void;
+	/** Delete this move and the rest of its line. */
+	onDeleteMove?: () => void;
+	variation?: VariationPosition;
+	onVariationAction?: (action: VariationAction) => void;
+}
+
 /**
- * Right-click menu: labelling for any move, plus the variation operations for
- * moves that sit inside one. Reaching these from the move list means they work
- * whether or not the notes panel is open.
+ * Right-click menu: labelling and deletion for any move, plus the variation
+ * operations for moves that sit inside one. Reaching these from the move list
+ * means they work whether or not the notes panel is open.
  */
-const useMoveMenu = (
-	classification: MoveClassification | null | undefined,
-	onClassify?: (classification: MoveClassification | null) => void,
-	variation?: VariationPosition,
-	onVariationAction?: (action: VariationAction) => void
-) =>
+const useMoveMenu = ({
+	classification,
+	onClassify,
+	onDeleteMove,
+	variation,
+	onVariationAction,
+}: MoveMenuOptions) =>
 	React.useCallback(
 		(event: React.MouseEvent) => {
 			if (!onClassify) return;
@@ -132,6 +142,13 @@ const useMoveMenu = (
 					.setDisabled(!classification)
 					.onClick(() => onClassify(null))
 			);
+
+			if (onDeleteMove) {
+				menu.addSeparator();
+				menu.addItem((item) =>
+					item.setTitle('Delete move').setIcon('scissors').onClick(onDeleteMove)
+				);
+			}
 
 			if (variation && onVariationAction) {
 				menu.addSeparator();
@@ -182,7 +199,7 @@ const useMoveMenu = (
 
 			menu.showAtMouseEvent(event.nativeEvent);
 		},
-		[classification, onClassify, onVariationAction, variation]
+		[classification, onClassify, onDeleteMove, onVariationAction, variation]
 	);
 
 interface MoveItemProps extends MoveAnnotations {
@@ -190,6 +207,7 @@ interface MoveItemProps extends MoveAnnotations {
 	san: string;
 	onMoveItemClick: () => void;
 	onClassify?: (classification: MoveClassification | null) => void;
+	onDeleteMove?: () => void;
 }
 
 export const MoveItem = ({
@@ -200,9 +218,14 @@ export const MoveItem = ({
 	classification,
 	onMoveItemClick,
 	onClassify,
+	onDeleteMove,
 }: MoveItemProps) => {
 	const ref = useScrollIntoView<HTMLParagraphElement>(isCurrentMove);
-	const onContextMenu = useMoveMenu(classification, onClassify);
+	const onContextMenu = useMoveMenu({
+		classification,
+		onClassify,
+		onDeleteMove,
+	});
 
 	return (
 		<p
@@ -238,17 +261,19 @@ export const VariantMoveItem = ({
 	classification,
 	onMoveItemClick,
 	onClassify,
+	onDeleteMove,
 	variation,
 	onVariationAction,
 	moveIndicator = null,
 }: VariantMoveItemProps) => {
 	const ref = useScrollIntoView<HTMLDivElement>(isCurrentMove);
-	const onContextMenu = useMoveMenu(
+	const onContextMenu = useMoveMenu({
 		classification,
 		onClassify,
+		onDeleteMove,
 		variation,
-		onVariationAction
-	);
+		onVariationAction,
+	});
 
 	return (
 		<div

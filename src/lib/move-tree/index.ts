@@ -82,20 +82,13 @@ export const findMovePath = (
 };
 
 /**
- * Drops the move at `path` from its list, then removes any variation the
- * deletion left empty - repeatedly, since emptying a nested variation can empty
- * its parent too.
+ * Drops any variation the removal at `path` left empty - repeatedly, since
+ * emptying a nested variation can empty its parent too.
  */
-export const removeMoveAtPath = (
+const pruneEmptyVariations = (
 	moves: ChessStudyMove[],
 	path: MovePath
 ): void => {
-	const list = getListAtPath(moves, path);
-
-	if (!list) return;
-
-	list.splice(path[path.length - 1], 1);
-
 	for (let p = path; p.length > 1 && !getListAtPath(moves, p)?.length; ) {
 		const parentPath = getParentMovePath(p);
 		const parent = parentPath && getMoveAtPath(moves, parentPath);
@@ -105,6 +98,43 @@ export const removeMoveAtPath = (
 		parent.variants.splice(p[p.length - 2], 1);
 		p = parentPath;
 	}
+};
+
+/** Drops the single move at `path` from its list. */
+export const removeMoveAtPath = (
+	moves: ChessStudyMove[],
+	path: MovePath
+): void => {
+	const list = getListAtPath(moves, path);
+
+	if (!list) return;
+
+	list.splice(path[path.length - 1], 1);
+	pruneEmptyVariations(moves, path);
+};
+
+/**
+ * Drops the move at `path` and everything after it in the same line, returning
+ * how many moves went.
+ *
+ * Only that line: variations hanging off the removed moves go with them, but a
+ * move inside a variation takes the rest of its own branch and nothing else -
+ * the line it branches from carries on. Removing the first move of a variation
+ * therefore removes the variation.
+ */
+export const removeMovesFromPath = (
+	moves: ChessStudyMove[],
+	path: MovePath
+): number => {
+	const list = getListAtPath(moves, path);
+
+	if (!list) return 0;
+
+	const removed = list.splice(path[path.length - 1]);
+
+	pruneEmptyVariations(moves, path);
+
+	return countMoves(removed);
 };
 
 /** Move number of a move at `ply`, e.g. `4` for the 7th half-move of a game. */

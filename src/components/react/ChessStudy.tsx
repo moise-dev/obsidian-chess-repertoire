@@ -26,6 +26,7 @@ import {
 	promoteToMainline,
 	promoteVariationAtPath,
 	removeMoveAtPath,
+	removeMovesFromPath,
 	removeVariationAtPath,
 } from 'src/lib/move-tree';
 import { parseUserConfig } from 'src/lib/obsidian';
@@ -95,6 +96,8 @@ export type GameActions =
 	| { type: 'SET_TITLE'; title: string | null }
 	| { type: 'PROMOTE_VARIATION'; moveId: string; toMainline: boolean }
 	| { type: 'DELETE_VARIATION'; moveId: string }
+	/** The move and the rest of its line, that line only. */
+	| { type: 'DELETE_FROM_MOVE'; moveId: string }
 	| { type: 'REORDER_VARIATION'; moveId: string; delta: number };
 
 export const ChessStudy = ({
@@ -310,6 +313,36 @@ export const ChessStudy = ({
 					const fallback = parentPath ? getMoveAtPath(moves, parentPath) : null;
 
 					if (!removeVariationAtPath(moves, path)) return draft;
+
+					const currentId = draft.currentMove?.moveId;
+
+					if (currentId && !findMovePathById(moves, currentId)) {
+						displayPosition(draft, chessView, setChessLogic, fallback ?? null);
+					}
+
+					return draft;
+				}
+				case 'DELETE_FROM_MOVE': {
+					if (!chessView) return draft;
+
+					const moves = draft.study.moves;
+					const path = findMovePathById(moves, action.moveId);
+					const list = path && getListAtPath(moves, path);
+
+					if (!path || !list) return draft;
+
+					// Where to land if we are looking at something about to go: the
+					// move before this one, or the move its variation hangs off.
+					const index = path[path.length - 1];
+					const parentPath = getParentMovePath(path);
+					const fallback =
+						index > 0
+							? list[index - 1]
+							: parentPath
+							? getMoveAtPath(moves, parentPath)
+							: null;
+
+					if (!removeMovesFromPath(moves, path)) return draft;
 
 					const currentId = draft.currentMove?.moveId;
 
@@ -635,6 +668,32 @@ export const ChessStudy = ({
 		[app, dispatch, gameState.study.moves]
 	);
 
+	const onDeleteMove = useCallback(
+		(moveId: string) => {
+			const moves = gameState.study.moves;
+			const path = findMovePathById(moves, moveId);
+			const list = path && getListAtPath(moves, path);
+
+			if (!path || !list) return;
+
+			const moveCount = countMoves(list.slice(path[path.length - 1]));
+
+			if (!moveCount) return;
+
+			// Same reasoning as deleting a variation: no undo, and autosave
+			// commits it moments later.
+			new ConfirmModal(app, {
+				title: 'Delete move?',
+				body: `This removes ${moveCount} ${
+					moveCount === 1 ? 'move' : 'moves'
+				} from this line, including any variations hanging off them. This cannot be undone.`,
+				confirmText: 'Delete',
+				onConfirm: () => dispatch({ type: 'DELETE_FROM_MOVE', moveId }),
+			}).open();
+		},
+		[app, dispatch, gameState.study.moves]
+	);
+
 	const onKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
 			// Never hijack keys while anything is being typed into. ProseMirror is
@@ -783,6 +842,7 @@ export const ChessStudy = ({
 						dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })
 					}
 					onVariationAction={onVariationAction}
+					onDeleteMove={onDeleteMove}
 					onUndoButtonClick={() =>
 						dispatch({ type: 'REMOVE_LAST_MOVE_FROM_HISTORY' })
 					}
