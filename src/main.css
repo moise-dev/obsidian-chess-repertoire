@@ -145,7 +145,7 @@
 }
 
 .chess-study .cs-side-title {
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 600;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
@@ -155,7 +155,7 @@
 .chess-study .cs-side-subtitle {
 	flex: 1;
 	min-width: 0;
-	font-size: 13px;
+	font-size: 15px;
 	color: var(--text-faint);
 	white-space: nowrap;
 	overflow: hidden;
@@ -176,18 +176,18 @@
 .chess-study .move-item-container {
 	display: grid;
 	grid-template-columns: 2.2em 1fr 1fr;
-	grid-auto-rows: minmax(26px, auto);
+	grid-auto-rows: minmax(28px, auto);
 	align-content: start;
 	width: 100%;
 	font-family: var(--font-monospace);
-	font-size: 15px;
+	font-size: 16px;
 }
 
 .chess-study .move-indicator {
 	justify-content: flex-end;
 	padding-right: 6px;
 	color: var(--text-faint);
-	font-size: 14px;
+	font-size: 15px;
 	user-select: none;
 	cursor: default;
 }
@@ -259,14 +259,14 @@
 /* Deeper lines are set slightly smaller, which keeps a depth-4 line from
    crowding the panel while staying readable. */
 .chess-study .cs-variations[data-depth='1'] {
-	font-size: 14px;
+	font-size: 15px;
 }
 .chess-study .cs-variations[data-depth='2'] {
-	font-size: 13.5px;
+	font-size: 14.5px;
 }
 .chess-study .cs-variations[data-depth='3'],
 .chess-study .cs-variations[data-depth='4'] {
-	font-size: 13px;
+	font-size: 14px;
 }
 
 .chess-study .variant-move-item-container {
@@ -645,7 +645,7 @@
 	border-radius: 4px;
 	background-color: var(--background-primary);
 	color: var(--text-normal);
-	font-size: 13px;
+	font-size: 15px;
 }
 
 .chess-study .cs-icon-button--primary.is-dirty {
