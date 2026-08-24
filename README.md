@@ -208,6 +208,7 @@ Click a study first: the shortcuts act on the one you last clicked, and a thin a
 - **No PGN export yet.** Studies live as JSON; classifications already record their NAG codes for a future exporter.
 - **On import, an alternative to the game's very first move is dropped.** Nothing precedes it, so the move tree has nowhere to hang it. Alternatives to every later move import fine.
 - **On import, a glyph with no matching label is dropped** rather than guessed at, `$5` and `!?` among them.
+- **Clicking an empty square or an enemy piece clears the arrows** drawn on the current move. That is the board library's own erase gesture; picking up your own piece leaves them alone.
 
 ## Development
 

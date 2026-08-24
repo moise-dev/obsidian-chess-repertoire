@@ -59,6 +59,13 @@ export const ChessgroundWrapper = React.memo(
 						check: true,
 					},
 					drawable: {
+						// Chessground erases the drawn shapes on any left click and
+						// reports that through onChange, which for a study means
+						// clicking a piece to move it wipes the arrows saved against
+						// the move you are on - and autosave commits the loss. Off,
+						// the erase is left to clicks on an empty square or an enemy
+						// piece, and picking up your own piece keeps them.
+						eraseOnClick: false,
 						onChange: (shapes) => {
 							setShapes(shapes);
 						},
