@@ -10,7 +10,7 @@ import { ClassificationPicker } from '../ClassificationPicker';
 interface CommentSectionProps {
 	currentComment: JSONContent | null;
 	setComments: (comment: JSONContent) => void;
-	/** e.g. `4... h6` — which move the note belongs to. */
+	/** Which move the note belongs to, e.g. `4... h6`. */
 	moveLabel: string | null;
 	defaultOpen: boolean;
 	classification: MoveClassification | null;

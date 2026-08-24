@@ -332,8 +332,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	/* Compress before wrapping: eight buttons at a fixed 28px overflow the side
-	   panel once the widget is resized down, dropping Save onto its own row. */
+	/* Compress before wrapping: at a fixed 28px the row overflows the side panel
+	   once the widget is resized down, dropping Save onto a line of its own. */
 	flex: 0 1 28px;
 	width: 28px;
 	min-width: 21px;
@@ -718,7 +718,7 @@
 	color: var(--text-error);
 }
 
-/* Wrong moves so far. Deliberately quiet - it is a tally, not a telling-off. */
+/* Wrong moves so far, kept quiet: it is a tally, not a verdict. */
 .chess-study .cs-trainer-errors {
 	display: inline-flex;
 	align-items: center;

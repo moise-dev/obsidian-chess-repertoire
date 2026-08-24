@@ -10,9 +10,6 @@ export const MAX_VARIATION_DEPTH = 4;
  * index and the move index within it, so `[i, v, j]` is move `j` of variation
  * `v` hanging off mainline move `i`, and `[i, v, j, w, k]` is one level deeper.
  * Length is always odd: `1 + 2 * depth`.
- *
- * The old representation was a `{ parentMoveIndex, variantIndex }` pair, which
- * structurally could not address anything below the first level.
  */
 export type MovePath = number[];
 
@@ -262,9 +259,8 @@ export const moveVariationAtPath = (
  * the end of a line. Passing `null` asks for the root position, which only the
  * first mainline move can follow.
  *
- * Variations hanging off the move are deliberately not offered: they are
- * alternatives to this continuation, not continuations themselves, and the
- * trainer holds you to the line rather than to the tree.
+ * Variations hanging off the move are not offered: they are alternatives to
+ * this continuation rather than continuations themselves.
  */
 export const getContinuation = (
 	moves: ChessStudyMove[],

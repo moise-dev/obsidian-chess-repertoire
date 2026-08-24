@@ -71,6 +71,22 @@ describe('parsePgn', () => {
 		assert.equal(moves[0].classification, null);
 	});
 
+	it('does not let a semicolon inside a comment eat the rest of it', () => {
+		// `;` starts a comment of its own in PGN, but not inside braces.
+		const { moves, skipped } = parse('1. e4 {better; or so they say} e5');
+
+		assert.equal(noteOn(moves[0]), 'better; or so they say');
+		assert.equal(sans(moves), 'e4 e5');
+		assert.equal(skipped, 0);
+	});
+
+	it('drops a semicolon comment that runs to the end of the line', () => {
+		const { moves, skipped } = parse('1. e4 ; a note about e4\ne5 2. Nf3');
+
+		assert.equal(sans(moves), 'e4 e5 Nf3');
+		assert.equal(skipped, 0);
+	});
+
 	it('does not read parentheses inside a comment as a variation', () => {
 		const { moves } = parse('1. e4 {the idea (and its point) is space} e5');
 

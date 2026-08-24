@@ -11,22 +11,17 @@ import { ChessStudyMove } from 'src/lib/storage';
 /**
  * PGN import.
  *
- * chess.js parses a PGN but keeps almost none of what a study is made of: it
- * discards variations outright, has no notion of NAGs, and files comments by
- * position rather than by move, so there is no way to hang one on the move it
- * belongs to. Everything a chess.com or Lichess export carries - the sidelines,
- * the `$2`s, the notes - would be dropped on the way in. So the movetext is
- * parsed here, and chess.js is used only to validate moves and give each one
- * its from/to/before/after.
+ * chess.js keeps almost none of what a study is made of: it discards variations,
+ * has no notion of NAGs, and files comments by position rather than by move. So
+ * the movetext is parsed here, and chess.js is used only to validate each move
+ * and give it its from/to/before/after.
  */
 
 /**
- * A position, rather than a game: eight ranks and a side to move.
+ * A position rather than a game: eight ranks and a side to move.
  *
- * Sniffing for a `/` is the obvious test and the wrong one - a PGN carrying a
- * `[Link "https://..."]` header, a `[Site]` pointing at Lichess, or a `1/2-1/2`
- * result all contain slashes, and every one of them would be handed to the FEN
- * parser and rejected.
+ * Testing for a `/` instead would call every PGN a FEN, since a `[Link]` header
+ * and a `1/2-1/2` result both contain one.
  */
 const FEN_PATTERN =
 	/^[1-8pnbrqkPNBRQK]+(?:\/[1-8pnbrqkPNBRQK]+){7}\s+[wb](?:\s|$)/;
@@ -50,11 +45,7 @@ const BY_NAG = new Map<number, MoveClassification>(
 	})
 );
 
-/**
- * The same judgements written against the move instead of after it - `Nf6??`
- * rather than `Nf6 $4`. chess.com and Lichess both export the glyph form, but
- * hand-written and copy-pasted PGNs are full of these.
- */
+/** The same judgements written onto the move: `Nf6??` rather than `Nf6 $4`. */
 const BY_SUFFIX: Record<string, MoveClassification | undefined> = {
 	'!!': 'brilliant',
 	'!': 'great',
@@ -94,10 +85,11 @@ const appendComment = (move: ChessStudyMove, text: string): void => {
 };
 
 const tokenize = (movetext: string): string[] =>
-	movetext
-		// `;` starts a comment that runs to the end of the line.
-		.replace(/;[^\n]*/g, ' ')
-		.match(/\{[^}]*\}|\(|\)|\$\d+|[^\s()]+/g) ?? [];
+	// A `{}` comment is taken whole and first, so a `;` or a bracket inside one
+	// is text. `;` outside one starts a comment that runs to end of line.
+	(movetext.match(/\{[^}]*\}|;[^\n]*|\(|\)|\$\d+|[^\s()]+/g) ?? []).filter(
+		(token) => !token.startsWith(';')
+	);
 
 interface ParseState {
 	tokens: string[];
@@ -207,9 +199,8 @@ const parseLine = (
 		try {
 			played = chess.move(san, { strict: false });
 		} catch {
-			// One unreadable move desyncs everything after it, so the rest of the
-			// line will fail too. Counting them is more use than throwing: the
-			// moves that did read are still worth having.
+			// Counted rather than thrown: the moves that did read are worth having,
+			// and one bad move desyncs the rest of the line anyway.
 			state.skipped++;
 			continue;
 		}

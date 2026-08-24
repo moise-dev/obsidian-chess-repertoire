@@ -33,7 +33,6 @@ import {
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
 	ChessStudyMove,
-	VariantMove,
 } from 'src/lib/storage';
 import {
 	displayMoveInHistory,
@@ -66,13 +65,12 @@ interface AppProps {
 const MIN_WIDTH = 320;
 
 export interface GameState {
-	currentMove: ChessStudyMove | VariantMove | null;
-	isViewOnly: boolean;
+	currentMove: ChessStudyMove | null;
 	study: ChessStudyFileData;
 }
 
-/** Its own type rather than a member of the union below, which prettier sets
- *  with an indentation eslint then refuses. */
+/** Named rather than inlined below, where prettier's indentation of a wide
+ *  union member trips no-mixed-spaces-and-tabs. */
 interface ClassifyAction {
 	type: 'SET_CLASSIFICATION';
 	classification: MoveClassification | null;
@@ -88,8 +86,8 @@ export type GameActions =
 	| { type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY'; moveId: string }
 	| { type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' }
 	| { type: 'DISPLAY_LAST_MOVE_IN_HISTORY' }
-	/** Put the board back to the move it is already on, undoing what was
-	 *  played on it - the trainer's way of refusing a move. */
+	/** Put the board back to the move it is already on: how the trainer
+	 *  refuses a move without recording it. */
 	| { type: 'RESET_BOARD_TO_CURRENT' }
 	| { type: 'SYNC_SHAPES'; shapes: DrawShape[] }
 	| { type: 'SYNC_COMMENT'; comment: JSONContent | null }
@@ -211,11 +209,9 @@ export const ChessStudy = ({
 				case 'DISPLAY_SELECTED_MOVE_IN_HISTORY': {
 					if (!chessView || hasNoMoves) return draft;
 
-					const selectedMoveId = action.moveId;
-
 					displayMoveInHistory(draft, chessView, setChessLogic, {
 						offset: 0,
-						selectedMoveId: selectedMoveId,
+						selectedMoveId: action.moveId,
 					});
 
 					return draft;
@@ -275,21 +271,11 @@ export const ChessStudy = ({
 				case 'SET_CLASSIFICATION': {
 					if (hasNoMoves) return draft;
 
-					const moveId = action.moveId;
-
-					if (!moveId) {
-						const move = getCurrentMove(draft);
-
-						if (move) {
-							move.classification = action.classification;
-							draft.currentMove = move;
-						}
-
-						return draft;
-					}
-
+					// The keyboard shortcut labels the current move; the context menu
+					// names the one it was opened on.
+					const moveId = action.moveId ?? draft.currentMove?.moveId;
 					const moves = draft.study.moves;
-					const path = findMovePathById(moves, moveId);
+					const path = moveId ? findMovePathById(moves, moveId) : null;
 					const move = path && getMoveAtPath(moves, path);
 
 					if (!move) return draft;
@@ -382,7 +368,13 @@ export const ChessStudy = ({
 							const move = makeMove();
 							moves.push(move);
 							draft.currentMove = move;
+
+							return draft;
 						}
+
+						// Variations hang off the move before them, and the first move
+						// has none. Saying so beats the move quietly not appearing.
+						new Notice('The first move of a study cannot have variations.');
 
 						return draft;
 					}
@@ -446,7 +438,6 @@ export const ChessStudy = ({
 		},
 		{
 			currentMove: chessStudyData.moves[chessStudyData.moves.length - 1] ?? null,
-			isViewOnly: false,
 			study: chessStudyData,
 		}
 	);
@@ -474,9 +465,9 @@ export const ChessStudy = ({
 	const onSaveButtonClick = useCallback(async () => {
 		try {
 			await saveStudy();
-			new Notice('Save successfull!');
+			new Notice('Saved.');
 		} catch (e) {
-			new Notice('Something went wrong during saving:', e);
+			new Notice(`Could not save the study: ${e}`);
 		}
 	}, [saveStudy]);
 
@@ -505,7 +496,6 @@ export const ChessStudy = ({
 	}, [gameState.study]);
 
 	// Flush on unmount, so closing the note commits whatever is still pending.
-	// Empty deps, so this cleanup runs once and only when the widget goes away.
 	useEffect(() => () => void autosave(), []);
 
 	/**
@@ -777,7 +767,7 @@ export const ChessStudy = ({
 								? trainer.submitMove(move)
 								: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
 						}
-						isViewOnly={gameState.isViewOnly || trainer.isBoardLocked}
+						isViewOnly={trainer.isBoardLocked}
 						syncShapes={(shapes: DrawShape[]) =>
 							dispatch({ type: 'SYNC_SHAPES', shapes })
 						}
@@ -837,7 +827,7 @@ export const ChessStudy = ({
 							navigator.clipboard.writeText(chessLogic.fen());
 							new Notice('Copied to clipboard!');
 						} catch (e) {
-							new Notice('Could not copy to clipboard:', e);
+							new Notice(`Could not copy to clipboard: ${e}`);
 						}
 					}}
 				/>

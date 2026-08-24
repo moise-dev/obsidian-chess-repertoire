@@ -1,9 +1,8 @@
 /**
  * chess.com-style move classifications, set by hand.
  *
- * Everything about a label - what it is called, how it is drawn, which key sets
- * it - lives in this one table, so adding chess.com's `Book` or `Miss` later is
- * a single row.
+ * What a label is called, how it is drawn, which key sets it and which glyph it
+ * imports from all live in one table, so a new label is one row.
  */
 
 export type MoveClassification =
@@ -22,8 +21,8 @@ interface ClassificationMeta {
 	/** Digit that applies this label when the widget has focus. */
 	shortcut: string;
 	/**
-	 * Numeric Annotation Glyph, for a future PGN export. Not all of chess.com's
-	 * tiers have a standard NAG - those are null.
+	 * Numeric Annotation Glyph: what the PGN importer reads this label from, and
+	 * what an exporter would write. Tiers with no standard glyph are null.
 	 */
 	nag: number | null;
 }

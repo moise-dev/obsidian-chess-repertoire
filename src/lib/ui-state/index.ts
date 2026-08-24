@@ -12,7 +12,7 @@ import {
 	moveNumberAtPly,
 	plyAtPath,
 } from '../move-tree';
-import { ChessStudyMove, VariantMove } from '../storage';
+import { ChessStudyMove } from '../storage';
 
 export const findMovePathById = (
 	moves: ChessStudyMove[],
@@ -116,7 +116,7 @@ export const displayPosition = (
 	draft: Draft<GameState>,
 	chessView: ChessgroundApi,
 	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
-	move: Draft<ChessStudyMove> | Draft<VariantMove> | null
+	move: Draft<ChessStudyMove> | null
 ): Draft<GameState> => {
 	showPosition(chessView, setChessLogic, move ? move.after : draft.study.rootFEN);
 

@@ -9,7 +9,7 @@ const STATUS_TEXT: Record<TrainerStatus, string> = {
 	idle: '',
 	'your-turn': 'Your move.',
 	opponent: 'Playing the reply…',
-	wrong: 'Not the move — try again.',
+	wrong: 'Not the move. Try again.',
 	complete: 'End of the line. Well done!',
 };
 

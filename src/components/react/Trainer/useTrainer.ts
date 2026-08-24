@@ -85,9 +85,8 @@ interface UseTrainerOptions {
  * A session starts from the study's first position and follows the line from
  * there.
  *
- * It rides on the widget's own navigation state - the move being asked for is
- * simply whatever follows the move on the board - so there is no second copy of
- * "where we are" that could drift out of step with the board.
+ * It keeps no position of its own: the move being asked for is whatever follows
+ * the move on the board, so there is nothing that can fall out of step with it.
  */
 export const useTrainer = ({
 	app,
@@ -105,13 +104,12 @@ export const useTrainer = ({
 	const [mistakes, setMistakes] = useState<TrainerMistake[]>([]);
 	const [movesPlayed, setMovesPlayed] = useState(0);
 	const [report, setReport] = useState<TrainerReport | null>(null);
-	// -1 is "no hint asked for yet"; the index into the available stages.
+	// -1 means no hint asked for yet; otherwise an index into `stages`.
 	const [hintIndex, setHintIndex] = useState(-1);
 
-	// The one move the study accepts from here. Variations branching off this
-	// position are not offered as answers: drilling a line means playing that
-	// line, and a sideline you wrote down is a different question - one the
-	// drill will ask when you train the line it belongs to.
+	// The one move the study accepts from here. A variation branching off this
+	// position is an alternative to that move, not another answer to the same
+	// question, so it is not offered as one.
 	const expected = useMemo(
 		() => getContinuation(moves, currentMoveId),
 		[currentMoveId, moves]

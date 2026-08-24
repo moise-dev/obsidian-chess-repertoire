@@ -17,11 +17,7 @@ export interface Variant {
 	moves: ChessStudyMove[];
 }
 
-/**
- * One move, anywhere in the tree. Mainline moves and variation moves used to be
- * separate types, which is what limited variations to a single level: only the
- * mainline kind carried `variants`.
- */
+/** One move, anywhere in the tree: the mainline and every variation alike. */
 export interface ChessStudyMove extends Move {
 	moveId: string;
 	variants: Variant[];
@@ -29,9 +25,6 @@ export interface ChessStudyMove extends Move {
 	comment: JSONContent | null;
 	classification?: MoveClassification | null;
 }
-
-/** Kept as an alias so existing imports keep working. */
-export type VariantMove = ChessStudyMove;
 
 export interface ChessStudyFileData {
 	version: string;

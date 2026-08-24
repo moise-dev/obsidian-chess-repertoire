@@ -6,10 +6,7 @@ interface StudyTitleProps {
 	onTitleChange: (title: string | null) => void;
 }
 
-/**
- * The study title, editable in place. Until now it could only ever be whatever
- * the imported PGN's `opening` tag happened to say.
- */
+/** The study title, editable in place. */
 export const StudyTitle = ({ title, onTitleChange }: StudyTitleProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draft, setDraft] = useState(title ?? '');

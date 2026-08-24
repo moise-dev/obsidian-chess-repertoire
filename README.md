@@ -38,9 +38,9 @@
 
 ### Trainer
 
-The graduation-cap button in the control strip starts a drill. It asks which colour you want to play, flips the board to it, and rewinds to the study's first position — the standard array for an ordinary game, or whatever FEN the study opens from.
+The graduation-cap button in the control strip starts a drill. It asks which colour you want to play, flips the board to it, and rewinds to the study's first position: the standard array for an ordinary game, or whatever FEN the study opens from.
 
-From there you play your colour and the study plays the other. A move the study does not know is refused: the board snaps back, the attempted move is drawn as a red arrow, and it goes on the tally. Only the line counts — variations are alternatives to the move being asked for, not answers alongside it, so playing into one is a mistake like any other.
+From there you play your colour and the study plays the other. A move the study does not know is refused: the board snaps back, the attempted move is drawn as a red arrow, and it goes on the tally. Only the line counts. Variations are alternatives to the move being asked for, not answers alongside it, so playing into one is a mistake like any other.
 
 <!-- SCREENSHOT: a session in progress. Board with a hint arrow or a marked
      piece on it, the move list showing "Moves are hidden while training", and
@@ -50,7 +50,7 @@ From there you play your colour and the study plays the other. A move the study 
 
 Hints escalate, one per press, and a stage with nothing to offer is skipped so the first press always reveals something:
 
-1. **What your study already says** — the note on the move being asked for, falling back to the note on the move just played.
+1. **What your study already says**: the note on the move being asked for, falling back to the note on the move just played.
 2. **The piece to move**, marked on the board.
 3. **An arrow** to where it goes.
 
@@ -63,14 +63,14 @@ When the line runs out, the drill ends and leaves a report: moves played, mistak
      and at least one showing a x2 multiplier. -->
 ![Session report](imgs/v2-trainer-report.png)
 
-Nothing a session does is written to your study — correct moves navigate, refused ones put the board back — so a drill can never leave stray variations behind.
+Nothing a session does is written to your study. Correct moves navigate and refused ones put the board back, so a drill can never leave stray variations behind.
 
 ### PGN import that keeps your annotations
 
 An annotated game from chess.com or Lichess comes in whole rather than as a bare list of moves:
 
 - **Comments** become notes on the move they follow, with lines the export wrapped joined back up.
-- **Glyphs** become classifications — `$1` Great, `$2` Mistake, `$3` Brilliant, `$4` Blunder, `$6` Inaccuracy — and so do judgements written onto the move itself, so `e4!` and `e4 $1` mean the same thing.
+- **Glyphs** become classifications (`$1` Great, `$2` Mistake, `$3` Brilliant, `$4` Blunder, `$6` Inaccuracy), and so do judgements written onto the move itself, so `e4!` and `e4 $1` mean the same thing.
 - **Variations** become variations, nested, keeping their own comments and glyphs.
 - A **`[FEN]` header** is honoured, so a game that starts from a position starts there.
 
@@ -80,13 +80,13 @@ An annotated game from chess.com or Lichess comes in whole rather than as a bare
      import. -->
 ![Importing an annotated game](imgs/v2-pgn-import.png)
 
-The original could not read these games at all — a `[Link "https://..."]` header was enough to make it reject the paste as a malformed FEN — and the library underneath it drops variations, has no notion of glyphs, and files comments by position rather than by move. A move that will not play no longer takes the whole import down with it either: it is left out, and the notice says how many were.
+The original could not read these games at all: a `[Link "https://..."]` header was enough to make it reject the paste as a malformed FEN. The library underneath it also drops variations, has no notion of glyphs, and files comments by position rather than by move. A move that will not play no longer takes the whole import down with it either: it is left out, and the notice says how many were.
 
 ### Variations at any depth
 
 The original supported one level of variations. This fork makes the move tree recursive, so variations nest up to four levels deep, each with its own rail colour and indent.
 
-Right-clicking any variation move opens a menu to **promote** it (one level, or straight to the mainline), **reorder** it among its siblings, or **delete** it — the last behind a confirmation naming how many moves will go, nested ones included.
+Right-clicking any variation move opens a menu to **promote** it (one level, or straight to the mainline), **reorder** it among its siblings, or **delete** it, the last behind a confirmation naming how many moves will go, nested ones included.
 
 <!-- SCREENSHOT: the move list only (crop it), showing a mainline with a
      variation two or three levels deep so the coloured rails and the stepped
@@ -98,7 +98,7 @@ Playing a move that an existing variation already starts with follows that varia
 
 ### Move classifications
 
-Seven chess.com-style labels — Brilliant, Great, Excellent, Good, Inaccuracy, Mistake, Blunder — set by pressing `1`–`7` (`0` clears), from a picker in the notes panel, or from the right-click menu on any move. Each shows as a coloured badge beside the move in the list and on the destination square of the board.
+Seven chess.com-style labels (Brilliant, Great, Excellent, Good, Inaccuracy, Mistake, Blunder) set by pressing `1`-`7` (`0` clears), from a picker in the notes panel, or from the right-click menu on any move. Each shows as a coloured badge beside the move in the list and on the destination square of the board.
 
 <!-- SCREENSHOT: a position where the current move carries a classification, so
      the badge on the board square and the matching badge in the move list are
@@ -110,7 +110,7 @@ Seven chess.com-style labels — Brilliant, Great, Excellent, Good, Inaccuracy, 
 
 - **Fills the note width** instead of a fixed 750px box, and stacks the board above the move list on narrow screens.
 - **Resizable** by dragging the bottom-right corner. The width is written back into the code block, so a study keeps its size.
-- **Four board themes** — Blue (default), Blue soft, Green, Brown — drawn from two colours each rather than a bitmap per theme, with square highlights that follow the theme.
+- **Four board themes** (Blue by default, Blue soft, Green, Brown), drawn from two colours each rather than a bitmap per theme, with square highlights that follow the theme.
 - **Coordinates drawn inside the board**, chess.com style. The original positioned them outside it, where the widget clipped them.
 - **Flip the board**, and **copy the current FEN** to the clipboard.
 - A **notes panel** that is labelled, collapsible, and shows which move a note belongs to.
@@ -121,7 +121,7 @@ Moves carrying a note get an accent dot, moves carrying arrows get a green dot, 
 
 ### Autosave
 
-Changes are saved automatically, debounced, and flushed when the note closes. The save button keeps working and gains a dot while there is something unsaved. In the original, nothing autosaved — annotating a run of moves and closing the note lost all of it silently.
+Changes are saved automatically, debounced, and flushed when the note closes. The save button keeps working and gains a dot while there is something unsaved. In the original, nothing autosaved: annotating a run of moves and closing the note lost all of it silently.
 
 ## Inherited from the original
 
@@ -137,7 +137,7 @@ Everything the original does still works:
 
 ## Installation
 
-Chess Study v2 is **not in the community plugin store** — see [what is left to publish it](#roadmap). Install it by hand:
+Chess Study v2 is **not in the community plugin store** yet, so install it by hand (see [what is left to publish it](#roadmap)):
 
 1. Download `main.js`, `styles.css` and `manifest.json` from the [latest release](../../releases/latest).
 2. Create a folder named `chess-study-v2` in `<vault>/.obsidian/plugins/`.
@@ -181,7 +181,7 @@ showCoordinates: false
 | `chessStudyId`     | valid nanoid                                  | Which stored study to render. Inserted by the command.        |
 | `boardOrientation` | `white` \| `black`                            | Which way round the board starts                              |
 | `boardColor`       | `blue` \| `blue-soft` \| `green` \| `brown`   | Board theme                                                   |
-| `showCoordinates`  | `true` \| `false`                             | Show the a–h / 1–8 labels                                     |
+| `showCoordinates`  | `true` \| `false`                             | Show the a-h / 1-8 labels                                     |
 | `boardSize`        | number of pixels                              | Widget width. Written automatically when you drag to resize.  |
 | `viewComments`     | `true` \| `false`                             | Whether the notes panel starts open                           |
 
@@ -191,23 +191,23 @@ showCoordinates: false
 
 ## Keyboard shortcuts
 
-Click a study first — the shortcuts act on the one you last clicked, and a thin accent ring shows which that is.
+Click a study first: the shortcuts act on the one you last clicked, and a thin accent ring shows which that is.
 
 | Key       | Action                     |
 | --------- | -------------------------- |
 | `←` / `→` | Previous / next move       |
 | `↑` / `↓` | First / last move          |
-| `1`–`7`   | Classify the current move  |
+| `1`-`7`   | Classify the current move  |
 | `0`       | Clear the classification   |
 
 ## Known limitations
 
-- **Shortcuts only work in Reading view.** In Live Preview the widget is rendered inside CodeMirror, which takes the keys first — more so with Vim mode enabled. The buttons and mouse work everywhere.
+- **Shortcuts only work in Reading view.** In Live Preview the widget is rendered inside CodeMirror, which takes the keys first, more so with Vim mode enabled. The buttons and mouse work everywhere.
 - **Desktop only.** The widget has not been adapted for touch.
-- **Underpromotion is not supported** — pawns reaching the last rank always promote to a queen.
+- **Underpromotion is not supported**: pawns reaching the last rank always promote to a queen.
 - **No PGN export yet.** Studies live as JSON; classifications already record their NAG codes for a future exporter.
 - **On import, an alternative to the game's very first move is dropped.** Nothing precedes it, so the move tree has nowhere to hang it. Alternatives to every later move import fine.
-- **On import, a glyph with no matching label is dropped** rather than guessed at — `$5` / `!?` among them.
+- **On import, a glyph with no matching label is dropped** rather than guessed at, `$5` and `!?` among them.
 
 ## Development
 

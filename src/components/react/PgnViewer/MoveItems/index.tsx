@@ -10,17 +10,17 @@ import {
 } from 'src/lib/classification';
 import { commentToPlainText, hasComment } from 'src/lib/comments';
 
-const useScrollIntoView = (isCurrentMove: boolean) => {
-	const ref = React.useRef<HTMLElement>(null);
+const useScrollIntoView = <T extends HTMLElement>(isCurrentMove: boolean) => {
+	const ref = React.useRef<T>(null);
 
 	React.useEffect(() => {
-		if (ref.current && isCurrentMove) {
-			ref.current?.scrollIntoView({
-				behavior: 'smooth',
-				block: 'nearest',
-				inline: 'end',
-			});
-		}
+		if (!isCurrentMove) return;
+
+		ref.current?.scrollIntoView({
+			behavior: 'smooth',
+			block: 'nearest',
+			inline: 'end',
+		});
 	}, [isCurrentMove]);
 
 	return ref;
@@ -51,37 +51,36 @@ interface MoveAnnotations {
  * accent dot for a note, a green dot for board arrows.
  */
 const Markers = ({ comment, shapes, classification }: MoveAnnotations) => {
-	// Read through the guard: a hand-edited or newer-version file could carry a
-	// label this build does not know, and indexing the table blindly would throw.
+	// Guarded: a hand-edited file could name a label this build does not have.
 	const known = readClassification(classification);
 
 	return (
-	<>
-		{known && (
-			<span
-				className="cs-move-classification"
-				style={
-					{
-						'--cs-classification': CLASSIFICATIONS[known].color,
-					} as React.CSSProperties
-				}
-				title={CLASSIFICATIONS[known].label}
-			>
-				{CLASSIFICATIONS[known].glyph}
-			</span>
-		)}
-		{hasComment(comment) && (
-			<span className="cs-move-marker cs-move-marker--note" aria-hidden="true" />
-		)}
-		{!!shapes?.length && (
-			<span
-				className="cs-move-marker cs-move-marker--shape"
-				title={`${shapes.length} board ${
-					shapes.length === 1 ? 'arrow' : 'arrows'
-				}`}
-			/>
-		)}
-	</>
+		<>
+			{known && (
+				<span
+					className="cs-move-classification"
+					style={
+						{
+							'--cs-classification': CLASSIFICATIONS[known].color,
+						} as React.CSSProperties
+					}
+					title={CLASSIFICATIONS[known].label}
+				>
+					{CLASSIFICATIONS[known].glyph}
+				</span>
+			)}
+			{hasComment(comment) && (
+				<span className="cs-move-marker cs-move-marker--note" aria-hidden="true" />
+			)}
+			{!!shapes?.length && (
+				<span
+					className="cs-move-marker cs-move-marker--shape"
+					title={`${shapes.length} board ${
+						shapes.length === 1 ? 'arrow' : 'arrows'
+					}`}
+				/>
+			)}
+		</>
 	);
 };
 
@@ -191,8 +190,6 @@ interface MoveItemProps extends MoveAnnotations {
 	san: string;
 	onMoveItemClick: () => void;
 	onClassify?: (classification: MoveClassification | null) => void;
-	variation?: VariationPosition;
-	onVariationAction?: (action: VariationAction) => void;
 }
 
 export const MoveItem = ({
@@ -204,15 +201,16 @@ export const MoveItem = ({
 	onMoveItemClick,
 	onClassify,
 }: MoveItemProps) => {
-	const ref = useScrollIntoView(isCurrentMove);
+	const ref = useScrollIntoView<HTMLParagraphElement>(isCurrentMove);
 	const onContextMenu = useMoveMenu(classification, onClassify);
 
 	return (
 		<p
-			className={`move-item ${
-				(isCurrentMove && 'active') || ''
-			}${annotationClass({ comment, shapes })} vertical-align`}
-			ref={ref as React.RefObject<HTMLParagraphElement>}
+			className={`move-item ${isCurrentMove ? 'active' : ''}${annotationClass({
+				comment,
+				shapes,
+			})} vertical-align`}
+			ref={ref}
 			title={annotationTitle({ comment })}
 			onClick={(e) => {
 				e.stopPropagation();
@@ -228,6 +226,8 @@ export const MoveItem = ({
 
 interface VariantMoveItemProps extends MoveItemProps {
 	moveIndicator?: string | null;
+	variation?: VariationPosition;
+	onVariationAction?: (action: VariationAction) => void;
 }
 
 export const VariantMoveItem = ({
@@ -242,7 +242,7 @@ export const VariantMoveItem = ({
 	onVariationAction,
 	moveIndicator = null,
 }: VariantMoveItemProps) => {
-	const ref = useScrollIntoView(isCurrentMove);
+	const ref = useScrollIntoView<HTMLDivElement>(isCurrentMove);
 	const onContextMenu = useMoveMenu(
 		classification,
 		onClassify,
@@ -253,7 +253,7 @@ export const VariantMoveItem = ({
 	return (
 		<div
 			className={`variant-move-item ${
-				(isCurrentMove && 'active') || ''
+				isCurrentMove ? 'active' : ''
 			}${annotationClass({ comment, shapes })}`}
 			title={annotationTitle({ comment })}
 			onClick={(e) => {
@@ -261,7 +261,7 @@ export const VariantMoveItem = ({
 				onMoveItemClick();
 			}}
 			onContextMenu={onContextMenu}
-			ref={ref as React.RefObject<HTMLDivElement>}
+			ref={ref}
 		>
 			<span className="variant-move-indicator">{moveIndicator}</span>
 			{san}

@@ -43,8 +43,10 @@ export const ChessgroundWrapper = React.memo(
 
 		//Chessground Init
 		useEffect(() => {
-			if (ref.current && !api) {
-				const chessgroundApi = ChessgroundApi(ref.current, {
+			if (!ref.current || api) return;
+
+			setApi(
+				ChessgroundApi(ref.current, {
 					fen: chess.fen(),
 					animation: { enabled: true, duration: 100 },
 					check: chess.isCheck(),
@@ -63,13 +65,15 @@ export const ChessgroundWrapper = React.memo(
 					},
 					turnColor: toColor(chess),
 					...config,
-				});
+				})
+			);
+		}, [api, chess, config, setApi, setShapes]);
 
-				setApi(chessgroundApi);
-			} else if (ref.current && api) {
-				api.set(config);
-			}
-		}, [addMoveToHistory, api, chess, config, setApi, setShapes]);
+		// Orientation and coordinates, which the board does not derive itself.
+		// Its own effect, or every render of the widget re-applied them.
+		useEffect(() => {
+			api?.set(config);
+		}, [api, config]);
 
 		//Sync Chess Logic
 		useEffect(() => {
