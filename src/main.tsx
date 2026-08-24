@@ -100,7 +100,7 @@ export default class ChessStudyPlugin extends Plugin {
 							cursorPosition
 						);
 					} catch (e) {
-						console.log(e);
+						console.error('chess-study: could not parse the input', e);
 						new Notice('There was an error during PGN parsing.', 0);
 					}
 				};
@@ -143,12 +143,6 @@ export default class ChessStudyPlugin extends Plugin {
 				}
 			}
 		);
-
-		console.log('Chess Study Plugin successfully loaded');
-	}
-
-	async onunload() {
-		console.log('Chess Study Plugin successfully unloaded');
 	}
 
 	async loadSettings() {

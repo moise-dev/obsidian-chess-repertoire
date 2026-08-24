@@ -62,12 +62,6 @@ export class ChessStudyDataAdapter {
 	async saveFile(data: ChessStudyFileData, id?: string) {
 		const chessStudyId = id || nanoid();
 
-		console.log(
-			`Writing file to ${normalizePath(
-				`${this.storagePath}/${chessStudyId}.json`
-			)}`
-		);
-
 		await this.adapter.write(
 			normalizePath(`${this.storagePath}/${chessStudyId}.json`),
 			JSON.stringify(data, null, 2),
@@ -78,10 +72,6 @@ export class ChessStudyDataAdapter {
 	}
 
 	async loadFile(id: string): Promise<ChessStudyFileData> {
-		console.log(
-			`Reading file from ${normalizePath(`${this.storagePath}/${id}.json`)}`
-		);
-
 		const data = await this.adapter.read(
 			normalizePath(`${this.storagePath}/${id}.json`)
 		);
@@ -103,9 +93,6 @@ export class ChessStudyDataAdapter {
 	async createStorageFolderIfNotExists() {
 		const folderExists = await this.adapter.exists(this.storagePath);
 
-		if (!folderExists) {
-			console.log(`Creating storage folder at: ${this.storagePath}`);
-			this.adapter.mkdir(this.storagePath);
-		}
+		if (!folderExists) this.adapter.mkdir(this.storagePath);
 	}
 }

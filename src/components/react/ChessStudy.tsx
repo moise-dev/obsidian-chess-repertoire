@@ -71,6 +71,15 @@ export interface GameState {
 	study: ChessStudyFileData;
 }
 
+/** Its own type rather than a member of the union below, which prettier sets
+ *  with an indentation eslint then refuses. */
+interface ClassifyAction {
+	type: 'SET_CLASSIFICATION';
+	classification: MoveClassification | null;
+	/** Defaults to the current move; the context menu passes an explicit one. */
+	moveId?: string;
+}
+
 export type GameActions =
 	| { type: 'ADD_MOVE_TO_HISTORY'; move: Move }
 	| { type: 'REMOVE_LAST_MOVE_FROM_HISTORY' }
@@ -84,12 +93,7 @@ export type GameActions =
 	| { type: 'RESET_BOARD_TO_CURRENT' }
 	| { type: 'SYNC_SHAPES'; shapes: DrawShape[] }
 	| { type: 'SYNC_COMMENT'; comment: JSONContent | null }
-	| {
-			type: 'SET_CLASSIFICATION';
-			classification: MoveClassification | null;
-			/** Defaults to the current move; the context menu passes an explicit one. */
-			moveId?: string;
-	  }
+	| ClassifyAction
 	| { type: 'SET_TITLE'; title: string | null }
 	| { type: 'PROMOTE_VARIATION'; moveId: string; toMainline: boolean }
 	| { type: 'DELETE_VARIATION'; moveId: string }
