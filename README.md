@@ -205,11 +205,11 @@ npm run deploy   # build, then copy main.js/styles.css/manifest.json into a vaul
 
 Before this can be submitted as a community plugin:
 
-- [ ] Give the plugin its own `id`, `name` and `author` in `manifest.json`, with a migration for existing storage folders
-- [ ] Align `manifest.json`, `package.json` and `versions.json` on a v2 version number
-- [ ] Cut a GitHub release with `main.js`, `manifest.json` and `styles.css` attached
-- [ ] Submit to [obsidian-releases](https://github.com/obsidianmd/obsidian-releases), explaining what the fork adds over the original
+- [x] Give the plugin its own `id`, `name` and `author` in `manifest.json`
+- [x] Align `manifest.json`, `package.json` and `versions.json` on 2.0.0
 - [ ] Replace the inherited screenshots with v2 ones
+- [ ] Tag `2.0.0` and publish the draft release the workflow builds
+- [ ] Submit to [obsidian-releases](https://github.com/obsidianmd/obsidian-releases), explaining what the fork adds over the original
 
 Beyond that:
 
