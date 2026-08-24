@@ -82,10 +82,12 @@ interface UseTrainerOptions {
 /**
  * Plays the study back as a drill: you play one colour, the study plays the
  * other, and a move that is not in the study is refused rather than recorded.
+ * A session starts from the study's first position and follows the line from
+ * there.
  *
- * The session rides on the widget's own navigation state - the move being asked
- * for is simply whatever follows the move on the board - so there is no second
- * copy of "where we are" that could drift out of step with the board.
+ * It rides on the widget's own navigation state - the move being asked for is
+ * simply whatever follows the move on the board - so there is no second copy of
+ * "where we are" that could drift out of step with the board.
  */
 export const useTrainer = ({
 	app,
@@ -158,14 +160,14 @@ export const useTrainer = ({
 	}, [dispatch, expected, isActive, isPlayerTurn]);
 
 	const start = useCallback(() => {
-		if (!continuations.length) {
-			new Notice('Nothing to train from here - the study ends at this move.');
+		if (!moves.length) {
+			new Notice('This study has no moves to train yet.');
 			return;
 		}
 
 		new ColorChoiceModal(app, {
 			body:
-				'The drill starts from the position on the board and follows the study. Your opponent plays the moves you wrote down.',
+				'The drill runs the study from its first move. Your opponent plays the moves you wrote down.',
 			onChoose: (color) => {
 				setPlayerColor(color);
 				setOrientation(color);
@@ -174,10 +176,17 @@ export const useTrainer = ({
 				setMovesPlayed(0);
 				setAttempt(null);
 				setHintIndex(-1);
+
+				// Rewind to the study's own starting position - the standard array
+				// for an ordinary game, or whatever FEN the study opens from - so a
+				// session always drills the line from the top, wherever the board
+				// happened to be sitting when the button was pressed.
+				dispatch({ type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' });
+
 				setIsActive(true);
 			},
 		}).open();
-	}, [app, continuations.length, setOrientation]);
+	}, [app, dispatch, moves.length, setOrientation]);
 
 	/**
 	 * Ends the session and leaves its report behind. Stopping part way still

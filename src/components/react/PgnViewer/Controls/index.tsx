@@ -76,8 +76,8 @@ export const Controls = (props: ControlActions) => {
 			</button>
 			<button
 				className={`cs-icon-button${props.isTraining ? ' is-active' : ''}`}
-				title={props.isTraining ? 'Stop training' : 'Train this position'}
-				aria-label="Train this position"
+				title={props.isTraining ? 'Stop training' : 'Train this study'}
+				aria-label="Train this study from its first move"
 				aria-pressed={props.isTraining}
 				onClick={() => props.onTrainButtonClick()}
 			>
