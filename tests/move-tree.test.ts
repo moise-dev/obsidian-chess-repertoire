@@ -31,8 +31,11 @@ const mv = (san: string, variants: unknown[] = []): ChessStudyMove =>
 		comment: null,
 	} as unknown as ChessStudyMove);
 
-const va = (variantId: string, parentMoveId: string, moves: ChessStudyMove[]) =>
-	({ variantId, parentMoveId, moves });
+const va = (
+	variantId: string,
+	parentMoveId: string,
+	moves: ChessStudyMove[]
+) => ({ variantId, parentMoveId, moves });
 
 /**
  *   mainline  a b c d
@@ -44,10 +47,7 @@ const tree = (): ChessStudyMove[] =>
 		JSON.stringify([
 			mv('a'),
 			mv('b', [
-				va('v1', 'b', [
-					mv('x1', [va('v3', 'x1', [mv('y1'), mv('y2')])]),
-					mv('x2'),
-				]),
+				va('v1', 'b', [mv('x1', [va('v3', 'x1', [mv('y1'), mv('y2')])]), mv('x2')]),
 				va('v2', 'b', [mv('z1')]),
 			]),
 			mv('c'),

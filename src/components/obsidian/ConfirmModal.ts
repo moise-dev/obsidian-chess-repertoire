@@ -24,9 +24,7 @@ export class ConfirmModal extends Modal {
 		contentEl.createEl('p', { text: this.options.body });
 
 		new Setting(contentEl)
-			.addButton((btn) =>
-				btn.setButtonText('Cancel').onClick(() => this.close())
-			)
+			.addButton((btn) => btn.setButtonText('Cancel').onClick(() => this.close()))
 			.addButton((btn) =>
 				btn
 					.setButtonText(this.options.confirmText)

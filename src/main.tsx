@@ -14,9 +14,9 @@ import {
 } from './components/obsidian/SettingsTab';
 
 // these styles must be imported somewhere
+import 'assets/board/themes.css';
 import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
-import 'assets/board/themes.css';
 import { nanoid } from 'nanoid';
 import { parseUserConfig } from './lib/obsidian';
 import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';

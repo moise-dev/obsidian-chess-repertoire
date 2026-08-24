@@ -30,9 +30,7 @@ export const ClassificationPicker = ({
 				return (
 					<button
 						key={key}
-						className={`cs-classification-button${
-							isActive ? ' is-active' : ''
-						}`}
+						className={`cs-classification-button${isActive ? ' is-active' : ''}`}
 						style={{ '--cs-classification': color } as React.CSSProperties}
 						title={`${label} (${shortcut})`}
 						aria-label={label}

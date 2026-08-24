@@ -14,7 +14,6 @@ import {
 	classificationForKey,
 	readClassification,
 } from 'src/lib/classification';
-import { parseUserConfig } from 'src/lib/obsidian';
 import {
 	MAX_VARIATION_DEPTH,
 	countMoves,
@@ -29,6 +28,7 @@ import {
 	removeMoveAtPath,
 	removeVariationAtPath,
 } from 'src/lib/move-tree';
+import { parseUserConfig } from 'src/lib/obsidian';
 import {
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
@@ -42,9 +42,9 @@ import {
 	getMoveLabel,
 } from 'src/lib/ui-state';
 import { useImmerReducer } from 'use-immer';
+import { ConfirmModal } from '../obsidian/ConfirmModal';
 import { ChessgroundProps, ChessgroundWrapper } from './ChessgroundWrapper';
 import { CommentSection } from './CommentSection';
-import { ConfirmModal } from '../obsidian/ConfirmModal';
 import { PgnViewer } from './PgnViewer';
 import { VariationAction } from './PgnViewer/MoveItems';
 import { TrainerBar, TrainerReportPanel, useTrainer } from './Trainer';
@@ -228,12 +228,7 @@ export const ChessStudy = ({
 
 					const moves = draft.study.moves;
 
-					displayPosition(
-						draft,
-						chessView,
-						setChessLogic,
-						moves[moves.length - 1]
-					);
+					displayPosition(draft, chessView, setChessLogic, moves[moves.length - 1]);
 
 					return draft;
 				}
@@ -414,9 +409,7 @@ export const ChessStudy = ({
 					}
 
 					if (pathDepth(path) + 1 > MAX_VARIATION_DEPTH) {
-						new Notice(
-							`Variations can only nest ${MAX_VARIATION_DEPTH} deep.`
-						);
+						new Notice(`Variations can only nest ${MAX_VARIATION_DEPTH} deep.`);
 						return draft;
 					}
 
@@ -523,9 +516,7 @@ export const ChessStudy = ({
 					}
 
 					const body = lines.slice(info.lineStart + 1, info.lineEnd);
-					const existing = body.findIndex((line) =>
-						/^\s*boardSize\s*:/.test(line)
-					);
+					const existing = body.findIndex((line) => /^\s*boardSize\s*:/.test(line));
 
 					if (existing >= 0) body[existing] = `boardSize: ${size}`;
 					else body.push(`boardSize: ${size}`);
@@ -746,9 +737,7 @@ export const ChessStudy = ({
 			className="chess-study"
 			ref={rootRef}
 			style={
-				width
-					? ({ '--cs-width': `${width}px` } as React.CSSProperties)
-					: undefined
+				width ? ({ '--cs-width': `${width}px` } as React.CSSProperties) : undefined
 			}
 			tabIndex={0}
 			onKeyDown={onKeyDown}
@@ -790,10 +779,9 @@ export const ChessStudy = ({
 					onTitleChange={(title: string | null) =>
 						dispatch({ type: 'SET_TITLE', title })
 					}
-					onClassify={(
-						moveId: string,
-						classification: MoveClassification | null
-					) => dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })}
+					onClassify={(moveId: string, classification: MoveClassification | null) =>
+						dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })
+					}
 					onVariationAction={onVariationAction}
 					onUndoButtonClick={() =>
 						dispatch({ type: 'REMOVE_LAST_MOVE_FROM_HISTORY' })
@@ -811,9 +799,7 @@ export const ChessStudy = ({
 						dispatch({ type: 'DISPLAY_LAST_MOVE_IN_HISTORY' })
 					}
 					onFlipButtonClick={() =>
-						setOrientation((current) =>
-							current === 'white' ? 'black' : 'white'
-						)
+						setOrientation((current) => (current === 'white' ? 'black' : 'white'))
 					}
 					onMoveItemClick={(moveId: string) =>
 						dispatch({

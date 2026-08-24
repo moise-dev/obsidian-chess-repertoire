@@ -232,9 +232,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 
 						return (
 							<React.Fragment key={white.move.moveId}>
-								<p className="move-indicator center">
-									{pairIndex + initialMoveNumber}
-								</p>
+								<p className="move-indicator center">{pairIndex + initialMoveNumber}</p>
 								{firstPlayer === 'b' && !black && pairIndex === 0 && (
 									<MoveItem
 										san={'...'}
@@ -252,9 +250,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 												shapes={entry.move.shapes}
 												classification={entry.move.classification}
 												isCurrentMove={entry.move.moveId === currentMoveId}
-												onMoveItemClick={() =>
-													onMoveItemClick(entry.move.moveId)
-												}
+												onMoveItemClick={() => onMoveItemClick(entry.move.moveId)}
 												onClassify={(classification) =>
 													onClassify(entry.move.moveId, classification)
 												}

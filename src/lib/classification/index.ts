@@ -102,9 +102,8 @@ const isClassification = (value: unknown): value is MoveClassification =>
 	typeof value === 'string' && value in CLASSIFICATIONS;
 
 /** Guards against a hand-edited or future-version study file. */
-export const readClassification = (
-	value: unknown
-): MoveClassification | null => (isClassification(value) ? value : null);
+export const readClassification = (value: unknown): MoveClassification | null =>
+	isClassification(value) ? value : null;
 
 /**
  * Badge drawn on the destination square of a classified move.

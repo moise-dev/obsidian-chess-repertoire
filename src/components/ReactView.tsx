@@ -1,4 +1,8 @@
-import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
+import {
+	App,
+	MarkdownPostProcessorContext,
+	MarkdownRenderChild,
+} from 'obsidian';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { ChessStudyDataAdapter, ChessStudyFileData } from 'src/lib/storage';

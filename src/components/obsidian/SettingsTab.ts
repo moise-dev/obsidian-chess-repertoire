@@ -50,9 +50,7 @@ export class SettingsTab extends PluginSettingTab {
 				dropdown
 					.setValue(this.plugin.settings.boardOrientation)
 					.onChange((orientation) => {
-						this.plugin.settings.boardOrientation = orientation as
-							| 'white'
-							| 'black';
+						this.plugin.settings.boardOrientation = orientation as 'white' | 'black';
 						this.plugin.saveSettings();
 					});
 			});
@@ -96,9 +94,7 @@ export class SettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.boardSize?.toString() ?? '')
 					.onChange((value) => {
 						const parsed = Number.parseInt(value, 10);
-						this.plugin.settings.boardSize = Number.isFinite(parsed)
-							? parsed
-							: null;
+						this.plugin.settings.boardSize = Number.isFinite(parsed) ? parsed : null;
 						this.plugin.saveSettings();
 					});
 			});

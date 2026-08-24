@@ -10,7 +10,6 @@ import { ROOT_FEN } from 'src/main';
 // own `variants`. Older files are normalised on load.
 export const CURRENT_STORAGE_VERSION = '0.0.4';
 
-
 export interface Variant {
 	variantId: string;
 	parentMoveId: string;

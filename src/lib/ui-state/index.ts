@@ -118,7 +118,11 @@ export const displayPosition = (
 	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
 	move: Draft<ChessStudyMove> | null
 ): Draft<GameState> => {
-	showPosition(chessView, setChessLogic, move ? move.after : draft.study.rootFEN);
+	showPosition(
+		chessView,
+		setChessLogic,
+		move ? move.after : draft.study.rootFEN
+	);
 
 	draft.currentMove = move;
 
