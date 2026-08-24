@@ -258,30 +258,25 @@ export const moveVariationAtPath = (
 };
 
 /**
- * The moves that may follow the move at `moveId`, mainline continuation first.
+ * The move that follows the move at `moveId` in the line it sits in, or null at
+ * the end of a line. Passing `null` asks for the root position, which only the
+ * first mainline move can follow.
  *
- * A move's `variants` are the alternatives to whatever follows it, so the
- * candidates after a move are its successor in its own line plus the first move
- * of each variation hanging off it. Passing `null` asks for the root position,
- * which only the first mainline move can follow.
+ * Variations hanging off the move are deliberately not offered: they are
+ * alternatives to this continuation, not continuations themselves, and the
+ * trainer holds you to the line rather than to the tree.
  */
-export const getContinuations = (
+export const getContinuation = (
 	moves: ChessStudyMove[],
 	moveId: string | null
-): ChessStudyMove[] => {
-	if (!moveId) return moves[0] ? [moves[0]] : [];
+): ChessStudyMove | null => {
+	if (!moveId) return moves[0] ?? null;
 
 	const path = findMovePath(moves, moveId);
-	const move = path && getMoveAtPath(moves, path);
 
-	if (!path || !move) return [];
+	if (!path) return null;
 
 	const list = getListAtPath(moves, path);
-	const next = list?.[path[path.length - 1] + 1];
 
-	const alternatives = (move.variants ?? [])
-		.map((variant) => variant.moves[0])
-		.filter(Boolean);
-
-	return next ? [next, ...alternatives] : alternatives;
+	return list?.[path[path.length - 1] + 1] ?? null;
 };

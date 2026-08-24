@@ -86,8 +86,8 @@ export interface TrainerMistake {
 	/** e.g. `4.` or `4...` - where in the line it happened. */
 	label: string;
 	played: string;
-	/** Everything the study would have accepted here, mainline first. */
-	expected: string[];
+	/** The move the study wanted, or empty at the end of a line. */
+	expected: string;
 	/** How often the same wrong move was played in the same position. */
 	count: number;
 }

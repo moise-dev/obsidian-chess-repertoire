@@ -7,7 +7,7 @@ import { GameActions } from 'src/components/react/ChessStudy';
 import { toColor } from 'src/lib/chess-logic';
 import {
 	findMovePath,
-	getContinuations,
+	getContinuation,
 	getMoveAtPath,
 } from 'src/lib/move-tree';
 import { ChessStudyMove } from 'src/lib/storage';
@@ -108,16 +108,14 @@ export const useTrainer = ({
 	// -1 is "no hint asked for yet"; the index into the available stages.
 	const [hintIndex, setHintIndex] = useState(-1);
 
-	// Every move the study allows from here. The first is the continuation of
-	// the line we are on; the rest are variations, which count as correct too -
-	// a repertoire is a tree, and drilling it should let you take any branch of
-	// it that you actually wrote down.
-	const continuations = useMemo(
-		() => getContinuations(moves, currentMoveId),
+	// The one move the study accepts from here. Variations branching off this
+	// position are not offered as answers: drilling a line means playing that
+	// line, and a sideline you wrote down is a different question - one the
+	// drill will ask when you train the line it belongs to.
+	const expected = useMemo(
+		() => getContinuation(moves, currentMoveId),
 		[currentMoveId, moves]
 	);
-
-	const expected = continuations[0] ?? null;
 
 	const currentMove = useMemo(() => {
 		if (!currentMoveId) return null;
@@ -226,11 +224,7 @@ export const useTrainer = ({
 	 */
 	const submitMove = useCallback(
 		(move: Move) => {
-			const match = continuations.find(
-				(continuation) => continuation.san === move.san
-			);
-
-			if (!match) {
+			if (!expected || expected.san !== move.san) {
 				setAttempt(move);
 				setMistakes((tally) =>
 					recordMistake(tally, {
@@ -239,7 +233,7 @@ export const useTrainer = ({
 							? moveNumberLabel(moves, expected, firstPlayer, initialMoveNumber)
 							: '',
 						played: move.san,
-						expected: continuations.map((continuation) => continuation.san),
+						expected: expected?.san ?? '',
 					})
 				);
 				dispatch({ type: 'RESET_BOARD_TO_CURRENT' });
@@ -251,18 +245,10 @@ export const useTrainer = ({
 
 			dispatch({
 				type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY',
-				moveId: match.moveId,
+				moveId: expected.moveId,
 			});
 		},
-		[
-			continuations,
-			currentMoveId,
-			dispatch,
-			expected,
-			firstPlayer,
-			initialMoveNumber,
-			moves,
-		]
+		[currentMoveId, dispatch, expected, firstPlayer, initialMoveNumber, moves]
 	);
 
 	const revealed: HintStage[] = stages.slice(0, hintIndex + 1);

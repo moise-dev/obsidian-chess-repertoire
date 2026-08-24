@@ -137,9 +137,7 @@ export const TrainerReportPanel = React.memo(
 									<span className="cs-trainer-mistake-count">×{mistake.count}</span>
 								)}
 								<span className="cs-trainer-mistake-arrow">→</span>
-								<span className="cs-trainer-mistake-expected">
-									{mistake.expected.join(' or ')}
-								</span>
+								<span className="cs-trainer-mistake-expected">{mistake.expected}</span>
 							</li>
 						))}
 					</ul>

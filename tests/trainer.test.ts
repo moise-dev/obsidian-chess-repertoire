@@ -1,7 +1,7 @@
 import { JSONContent } from '@tiptap/react';
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { getContinuations } from '../src/lib/move-tree';
+import { getContinuation } from '../src/lib/move-tree';
 import { ChessStudyMove } from '../src/lib/storage';
 import {
 	buildHintStages,
@@ -45,8 +45,6 @@ const note = (text: string): JSONContent => ({
 	content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
 });
 
-const sans = (moves: ChessStudyMove[]) => moves.map((move) => move.san);
-
 /**
  *   mainline  e4 e5 Nf3
  *   e5  ->  v1: Nc6 Bc4
@@ -63,34 +61,40 @@ const tree = (): ChessStudyMove[] => [
 	mv('Nf3'),
 ];
 
-describe('getContinuations', () => {
-	it('offers only the first mainline move from the root position', () => {
-		assert.deepEqual(sans(getContinuations(tree(), null)), ['e4']);
+const san = (move: ChessStudyMove | null) => move?.san ?? null;
+
+describe('getContinuation', () => {
+	it('starts a line at the first mainline move', () => {
+		assert.equal(san(getContinuation(tree(), null)), 'e4');
 	});
 
-	it('offers the next move in the line, then any variation of it', () => {
-		// A repertoire is a tree, so every branch you wrote down counts as a
-		// correct answer - the mainline just comes first.
-		assert.deepEqual(sans(getContinuations(tree(), 'e5')), ['Nf3', 'Nc6', 'd6']);
+	it('offers the next move in the line, never a variation of it', () => {
+		// Nc6 and d6 are alternatives to Nf3, not answers alongside it: the
+		// drill holds you to the line it is running.
+		assert.equal(san(getContinuation(tree(), 'e5')), 'Nf3');
 	});
 
 	it('follows the line a variation move sits in, not the mainline', () => {
-		assert.deepEqual(sans(getContinuations(tree(), 'Nc6')), ['Bc4']);
+		assert.equal(san(getContinuation(tree(), 'Nc6')), 'Bc4');
 	});
 
 	it('offers nothing at the end of a line', () => {
-		assert.deepEqual(getContinuations(tree(), 'Nf3'), []);
-		assert.deepEqual(getContinuations(tree(), 'd6'), []);
+		assert.equal(getContinuation(tree(), 'Nf3'), null);
+		assert.equal(getContinuation(tree(), 'd6'), null);
 	});
 
 	it('offers nothing for a move that is not in the study', () => {
-		assert.deepEqual(getContinuations(tree(), 'nonsense'), []);
+		assert.equal(getContinuation(tree(), 'nonsense'), null);
 	});
 
-	it('offers the variations of a move with no continuation of its own', () => {
+	it('offers nothing after a move whose only sequels are variations', () => {
 		const moves = [mv('e4', { variants: [va('v1', 'e4', [mv('c5')])] })];
 
-		assert.deepEqual(sans(getContinuations(moves, 'e4')), ['c5']);
+		assert.equal(getContinuation(moves, 'e4'), null);
+	});
+
+	it('offers nothing at all for an empty study', () => {
+		assert.equal(getContinuation([], null), null);
 	});
 });
 
@@ -205,7 +209,7 @@ describe('recordMistake', () => {
 		atMoveId: 'e5',
 		label: '2.',
 		played: 'Qh5',
-		expected: ['Nf3', 'Bc4'],
+		expected: 'Nf3',
 	};
 
 	it('adds a mistake the tally has not seen', () => {
