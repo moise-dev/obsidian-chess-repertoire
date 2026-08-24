@@ -1,13 +1,13 @@
 {
-  "name": "chess-study",
-  "version": "1.1.0",
-  "description": "A chess study helper and PGN viewer/editor.",
+  "name": "chess-study-v2",
+  "version": "2.0.0",
+  "description": "A chess study helper, PGN viewer/editor and opening trainer for Obsidian.",
   "keywords": [
     "chess",
     "obsidian"
   ],
   "license": "GPL-3.0-or-later",
-  "author": "Christoph Lindst\u00e4dt",
+  "author": "moise-dev",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",

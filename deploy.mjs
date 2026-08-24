@@ -9,7 +9,7 @@ import { join } from 'path';
 
 const target =
 	process.env.CHESS_STUDY_VAULT_PLUGIN_DIR ??
-	'/mnt/TheKnowledge/.obsidian/plugins/chess-study';
+	'/mnt/TheKnowledge/.obsidian/plugins/chess-study-v2';
 
 if (!existsSync(target)) {
 	console.error(`Target plugin folder does not exist: ${target}`);
