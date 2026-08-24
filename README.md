@@ -3,7 +3,7 @@
 
 > A chess study helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
 
-**Chess Study v2** is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes). The original turns a PGN into a playable, annotatable board inside a note, with comments and arrows stored in your vault. This fork keeps all of that and adds the parts that turn a set of notes into something you can actually rehearse: variations of any depth, chess.com-style move classifications, a rebuilt widget, and a **trainer** that plays your study back at you and tells you where you went wrong.
+**Chess Study v2** is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes). The original turns a PGN into a playable, annotatable board inside a note, with comments and arrows stored in your vault. This fork keeps all of that and adds the parts that turn a set of notes into something you can actually rehearse: an importer that brings a chess.com or Lichess game in whole, variations of any depth, chess.com-style move classifications, a rebuilt widget, and a **trainer** that plays your study back at you and tells you where you went wrong.
 
 <!-- SCREENSHOT: the hero shot. A study open in a note, board on the left with a
      couple of arrows drawn, move list on the right showing a mainline plus one
@@ -16,6 +16,7 @@
 
 - [What v2 adds](#what-v2-adds)
 	- [Trainer](#trainer)
+	- [PGN import that keeps your annotations](#pgn-import-that-keeps-your-annotations)
 	- [Variations at any depth](#variations-at-any-depth)
 	- [Move classifications](#move-classifications)
 	- [A rebuilt widget](#a-rebuilt-widget)
@@ -63,6 +64,23 @@ When the line runs out, the drill ends and leaves a report: moves played, mistak
 ![Session report](imgs/v2-trainer-report.png)
 
 Nothing a session does is written to your study — correct moves navigate, refused ones put the board back — so a drill can never leave stray variations behind.
+
+### PGN import that keeps your annotations
+
+An annotated game from chess.com or Lichess comes in whole rather than as a bare list of moves:
+
+- **Comments** become notes on the move they follow, with lines the export wrapped joined back up.
+- **Glyphs** become classifications — `$1` Great, `$2` Mistake, `$3` Brilliant, `$4` Blunder, `$6` Inaccuracy — and so do judgements written onto the move itself, so `e4!` and `e4 $1` mean the same thing.
+- **Variations** become variations, nested, keeping their own comments and glyphs.
+- A **`[FEN]` header** is honoured, so a game that starts from a position starts there.
+
+<!-- SCREENSHOT: an annotated chess.com game just after importing. Worth
+     choosing one where the move list shows a classification badge or two, a
+     note marker, and a variation, so it is clear all three survived the
+     import. -->
+![Importing an annotated game](imgs/v2-pgn-import.png)
+
+The original could not read these games at all — a `[Link "https://..."]` header was enough to make it reject the paste as a malformed FEN — and the library underneath it drops variations, has no notion of glyphs, and files comments by position rather than by move. A move that will not play no longer takes the whole import down with it either: it is left out, and the notice says how many were.
 
 ### Variations at any depth
 
@@ -188,6 +206,8 @@ Click a study first — the shortcuts act on the one you last clicked, and a thi
 - **Desktop only.** The widget has not been adapted for touch.
 - **Underpromotion is not supported** — pawns reaching the last rank always promote to a queen.
 - **No PGN export yet.** Studies live as JSON; classifications already record their NAG codes for a future exporter.
+- **On import, an alternative to the game's very first move is dropped.** Nothing precedes it, so the move tree has nowhere to hang it. Alternatives to every later move import fine.
+- **On import, a glyph with no matching label is dropped** rather than guessed at — `$5` / `!?` among them.
 
 ## Development
 
