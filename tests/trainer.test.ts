@@ -3,7 +3,13 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { getContinuations } from '../src/lib/move-tree';
 import { ChessStudyMove } from '../src/lib/storage';
-import { buildHintStages, errorShapes, hintShapes } from '../src/lib/trainer';
+import {
+	buildHintStages,
+	errorShapes,
+	hintShapes,
+	moveNumberLabel,
+	recordMistake,
+} from '../src/lib/trainer';
 
 // Only the fields the trainer reads. The chess.js Move parts that do not take
 // part - flags, piece, before/after - are left off rather than faked.
@@ -12,6 +18,7 @@ const mv = (
 	options: {
 		from?: string;
 		to?: string;
+		color?: 'w' | 'b';
 		comment?: JSONContent | null;
 		variants?: unknown[];
 	} = {}
@@ -19,6 +26,7 @@ const mv = (
 	({
 		san,
 		moveId: san,
+		color: options.color ?? 'w',
 		from: options.from ?? 'e2',
 		to: options.to ?? 'e4',
 		comment: options.comment ?? null,
@@ -153,5 +161,92 @@ describe('board marks', () => {
 		assert.deepEqual(errorShapes({ from: 'd2', to: 'd4' }), [
 			{ orig: 'd2', dest: 'd4', brush: 'red' },
 		]);
+	});
+});
+
+describe('moveNumberLabel', () => {
+	/**
+	 *   mainline  1. e4 e5  2. Nf3
+	 *   e5  ->  v1: 2. Bc4 Nc6
+	 */
+	const line: ChessStudyMove[] = [
+		mv('e4'),
+		mv('e5', {
+			color: 'b',
+			variants: [va('v1', 'e5', [mv('Bc4'), mv('Nc6', { color: 'b' })])],
+		}),
+		mv('Nf3'),
+	];
+
+	it('numbers mainline moves, with dots for Black', () => {
+		assert.equal(moveNumberLabel(line, line[0], 'w', 1), '1.');
+		assert.equal(moveNumberLabel(line, line[1], 'w', 1), '1...');
+		assert.equal(moveNumberLabel(line, line[2], 'w', 1), '2.');
+	});
+
+	it('numbers a variation from the move it branches off', () => {
+		const [bishop, knight] = line[1].variants[0].moves;
+
+		assert.equal(moveNumberLabel(line, bishop, 'w', 1), '2.');
+		assert.equal(moveNumberLabel(line, knight, 'w', 1), '2...');
+	});
+
+	it('counts from the first move number the study starts at', () => {
+		// A study opened from a FEN can start mid-game, and on Black's move.
+		const midGame: ChessStudyMove[] = [mv('Nf6', { color: 'b' }), mv('c4')];
+
+		assert.equal(moveNumberLabel(midGame, midGame[0], 'b', 12), '12...');
+		assert.equal(moveNumberLabel(midGame, midGame[1], 'b', 12), '13.');
+	});
+});
+
+describe('recordMistake', () => {
+	const mistake = {
+		atMoveId: 'e5',
+		label: '2.',
+		played: 'Qh5',
+		expected: ['Nf3', 'Bc4'],
+	};
+
+	it('adds a mistake the tally has not seen', () => {
+		assert.deepEqual(recordMistake([], mistake), [{ ...mistake, count: 1 }]);
+	});
+
+	it('counts the same wrong move in the same position only once', () => {
+		// One thing you do not know, played twice - not two things.
+		const tally = recordMistake(recordMistake([], mistake), mistake);
+
+		assert.equal(tally.length, 1);
+		assert.equal(tally[0].count, 2);
+	});
+
+	it('keeps a different wrong move in the same position apart', () => {
+		const tally = recordMistake(recordMistake([], mistake), {
+			...mistake,
+			played: 'f4',
+		});
+
+		assert.deepEqual(
+			tally.map((entry) => entry.played),
+			['Qh5', 'f4']
+		);
+	});
+
+	it('keeps the same wrong move in another position apart', () => {
+		// Two lines can reach the same move number, so the label cannot be the
+		// thing that tells positions apart.
+		const tally = recordMistake(recordMistake([], mistake), {
+			...mistake,
+			atMoveId: 'c5',
+		});
+
+		assert.equal(tally.length, 2);
+	});
+
+	it('leaves the tally it was given alone', () => {
+		const before = recordMistake([], mistake);
+		recordMistake(before, mistake);
+
+		assert.equal(before[0].count, 1);
 	});
 });

@@ -48,7 +48,7 @@ import { CommentSection } from './CommentSection';
 import { ConfirmModal } from '../obsidian/ConfirmModal';
 import { PgnViewer } from './PgnViewer';
 import { VariationAction } from './PgnViewer/MoveItems';
-import { TrainerBar, useTrainer } from './Trainer';
+import { TrainerBar, TrainerReportPanel, useTrainer } from './Trainer';
 
 export type ChessStudyConfig = ChessgroundProps;
 
@@ -704,6 +704,8 @@ export const ChessStudy = ({
 		moves: gameState.study.moves,
 		currentMoveId,
 		chess: chessLogic,
+		firstPlayer,
+		initialMoveNumber,
 		dispatch,
 		setOrientation,
 	});
@@ -839,6 +841,11 @@ export const ChessStudy = ({
 
 			{trainer.isActive ? (
 				<TrainerBar {...trainer} />
+			) : trainer.report ? (
+				<TrainerReportPanel
+					report={trainer.report}
+					onDismiss={trainer.dismissReport}
+				/>
 			) : (
 				<CommentSection
 					currentComment={gameState.currentMove?.comment ?? null}

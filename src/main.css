@@ -772,3 +772,63 @@
 	color: var(--text-muted);
 	font-size: 12px;
 }
+
+/* The report left behind by a finished session. */
+.chess-study .cs-trainer.is-clean {
+	border-left-color: var(--text-success);
+}
+
+.chess-study .cs-trainer-clean {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--text-success);
+	font-size: 12px;
+}
+
+.chess-study .cs-trainer-mistakes {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.chess-study .cs-trainer-mistake {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 5px;
+	padding: 3px 6px;
+	border-radius: 5px;
+	background-color: var(--background-secondary);
+	font-size: 12px;
+}
+
+.chess-study .cs-trainer-mistake-label {
+	min-width: 30px;
+	color: var(--text-faint);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.chess-study .cs-trainer-mistake-played {
+	color: var(--text-error);
+	font-weight: 600;
+	text-decoration: line-through;
+}
+
+.chess-study .cs-trainer-mistake-count {
+	color: var(--text-faint);
+	font-size: 11px;
+}
+
+.chess-study .cs-trainer-mistake-arrow {
+	color: var(--text-faint);
+}
+
+.chess-study .cs-trainer-mistake-expected {
+	color: var(--text-success);
+	font-weight: 600;
+}

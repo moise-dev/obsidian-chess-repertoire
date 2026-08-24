@@ -1,6 +1,6 @@
 import { Chess, Move } from 'chess.js';
 import { DrawShape } from 'chessground/draw';
-import { App } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ColorChoiceModal } from 'src/components/obsidian/ColorChoiceModal';
 import { GameActions } from 'src/components/react/ChessStudy';
@@ -14,9 +14,12 @@ import { ChessStudyMove } from 'src/lib/storage';
 import {
 	HintStage,
 	TrainerColor,
+	TrainerMistake,
 	buildHintStages,
 	errorShapes,
 	hintShapes,
+	moveNumberLabel,
+	recordMistake,
 } from 'src/lib/trainer';
 
 /** How long the opponent "thinks" before replying, in ms. */
@@ -29,11 +32,24 @@ export type TrainerStatus =
 	| 'wrong'
 	| 'complete';
 
+/** What a finished session had to say, shown once the drill is over. */
+export interface TrainerReport {
+	playerColor: TrainerColor;
+	/** The line was played to its end, rather than stopped part way. */
+	completed: boolean;
+	/** Correct moves played, the drill's own moves only. */
+	movesPlayed: number;
+	mistakes: TrainerMistake[];
+}
+
 export interface Trainer {
 	isActive: boolean;
+	/** The last session's report, until it is dismissed. */
+	report: TrainerReport | null;
+	dismissReport: () => void;
 	playerColor: TrainerColor;
 	status: TrainerStatus;
-	/** Wrong moves played since the session started. */
+	/** Wrong moves played since the session started, repeats included. */
 	errorCount: number;
 	/** The note revealed by the first hint, once it has been asked for. */
 	commentHint: string | null;
@@ -56,6 +72,9 @@ interface UseTrainerOptions {
 	currentMoveId: string | null;
 	/** The position on the board, i.e. whose turn it is. */
 	chess: Chess;
+	/** Numbering context, so a mistake can say which move it was. */
+	firstPlayer: string;
+	initialMoveNumber: number;
 	dispatch: React.Dispatch<GameActions>;
 	setOrientation: (color: TrainerColor) => void;
 }
@@ -73,13 +92,17 @@ export const useTrainer = ({
 	moves,
 	currentMoveId,
 	chess,
+	firstPlayer,
+	initialMoveNumber,
 	dispatch,
 	setOrientation,
 }: UseTrainerOptions): Trainer => {
 	const [isActive, setIsActive] = useState(false);
 	const [playerColor, setPlayerColor] = useState<TrainerColor>('white');
-	const [errorCount, setErrorCount] = useState(0);
 	const [attempt, setAttempt] = useState<Move | null>(null);
+	const [mistakes, setMistakes] = useState<TrainerMistake[]>([]);
+	const [movesPlayed, setMovesPlayed] = useState(0);
+	const [report, setReport] = useState<TrainerReport | null>(null);
 	// -1 is "no hint asked for yet"; the index into the available stages.
 	const [hintIndex, setHintIndex] = useState(-1);
 
@@ -88,8 +111,8 @@ export const useTrainer = ({
 	// a repertoire is a tree, and drilling it should let you take any branch of
 	// it that you actually wrote down.
 	const continuations = useMemo(
-		() => (isActive ? getContinuations(moves, currentMoveId) : []),
-		[currentMoveId, isActive, moves]
+		() => getContinuations(moves, currentMoveId),
+		[currentMoveId, moves]
 	);
 
 	const expected = continuations[0] ?? null;
@@ -135,21 +158,52 @@ export const useTrainer = ({
 	}, [dispatch, expected, isActive, isPlayerTurn]);
 
 	const start = useCallback(() => {
+		if (!continuations.length) {
+			new Notice('Nothing to train from here - the study ends at this move.');
+			return;
+		}
+
 		new ColorChoiceModal(app, {
 			body:
 				'The drill starts from the position on the board and follows the study. Your opponent plays the moves you wrote down.',
 			onChoose: (color) => {
 				setPlayerColor(color);
 				setOrientation(color);
-				setErrorCount(0);
+				setReport(null);
+				setMistakes([]);
+				setMovesPlayed(0);
 				setAttempt(null);
 				setHintIndex(-1);
 				setIsActive(true);
 			},
 		}).open();
-	}, [app, setOrientation]);
+	}, [app, continuations.length, setOrientation]);
 
-	const stop = useCallback(() => setIsActive(false), []);
+	/**
+	 * Ends the session and leaves its report behind. Stopping part way still
+	 * reports: the mistakes made up to that point are the reason to stop.
+	 */
+	const endSession = useCallback(
+		(completed: boolean) => {
+			setIsActive(false);
+			setReport(
+				completed || mistakes.length
+					? { playerColor, completed, movesPlayed, mistakes }
+					: null
+			);
+		},
+		[mistakes, movesPlayed, playerColor]
+	);
+
+	const stop = useCallback(() => endSession(false), [endSession]);
+
+	const dismissReport = useCallback(() => setReport(null), []);
+
+	// The line has run out: the drill is over, so hand back the board and say
+	// how it went.
+	useEffect(() => {
+		if (isActive && isComplete) endSession(true);
+	}, [endSession, isActive, isComplete]);
 
 	const requestHint = useCallback(
 		() => setHintIndex((index) => Math.min(index + 1, stages.length - 1)),
@@ -169,18 +223,37 @@ export const useTrainer = ({
 
 			if (!match) {
 				setAttempt(move);
-				setErrorCount((count) => count + 1);
+				setMistakes((tally) =>
+					recordMistake(tally, {
+						atMoveId: currentMoveId,
+						label: expected
+							? moveNumberLabel(moves, expected, firstPlayer, initialMoveNumber)
+							: '',
+						played: move.san,
+						expected: continuations.map((continuation) => continuation.san),
+					})
+				);
 				dispatch({ type: 'RESET_BOARD_TO_CURRENT' });
 
 				return;
 			}
+
+			setMovesPlayed((count) => count + 1);
 
 			dispatch({
 				type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY',
 				moveId: match.moveId,
 			});
 		},
-		[continuations, dispatch]
+		[
+			continuations,
+			currentMoveId,
+			dispatch,
+			expected,
+			firstPlayer,
+			initialMoveNumber,
+			moves,
+		]
 	);
 
 	const revealed: HintStage[] = stages.slice(0, hintIndex + 1);
@@ -210,9 +283,11 @@ export const useTrainer = ({
 
 	return {
 		isActive,
+		report,
+		dismissReport,
 		playerColor,
 		status,
-		errorCount,
+		errorCount: mistakes.reduce((total, mistake) => total + mistake.count, 0),
 		commentHint: commentStage?.text ?? null,
 		hintsGiven: hintIndex + 1,
 		hintCount: stages.length,
