@@ -19,6 +19,7 @@ import 'chessground/assets/chessground.cburnett.css';
 import 'assets/board/themes.css';
 import { nanoid } from 'nanoid';
 import { parseUserConfig } from './lib/obsidian';
+import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';
 import './main.css';
 
 type FEN = string;
@@ -65,30 +66,31 @@ export default class ChessStudyPlugin extends Plugin {
 					try {
 						const chessStringTrimmed = chessString?.trim() ?? '';
 
-						const isFen = chessStringTrimmed.includes('/');
+						const isFen = looksLikeFen(chessStringTrimmed);
 
-						const chess = isFen ? new Chess(chessStringTrimmed) : new Chess();
+						// Validates it, and throws for the notice below if it is not a
+						// position after all.
+						if (isFen) new Chess(chessStringTrimmed);
 
-						if (!isFen) {
-							//Try to parse the PGN
-							chess.loadPgn(chessStringTrimmed, {
-								strict: false,
-							});
+						const parsed = isFen
+							? null
+							: parsePgn(chessStringTrimmed, ROOT_FEN, nanoid);
+
+						if (parsed?.skipped) {
+							new Notice(
+								`${parsed.skipped} ${
+									parsed.skipped === 1 ? 'move' : 'moves'
+								} in that PGN could not be read and were left out.`
+							);
 						}
 
 						const chessStudyFileData: ChessStudyFileData = {
 							version: CURRENT_STORAGE_VERSION,
 							header: {
-								title: chess.header()['opening'] || null,
+								title: parsed ? titleFromHeaders(parsed.headers) : null,
 							},
-							moves: chess.history({ verbose: true }).map((move) => ({
-								...move,
-								moveId: nanoid(),
-								variants: [],
-								shapes: [],
-								comment: null,
-							})),
-							rootFEN: isFen ? chessStringTrimmed : ROOT_FEN,
+							moves: parsed?.moves ?? [],
+							rootFEN: isFen ? chessStringTrimmed : parsed?.rootFEN ?? ROOT_FEN,
 						};
 
 						this.dataAdapter.createStorageFolderIfNotExists();
