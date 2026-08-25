@@ -1043,9 +1043,14 @@
 	background-color: var(--cs-map-state, var(--text-faint));
 }
 
-.cs-map-card-body {
-	display: flex;
-	gap: 8px;
+.cs-map-card-range {
+	color: var(--text-normal);
+	font-weight: 600;
+}
+
+/* Pushed to the far edge, so the range and the state read as one group. */
+.cs-map-card-count {
+	margin-left: auto;
 }
 
 .cs-map-card-note {
@@ -1055,47 +1060,59 @@
 	font-style: italic;
 }
 
-.cs-map-moves {
-	display: flex;
-	flex-wrap: wrap;
-	align-content: flex-start;
-	gap: 2px;
-	min-width: 0;
+/*
+ * A scoresheet rather than a run of chips: fixed columns mean a long segment
+ * reads down its move numbers, and a card's height follows from how many moves
+ * it holds instead of from how they happened to wrap.
+ */
+.cs-map-sheet {
+	display: grid;
+	grid-template-columns: auto 1fr 1fr;
+	align-items: baseline;
+	gap: 0 4px;
+	font-family: var(--font-monospace);
+	font-size: 0.8em;
 }
 
-.cs-map-move {
-	display: inline-flex;
-	align-items: baseline;
-	gap: 3px;
+.cs-map-sheet-number {
+	padding-right: 2px;
+	color: var(--text-faint);
+	font-weight: 600;
+	text-align: right;
+}
+
+.cs-map-sheet-gap {
+	color: var(--text-faint);
+	text-align: center;
+}
+
+/*
+ * `all: unset` because Obsidian styles bare buttons - background, padding, a
+ * shadow - and a move is a word, not a button. Everything it needs is set back
+ * below.
+ */
+.cs-map-sheet .cs-map-move {
+	all: unset;
 	padding: 1px 4px;
-	border: none;
 	border-radius: 3px;
-	background: none;
-	box-shadow: none;
+	justify-self: start;
 	color: var(--text-normal);
 	font-family: var(--font-monospace);
-	font-size: 0.82em;
-	line-height: 1.5;
+	line-height: 1.6;
 	cursor: pointer;
 }
 
-.cs-map-move:hover {
+.cs-map-sheet .cs-map-move:hover {
 	background-color: var(--background-modifier-hover);
 }
 
-.cs-map-move.is-current {
+.cs-map-sheet .cs-map-move.is-current {
 	color: var(--text-accent);
 	font-weight: 700;
 }
 
-.cs-map-move.is-undrilled {
+.cs-map-sheet .cs-map-move.is-undrilled {
 	color: var(--text-faint);
-}
-
-.cs-map-move-number {
-	color: var(--text-faint);
-	font-size: 0.9em;
-	font-weight: 600;
 }
 
 /*
@@ -1105,10 +1122,12 @@
  */
 .cs-map-board {
 	flex: 0 0 auto;
+	align-self: center;
 	display: grid;
 	grid-template-columns: repeat(8, 1fr);
-	width: 72px;
-	height: 72px;
+	width: 132px;
+	height: 132px;
+	border: 1px solid var(--background-modifier-border);
 	border-radius: 3px;
 	overflow: hidden;
 }
@@ -1117,7 +1136,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 7px;
+	font-size: 13px;
 	line-height: 1;
 }
 

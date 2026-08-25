@@ -6,18 +6,27 @@ import {
 	fenToBoard,
 	flattenSegments,
 	layoutSegments,
+	toScoresheet,
 } from '../src/lib/move-map';
 import { ChessStudyMove } from '../src/lib/storage';
 
-const mv = (san: string, variants: unknown[] = []): ChessStudyMove =>
+const mv = (
+	san: string,
+	variants: unknown[] = [],
+	color: 'w' | 'b' = 'w'
+): ChessStudyMove =>
 	({
 		san,
 		moveId: san,
-		color: 'w',
+		color,
 		variants,
 		shapes: [],
 		comment: null,
 	} as unknown as ChessStudyMove);
+
+/** Alternating colours, the way a real line runs. */
+const line = (...sans: string[]) =>
+	sans.map((san, index) => mv(san, [], index % 2 ? 'b' : 'w'));
 
 const va = (
 	variantId: string,
@@ -184,6 +193,52 @@ describe('layoutSegments', () => {
 			layout.edges.map((edge) => `${edge.from.segment.id}->${edge.to.segment.id}`),
 			['x1->x2', 'x1->y1', 'a->c', 'a->x1', 'a->z1']
 		);
+	});
+});
+
+describe('toScoresheet', () => {
+	// Plies count from 0, so ply 0 and 1 are move 1, ply 2 and 3 are move 2.
+	const numberAtPly = (ply: number) => Math.floor(ply / 2) + 1;
+
+	it('pairs the moves under their number', () => {
+		const root = buildSegments(line('e4', 'e5', 'Nf3', 'Nc6'))!;
+
+		assert.deepEqual(
+			toScoresheet(root, numberAtPly).map((row) => [
+				row.number,
+				row.white?.san ?? null,
+				row.black?.san ?? null,
+			]),
+			[
+				[1, 'e4', 'e5'],
+				[2, 'Nf3', 'Nc6'],
+			]
+		);
+	});
+
+	it('leaves the White column empty when a segment starts on Black', () => {
+		const moves = line('e4', 'e5', 'Nf3', 'Nc6');
+		// A branch after 2.Nf3 starts on Black's move, at ply 3.
+		const segment = buildSegments(moves)!.children[0] ?? {
+			...buildSegments(moves)!,
+			startPly: 3,
+			moves: moves.slice(3),
+		};
+
+		const rows = toScoresheet(segment, numberAtPly);
+
+		assert.equal(rows[0].white, null);
+		assert.equal(rows[0].black?.san, 'Nc6');
+		assert.equal(rows[0].number, 2);
+	});
+
+	it('carries an odd move onto a row of its own', () => {
+		const root = buildSegments(line('e4', 'e5', 'Nf3'))!;
+		const rows = toScoresheet(root, numberAtPly);
+
+		assert.equal(rows.length, 2);
+		assert.equal(rows[1].white?.san, 'Nf3');
+		assert.equal(rows[1].black, null);
 	});
 });
 

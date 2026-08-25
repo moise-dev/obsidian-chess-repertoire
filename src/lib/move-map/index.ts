@@ -158,6 +158,43 @@ export const layoutSegments = (
 	};
 };
 
+/** One line of a scoresheet: a move number and the two moves under it. */
+export interface ScoresheetRow {
+	number: number;
+	white: ChessStudyMove | null;
+	black: ChessStudyMove | null;
+}
+
+/**
+ * A segment's moves paired up the way a scoresheet pairs them.
+ *
+ * Laying them out in fixed columns rather than letting them wrap is what keeps
+ * a card readable: a long run reads down the numbers, and a segment that starts
+ * on Black's move keeps its first row aligned with an empty White column rather
+ * than shunting everything across by one.
+ */
+export const toScoresheet = (
+	segment: MapSegment,
+	numberAtPly: (ply: number) => number
+): ScoresheetRow[] => {
+	const rows: ScoresheetRow[] = [];
+
+	for (const [index, move] of segment.moves.entries()) {
+		const number = numberAtPly(segment.startPly + index);
+		let row = rows[rows.length - 1];
+
+		if (!row || row.number !== number) {
+			row = { number, white: null, black: null };
+			rows.push(row);
+		}
+
+		if (move.color === 'w') row.white = move;
+		else row.black = move;
+	}
+
+	return rows;
+};
+
 /** The piece on each square of a FEN, rank 8 first, or null for an empty one. */
 export const fenToBoard = (fen: string): (string | null)[][] =>
 	fen

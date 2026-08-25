@@ -14,17 +14,24 @@ import {
 	buildSegments,
 	fenToBoard,
 	layoutSegments,
+	toScoresheet,
 } from 'src/lib/move-map';
 import { moveNumberAtPly } from 'src/lib/move-tree';
 import { ChessStudyMove, MoveDrillStats } from 'src/lib/storage';
 
-const CARD_WIDTH = 208;
-const GAP_X = 56;
-const GAP_Y = 18;
-const DEFAULT_HEIGHT = 96;
+const CARD_WIDTH = 248;
+const GAP_X = 64;
+const GAP_Y = 20;
+const DEFAULT_HEIGHT = 180;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 2;
-const FIT_PADDING = 28;
+/**
+ * Fitting may zoom in as well as out, but only so far: a study of two cards
+ * should fill the space rather than sit marooned in the middle of it, and
+ * blowing those two up to fill a 1400px modal is no better.
+ */
+const MAX_FIT_ZOOM = 1.4;
+const FIT_PADDING = 32;
 
 const clamp = (value: number, low: number, high: number) =>
 	Math.min(Math.max(value, low), high);
@@ -223,7 +230,7 @@ export const MoveMap = ({
 			Math.min(
 				(viewport.clientWidth - FIT_PADDING * 2) / layout.width,
 				(viewport.clientHeight - FIT_PADDING * 2) / layout.height,
-				1
+				MAX_FIT_ZOOM
 			),
 			MIN_ZOOM,
 			MAX_ZOOM
@@ -416,6 +423,9 @@ export const MoveMap = ({
 						const { segment } = node;
 						const state = segmentState(segment, excluded, stats, userColor);
 						const last = segment.moves[segment.moves.length - 1];
+						const rows = toScoresheet(segment, (ply) =>
+							moveNumberAtPly(ply, firstPlayer, initialMoveNumber)
+						);
 						const holdsCurrent = segment.moves.some(
 							(move) => move.moveId === currentMoveId
 						);
@@ -438,48 +448,45 @@ export const MoveMap = ({
 							>
 								<div className="cs-map-card-head" title={stateTitle(state)}>
 									<span className="cs-map-card-state" />
+									<span className="cs-map-card-range">
+										{rows[0].number === rows[rows.length - 1].number
+											? rows[0].number
+											: `${rows[0].number}\u2013${rows[rows.length - 1].number}`}
+									</span>
 									<span className="cs-map-card-count">
 										{segment.moves.length} {segment.moves.length === 1 ? 'move' : 'moves'}
 									</span>
 								</div>
 
-								<div className="cs-map-card-body">
-									<MiniBoard
-										fen={last ? last.after : rootFEN}
-										flipped={userColor === 'b'}
-									/>
+								<MiniBoard
+									fen={last ? last.after : rootFEN}
+									flipped={userColor === 'b'}
+								/>
 
-									<div className="cs-map-moves">
-										{segment.moves.map((move, index) => {
-											const number = moveNumberAtPly(
-												segment.startPly + index,
-												firstPlayer,
-												initialMoveNumber
-											);
-											const indicator =
-												move.color === 'w'
-													? `${number}.`
-													: index === 0
-													? `${number}...`
-													: null;
-
-											return (
-												<button
-													key={move.moveId}
-													className={`cs-map-move${
-														move.moveId === currentMoveId ? ' is-current' : ''
-													}${excluded.has(move.moveId) ? ' is-undrilled' : ''}`}
-													title="Show this move on the board"
-													onClick={() => onMoveClick(move.moveId)}
-												>
-													{indicator && (
-														<span className="cs-map-move-number">{indicator}</span>
-													)}
-													{move.san}
-												</button>
-											);
-										})}
-									</div>
+								<div className="cs-map-sheet">
+									{rows.map((row) => (
+										<React.Fragment key={row.number}>
+											<span className="cs-map-sheet-number">{row.number}.</span>
+											{[row.white, row.black].map((move, column) =>
+												move ? (
+													<button
+														key={move.moveId}
+														className={`cs-map-move${
+															move.moveId === currentMoveId ? ' is-current' : ''
+														}${excluded.has(move.moveId) ? ' is-undrilled' : ''}`}
+														title="Show this move on the board"
+														onClick={() => onMoveClick(move.moveId)}
+													>
+														{move.san}
+													</button>
+												) : (
+													<span key={column} className="cs-map-sheet-gap" aria-hidden="true">
+														{'\u2026'}
+													</span>
+												)
+											)}
+										</React.Fragment>
+									))}
 								</div>
 
 								{state.isHole && (
