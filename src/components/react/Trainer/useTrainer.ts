@@ -1,16 +1,28 @@
 import { Chess, Move } from 'chess.js';
 import { DrawShape } from 'chessground/draw';
 import { App, Notice } from 'obsidian';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ColorChoiceModal } from 'src/components/obsidian/ColorChoiceModal';
 import { GameActions } from 'src/components/react/ChessStudy';
 import { toColor } from 'src/lib/chess-logic';
+import {
+	chooseReply,
+	getDrillableReplies,
+	isDrillable,
+	pruneDrillData,
+	recordAttempt,
+} from 'src/lib/drill';
 import {
 	findMovePath,
 	getContinuation,
 	getMoveAtPath,
 } from 'src/lib/move-tree';
-import { ChessStudyMove } from 'src/lib/storage';
+import {
+	CURRENT_DRILL_VERSION,
+	ChessStudyDataAdapter,
+	ChessStudyMove,
+	MoveDrillStats,
+} from 'src/lib/storage';
 import {
 	HintStage,
 	TrainerColor,
@@ -68,6 +80,9 @@ export interface Trainer {
 
 interface UseTrainerOptions {
 	app: App;
+	/** Where the drill history for this study is read and written. */
+	dataAdapter: ChessStudyDataAdapter;
+	chessStudyId: string;
 	moves: ChessStudyMove[];
 	currentMoveId: string | null;
 	/** The position on the board, i.e. whose turn it is. */
@@ -82,14 +97,22 @@ interface UseTrainerOptions {
 /**
  * Plays the study back as a drill: you play one colour, the study plays the
  * other, and a move that is not in the study is refused rather than recorded.
- * A session starts from the study's first position and follows the line from
- * there.
+ * A session starts from the study's first position and works down from there.
  *
- * It keeps no position of its own: the move being asked for is whatever follows
- * the move on the board, so there is nothing that can fall out of step with it.
+ * The two sides are asked different questions, because a repertoire is not
+ * symmetric. Your own move is the one you wrote down, so only the continuation
+ * of the line is accepted. The opponent's move is theirs to choose, so every
+ * reply the study records is one you undertook to know, and the drill picks
+ * among them - favouring the ones you get wrong, and showing lines you have
+ * never drilled before anything you have.
+ *
+ * It keeps no position of its own: what is asked for is decided by the move on
+ * the board, so there is nothing that can fall out of step with it.
  */
 export const useTrainer = ({
 	app,
+	dataAdapter,
+	chessStudyId,
 	moves,
 	currentMoveId,
 	chess,
@@ -106,12 +129,32 @@ export const useTrainer = ({
 	const [report, setReport] = useState<TrainerReport | null>(null);
 	// -1 means no hint asked for yet; otherwise an index into `stages`.
 	const [hintIndex, setHintIndex] = useState(-1);
+	// A ref rather than state: nothing renders the history, the reply is drawn
+	// from it inside a timeout where a stale closure would read the wrong
+	// counts, and it is written on every answer.
+	const statsRef = useRef<Record<string, MoveDrillStats>>({});
+	// Which reply the study settled on at each position, keyed by the move the
+	// board was standing on. Within a session a position always gets the same
+	// answer, so stepping back with the arrow keys reviews the line you played
+	// instead of rerouting it; the next session draws afresh.
+	const repliesRef = useRef<Record<string, string>>({});
 
-	// The one move the study accepts from here. A variation branching off this
-	// position is an alternative to that move, not another answer to the same
-	// question, so it is not offered as one.
-	const expected = useMemo(
-		() => getContinuation(moves, currentMoveId),
+	/** The colour whose moves the history is about: the one being drilled. */
+	const userColor = playerColor === 'white' ? 'w' : 'b';
+
+	// The one move the study accepts from you here. Variations at this position
+	// are alternatives you could have chosen and did not, so they are not other
+	// answers to the same question.
+	const expected = useMemo(() => {
+		const next = getContinuation(moves, currentMoveId);
+
+		return next && isDrillable(next) ? next : null;
+	}, [currentMoveId, moves]);
+
+	// What the study may play against you here. Excluded branches are left out,
+	// so a line kept for reference is never played into.
+	const replies = useMemo(
+		() => getDrillableReplies(moves, currentMoveId),
 		[currentMoveId, moves]
 	);
 
@@ -129,7 +172,9 @@ export const useTrainer = ({
 	);
 
 	const isPlayerTurn = toColor(chess) === playerColor;
-	const isComplete = isActive && !expected;
+	// A drill ends where the study stops answering: no continuation for you, or
+	// nothing left for the study to reply with.
+	const isComplete = isActive && (isPlayerTurn ? !expected : !replies.length);
 
 	// Forget the hints and the refused move as soon as the position moves on.
 	useEffect(() => {
@@ -141,19 +186,38 @@ export const useTrainer = ({
 	// the move just played, so stepping back through the line with the arrow
 	// keys resumes the drill instead of stalling.
 	useEffect(() => {
-		if (!isActive || isPlayerTurn || !expected) return;
+		if (!isActive || isPlayerTurn || !replies.length) return;
 
-		const timer = window.setTimeout(
-			() =>
-				dispatch({
-					type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY',
-					moveId: expected.moveId,
-				}),
-			OPPONENT_DELAY
-		);
+		const timer = window.setTimeout(() => {
+			const key = currentMoveId ?? '';
+			const settled = replies.find(
+				(reply) => reply.moveId === repliesRef.current[key]
+			);
+			// Drawn here rather than in a memo, which would roll again on every
+			// render and change the reply while it was being waited for.
+			const reply =
+				settled ?? chooseReply(moves, currentMoveId, statsRef.current, userColor);
+
+			if (!reply) return;
+
+			repliesRef.current[key] = reply.moveId;
+
+			dispatch({
+				type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY',
+				moveId: reply.moveId,
+			});
+		}, OPPONENT_DELAY);
 
 		return () => window.clearTimeout(timer);
-	}, [dispatch, expected, isActive, isPlayerTurn]);
+	}, [
+		currentMoveId,
+		dispatch,
+		isActive,
+		isPlayerTurn,
+		moves,
+		replies,
+		userColor,
+	]);
 
 	const start = useCallback(() => {
 		if (!moves.length) {
@@ -163,8 +227,8 @@ export const useTrainer = ({
 
 		new ColorChoiceModal(app, {
 			body:
-				'The drill runs the study from its first move. Your opponent plays the moves you wrote down.',
-			onChoose: (color) => {
+				'The drill runs the study from its first move. Your opponent picks from the replies you wrote down, so no two sessions need take the same line.',
+			onChoose: async (color) => {
 				setPlayerColor(color);
 				setOrientation(color);
 				setReport(null);
@@ -173,16 +237,26 @@ export const useTrainer = ({
 				setAttempt(null);
 				setHintIndex(-1);
 
+				// Read per session rather than on mount: a note can hold several
+				// studies and most of them are never drilled. Pruned on the way in,
+				// so a study edited for years does not carry records for lines it no
+				// longer has.
+				statsRef.current = pruneDrillData(
+					await dataAdapter.loadDrillData(chessStudyId),
+					moves
+				).stats;
+				repliesRef.current = {};
+
 				// Rewind to the study's own starting position - the standard array
 				// for an ordinary game, or whatever FEN the study opens from - so a
-				// session always drills the line from the top, wherever the board
-				// happened to be sitting when the button was pressed.
+				// session always drills from the top, wherever the board happened to
+				// be sitting when the button was pressed.
 				dispatch({ type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' });
 
 				setIsActive(true);
 			},
 		}).open();
-	}, [app, dispatch, moves.length, setOrientation]);
+	}, [app, chessStudyId, dataAdapter, dispatch, moves, setOrientation]);
 
 	/**
 	 * Ends the session and leaves its report behind. Stopping part way still
@@ -196,8 +270,20 @@ export const useTrainer = ({
 					? { playerColor, completed, movesPlayed, mistakes }
 					: null
 			);
+
+			// A session stopped part way still answered real questions, so its
+			// history is kept too. Failing to write it costs the history and
+			// nothing else, so it is logged rather than announced.
+			void dataAdapter
+				.saveDrillData(chessStudyId, {
+					version: CURRENT_DRILL_VERSION,
+					stats: statsRef.current,
+				})
+				.catch((e) =>
+					console.error('chess-study: could not save the drill history', e)
+				);
 		},
-		[mistakes, movesPlayed, playerColor]
+		[chessStudyId, dataAdapter, mistakes, movesPlayed, playerColor]
 	);
 
 	const stop = useCallback(() => endSession(false), [endSession]);
@@ -223,6 +309,9 @@ export const useTrainer = ({
 	const submitMove = useCallback(
 		(move: Move) => {
 			if (!expected || expected.san !== move.san) {
+				if (expected)
+					statsRef.current = recordAttempt(statsRef.current, expected.moveId, true);
+
 				setAttempt(move);
 				setMistakes((tally) =>
 					recordMistake(tally, {
@@ -239,6 +328,15 @@ export const useTrainer = ({
 				return;
 			}
 
+			// A move found only after a hint is not a move you knew, so it counts
+			// against the line rather than for it - which is what brings the line
+			// back round sooner.
+			statsRef.current = recordAttempt(
+				statsRef.current,
+				expected.moveId,
+				hintIndex >= 0
+			);
+
 			setMovesPlayed((count) => count + 1);
 
 			dispatch({
@@ -246,7 +344,15 @@ export const useTrainer = ({
 				moveId: expected.moveId,
 			});
 		},
-		[currentMoveId, dispatch, expected, firstPlayer, initialMoveNumber, moves]
+		[
+			currentMoveId,
+			dispatch,
+			expected,
+			firstPlayer,
+			hintIndex,
+			initialMoveNumber,
+			moves,
+		]
 	);
 
 	const revealed: HintStage[] = stages.slice(0, hintIndex + 1);

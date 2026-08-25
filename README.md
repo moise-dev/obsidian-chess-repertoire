@@ -36,7 +36,13 @@
 
 The graduation-cap button in the control strip starts a drill. It asks which colour you want to play, flips the board to it, and rewinds to the study's first position: the standard array for an ordinary game, or whatever FEN the study opens from.
 
-From there you play your colour and the study plays the other. A move the study does not know is refused: the board snaps back, the attempted move is drawn as a red arrow, and it goes on the tally. Only the line counts. Variations are alternatives to the move being asked for, not answers alongside it, so playing into one is a mistake like any other.
+From there you play your colour and the study plays the other. A move the study does not know is refused: the board snaps back, the attempted move is drawn as a red arrow, and it goes on the tally.
+
+The two sides are asked different questions, because a repertoire is not symmetric. **Your** move is the one you wrote down, so only the continuation of the line is accepted; a variation at your own turn is an alternative you considered and passed over, not another answer. **Their** move is theirs to choose, so every reply the study records is a line you undertook to know, and the drill picks among them rather than always taking the mainline. Within a session a position always gets the same reply, so stepping back through the line reviews what you played; the next session draws afresh.
+
+Which reply comes up is not uniform. Lines you have never drilled go first, since a repertoire is only prepared once every branch has been seen at least once. After that it is a weighted draw favouring the lines you get wrong, with a floor under the rest so a line you know cold still comes round. A move found only after a hint counts as one you did not know.
+
+That history lives in `<id>.drill.json` beside the study rather than inside it, so drilling never touches the study file, the record can be deleted on its own to start over, and a study you share carries no one's progress. Losing it costs you the weighting and nothing else.
 
 ![Training a line](imgs/v2-trainer.png)
 
@@ -48,11 +54,11 @@ Hints escalate, one per press, and a stage with nothing to offer is skipped so t
 
 Hints are drawn as board decorations that are never saved, and they reset as soon as the position moves on. The move list empties for the length of a session, the notes panel gives way to the trainer's own strip, and the arrows saved on a move stay hidden until you ask for them, since any of the three would hand over the answer.
 
-When the line runs out, the drill ends and leaves a report: moves played, mistakes made, and a row per mistake giving the move number, what you played, and what the study wanted. The same wrong move in the same position counts once, with a multiplier.
+When the line runs out - no continuation for you, or nothing left for the study to reply with - the drill ends and leaves a report: moves played, mistakes made, and a row per mistake giving the move number, what you played, and what the study wanted. The same wrong move in the same position counts once, with a multiplier.
 
 ![Session report](imgs/v2-trainer-report.png)
 
-Nothing a session does is written to your study. Correct moves navigate, refused ones put the board back so a drill can never leave stray variations behind, and anything drawn on the board while one is running is dropped when the position moves on.
+Nothing a session does is written to your study. Its history is a separate file, and the study itself is untouched: correct moves navigate, refused ones put the board back so a drill can never leave stray variations behind, and anything drawn on the board while one is running is dropped when the position moves on.
 
 That last part is not only tidiness. The board library reports the whole set of shapes on every change rather than a delta, so with a move's saved arrows hidden, a single stroke drawn mid-drill would stand in for all of them and the rest would be silently gone. Hiding the saved arrows and declining to record new ones are the same rule: a drill cannot edit the study.
 
@@ -213,6 +219,7 @@ Before this can be submitted as a community plugin:
 
 Beyond that:
 
+- [ ] A way to exclude a branch from drills from the move list, now that the trainer honours the flag
 - [ ] Get the shortcuts working in Live Preview
 - [ ] PGN export, including classifications as NAGs
 - [ ] A view to manage stored studies

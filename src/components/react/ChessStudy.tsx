@@ -748,6 +748,8 @@ export const ChessStudy = ({
 
 	const trainer = useTrainer({
 		app,
+		dataAdapter,
+		chessStudyId,
 		moves: gameState.study.moves,
 		currentMoveId,
 		chess: chessLogic,
