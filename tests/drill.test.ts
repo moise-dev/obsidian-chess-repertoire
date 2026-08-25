@@ -6,6 +6,7 @@ import {
 	getDrillableReplies,
 	pruneDrillData,
 	recordAttempt,
+	resolveStudyColor,
 	subtreeRecord,
 	weighReplies,
 } from '../src/lib/drill';
@@ -72,6 +73,18 @@ const stats = (
 		])
 	);
 
+describe('resolveStudyColor', () => {
+	it('takes the study at its word', () => {
+		assert.equal(resolveStudyColor('b', 'white'), 'b');
+		assert.equal(resolveStudyColor('w', 'black'), 'w');
+	});
+
+	it('falls back to the way the board is turned', () => {
+		assert.equal(resolveStudyColor(undefined, 'black'), 'b');
+		assert.equal(resolveStudyColor(undefined, 'white'), 'w');
+	});
+});
+
 describe('replies', () => {
 	it('offers the continuation and the variations hanging off the move', () => {
 		assert.equal(sans(getReplies(tree(), 'e4')), 'e5 c5 e6');
@@ -112,10 +125,15 @@ describe('collectExcludedMoveIds', () => {
 
 		moves[0].excluded = true;
 
-		assert.deepEqual(
-			[...collectExcludedMoveIds(moves)].sort(),
-			['Nc3', 'Nf3', 'c5', 'd4', 'e4', 'e5', 'e6']
-		);
+		assert.deepEqual([...collectExcludedMoveIds(moves)].sort(), [
+			'Nc3',
+			'Nf3',
+			'c5',
+			'd4',
+			'e4',
+			'e5',
+			'e6',
+		]);
 	});
 
 	it('leaves the line a variation branches from alone', () => {

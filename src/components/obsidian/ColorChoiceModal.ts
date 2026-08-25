@@ -10,6 +10,8 @@ export class ColorChoiceModal extends Modal {
 		app: App,
 		private options: {
 			body: string;
+			/** The study's own colour, if it has said. Offered as the default. */
+			current?: TrainerColor;
 			onChoose: (color: TrainerColor) => void;
 		}
 	) {
@@ -27,16 +29,21 @@ export class ColorChoiceModal extends Modal {
 			this.options.onChoose(color);
 		};
 
+		// The study's own colour is the call to action; with nothing recorded the
+		// emphasis falls on White, as it did before studies had a colour.
+		const preferred = this.options.current ?? 'white';
+
 		new Setting(contentEl)
-			.addButton((btn) =>
-				btn.setButtonText('Black').onClick(() => choose('black'))
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText('White')
-					.setCta()
-					.onClick(() => choose('white'))
-			);
+			.addButton((btn) => {
+				btn.setButtonText('Black').onClick(() => choose('black'));
+
+				if (preferred === 'black') btn.setCta();
+			})
+			.addButton((btn) => {
+				btn.setButtonText('White').onClick(() => choose('white'));
+
+				if (preferred === 'white') btn.setCta();
+			});
 	}
 
 	onClose() {

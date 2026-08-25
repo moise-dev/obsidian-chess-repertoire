@@ -10,7 +10,9 @@ import { ROOT_FEN } from 'src/main';
 // own `variants`. Older files are normalised on load.
 // 0.0.5 adds `excluded` to a move. It is optional and absent means drilled, so
 // nothing has to be migrated.
-export const CURRENT_STORAGE_VERSION = '0.0.5';
+// 0.0.6 adds `playerColor` to the study. Also optional; absent means the colour
+// is not known yet and the board's orientation stands in.
+export const CURRENT_STORAGE_VERSION = '0.0.6';
 
 /** Drill records are their own file and their own version line. */
 export const CURRENT_DRILL_VERSION = '0.0.1';
@@ -74,6 +76,15 @@ export interface ChessStudyFileData {
 	header: { title: string | null };
 	moves: ChessStudyMove[];
 	rootFEN: string;
+	/**
+	 * The side the study is written for: the one whose moves are the mainline,
+	 * with the variations holding the other side's replies.
+	 *
+	 * `'w' | 'b'` rather than the trainer's `'white' | 'black'`, to match the
+	 * colour on a move. Absent in a study that has never said - the board's
+	 * orientation stands in until one does.
+	 */
+	playerColor?: 'w' | 'b';
 }
 
 const normaliseMoves = (moves: ChessStudyMove[] | undefined): void => {

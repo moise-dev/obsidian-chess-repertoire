@@ -162,6 +162,54 @@
 	text-overflow: ellipsis;
 }
 
+/*
+ * Which side the study is written for. Small and quiet: it is a fact about the
+ * study rather than a control you reach for, but it decides what the drill asks
+ * and what the map calls a hole, so it is never hidden either.
+ */
+.chess-study .cs-color-chip {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-left: auto;
+	padding: 1px 7px;
+	border: 1px solid var(--cs-border);
+	border-radius: 999px;
+	background: none;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: 11px;
+	line-height: 1.6;
+	cursor: pointer;
+}
+
+.chess-study .cs-color-chip:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+/* Nothing recorded yet: what is shown is a guess, so it is drawn as one. */
+.chess-study .cs-color-chip.is-assumed {
+	border-style: dashed;
+	color: var(--text-faint);
+}
+
+.chess-study .cs-color-dot {
+	width: 8px;
+	height: 8px;
+	border: 1px solid var(--text-faint);
+	border-radius: 50%;
+}
+
+.chess-study .cs-color-dot.is-white {
+	background-color: #f2f2f2;
+}
+
+.chess-study .cs-color-dot.is-black {
+	background-color: #1a1a1a;
+}
+
 .chess-study .move-item-section {
 	flex: 1 1 auto;
 	min-height: 0;

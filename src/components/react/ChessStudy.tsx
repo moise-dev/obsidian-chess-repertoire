@@ -14,7 +14,7 @@ import {
 	classificationForKey,
 	readClassification,
 } from 'src/lib/classification';
-import { collectExcludedMoveIds } from 'src/lib/drill';
+import { collectExcludedMoveIds, resolveStudyColor } from 'src/lib/drill';
 import {
 	MAX_VARIATION_DEPTH,
 	countMoves,
@@ -99,6 +99,8 @@ export type GameActions =
 	| { type: 'SYNC_COMMENT'; comment: JSONContent | null }
 	| ClassifyAction
 	| { type: 'SET_TITLE'; title: string | null }
+	/** Which side the study is written for, i.e. whose moves the mainline is. */
+	| { type: 'SET_PLAYER_COLOR'; color: 'w' | 'b' }
 	| { type: 'PROMOTE_VARIATION'; moveId: string; toMainline: boolean }
 	| { type: 'DELETE_VARIATION'; moveId: string }
 	/** The move and the rest of its line, that line only. */
@@ -288,6 +290,11 @@ export const ChessStudy = ({
 					move.classification = action.classification;
 
 					if (draft.currentMove?.moveId === moveId) draft.currentMove = move;
+
+					return draft;
+				}
+				case 'SET_PLAYER_COLOR': {
+					draft.study.playerColor = action.color;
 
 					return draft;
 				}
@@ -729,10 +736,8 @@ export const ChessStudy = ({
 	/**
 	 * Opens the study as a diagram.
 	 *
-	 * The side the map reads for is taken from the board's orientation: a
-	 * repertoire study is kept the way round it is played, and the flip button
-	 * is the way to say otherwise. Nothing in the study records it, and asking
-	 * on every open would be a question with an obvious answer.
+	 * The side it reads for is the study's own when it has one, falling back to
+	 * the way the board is turned - see `resolveStudyColor`.
 	 */
 	const onOpenMap = useCallback(() => {
 		new MoveMapModal(app, {
@@ -742,7 +747,7 @@ export const ChessStudy = ({
 			currentMoveId: gameState.currentMove?.moveId ?? null,
 			firstPlayer,
 			initialMoveNumber,
-			userColor: orientation === 'black' ? 'b' : 'w',
+			userColor: resolveStudyColor(gameState.study.playerColor, orientation),
 			boardColor,
 			loadStats: async () => (await dataAdapter.loadDrillData(chessStudyId)).stats,
 			onSelectMove: (moveId: string) =>
@@ -815,6 +820,7 @@ export const ChessStudy = ({
 		dataAdapter,
 		chessStudyId,
 		moves: gameState.study.moves,
+		studyColor: gameState.study.playerColor,
 		currentMoveId,
 		chess: chessLogic,
 		firstPlayer,
@@ -915,6 +921,10 @@ export const ChessStudy = ({
 					onMapButtonClick={onOpenMap}
 					onTitleChange={(title: string | null) =>
 						dispatch({ type: 'SET_TITLE', title })
+					}
+					playerColor={gameState.study.playerColor}
+					onPlayerColorChange={(color: 'w' | 'b') =>
+						dispatch({ type: 'SET_PLAYER_COLOR', color })
 					}
 					onClassify={(moveId: string, classification: MoveClassification | null) =>
 						dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })

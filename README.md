@@ -35,7 +35,7 @@
 
 ### Trainer
 
-The graduation-cap button in the control strip starts a drill. It asks which colour you want to play, flips the board to it, and rewinds to the study's first position: the standard array for an ordinary game, or whatever FEN the study opens from.
+The graduation-cap button in the control strip starts a drill. It asks which colour you want to play - offering the study's own, if it has one - flips the board to it, and rewinds to the study's first position: the standard array for an ordinary game, or whatever FEN the study opens from.
 
 From there you play your colour and the study plays the other. A move the study does not know is refused: the board snaps back, the attempted move is drawn as a red arrow, and it goes on the tally.
 
@@ -75,7 +75,7 @@ Which position depends on where the card sits. The trunk shows where it hands ov
 
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
-The map reads for whichever side the board is turned to, since nothing in a study records which colour it was written for and a repertoire is kept the way round it is played. Flip the board to read it the other way.
+Which side the map reads for is the study's own, shown as a chip beside the move list and switched by clicking it. A study that has never said assumes the side the board is turned to and draws the chip dashed to admit as much; starting a drill and choosing a colour settles it too, since that is the same question.
 
 ### PGN import that keeps your annotations
 

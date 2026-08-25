@@ -172,7 +172,37 @@ interface PgnViewerProps extends ControlActions, MoveListContext {
 	history: ChessStudyMove[];
 	title: string | null;
 	onTitleChange: (title: string | null) => void;
+	/** The side the study is written for, or undefined until it has said. */
+	playerColor: 'w' | 'b' | undefined;
+	onPlayerColorChange: (color: 'w' | 'b') => void;
 }
+
+/**
+ * Which side the study is written for: the one whose moves are the mainline.
+ *
+ * A study that has never said shows the side it is about to assume rather than
+ * a blank, so the first click confirms it instead of changing it. That guess is
+ * the board's orientation, which is also what the map falls back to.
+ */
+const PlayerColorChip = ({
+	playerColor,
+	onPlayerColorChange,
+}: Pick<PgnViewerProps, 'playerColor' | 'onPlayerColorChange'>) => (
+	<button
+		className={`cs-color-chip${playerColor ? '' : ' is-assumed'}`}
+		title={
+			playerColor
+				? 'The side this study is written for. Click to switch.'
+				: 'This study has not said which side it is written for. Click to set it.'
+		}
+		onClick={() => onPlayerColorChange(playerColor === 'b' ? 'w' : 'b')}
+	>
+		<span
+			className={`cs-color-dot is-${playerColor === 'b' ? 'black' : 'white'}`}
+		/>
+		{playerColor === 'b' ? 'Black' : 'White'}
+	</button>
+);
 
 export const PgnViewer = React.memo((props: PgnViewerProps) => {
 	const {
@@ -182,6 +212,8 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		initialMoveNumber,
 		title,
 		onTitleChange,
+		playerColor,
+		onPlayerColorChange,
 		onMoveItemClick,
 		onClassify,
 		onVariationAction,
@@ -225,6 +257,10 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 			<div className="cs-side-header">
 				<span className="cs-side-title">Moves</span>
 				<StudyTitle title={title} onTitleChange={onTitleChange} />
+				<PlayerColorChip
+					playerColor={playerColor}
+					onPlayerColorChange={onPlayerColorChange}
+				/>
 			</div>
 			<div className="move-item-section">
 				{isTraining && (

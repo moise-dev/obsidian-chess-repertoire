@@ -84,6 +84,8 @@ interface UseTrainerOptions {
 	dataAdapter: ChessStudyDataAdapter;
 	chessStudyId: string;
 	moves: ChessStudyMove[];
+	/** The colour the study is written for, if it has said. */
+	studyColor: 'w' | 'b' | undefined;
 	currentMoveId: string | null;
 	/** The position on the board, i.e. whose turn it is. */
 	chess: Chess;
@@ -114,6 +116,7 @@ export const useTrainer = ({
 	dataAdapter,
 	chessStudyId,
 	moves,
+	studyColor,
 	currentMoveId,
 	chess,
 	firstPlayer,
@@ -122,7 +125,9 @@ export const useTrainer = ({
 	setOrientation,
 }: UseTrainerOptions): Trainer => {
 	const [isActive, setIsActive] = useState(false);
-	const [playerColor, setPlayerColor] = useState<TrainerColor>('white');
+	const [playerColor, setPlayerColor] = useState<TrainerColor>(
+		studyColor === 'b' ? 'black' : 'white'
+	);
 	const [attempt, setAttempt] = useState<Move | null>(null);
 	const [mistakes, setMistakes] = useState<TrainerMistake[]>([]);
 	const [movesPlayed, setMovesPlayed] = useState(0);
@@ -235,8 +240,18 @@ export const useTrainer = ({
 		new ColorChoiceModal(app, {
 			body:
 				'The drill runs the study from its first move. Your opponent picks from the replies you wrote down, so no two sessions need take the same line.',
+			current:
+				studyColor === 'b' ? 'black' : studyColor === 'w' ? 'white' : undefined,
 			onChoose: async (color) => {
 				setPlayerColor(color);
+
+				// A study that has not said which side it is written for learns it
+				// here, since answering this question is saying so.
+				const chosen = color === 'black' ? 'b' : 'w';
+
+				if (chosen !== studyColor)
+					dispatch({ type: 'SET_PLAYER_COLOR', color: chosen });
+
 				setOrientation(color);
 				setReport(null);
 				setMistakes([]);
@@ -263,7 +278,15 @@ export const useTrainer = ({
 				setIsActive(true);
 			},
 		}).open();
-	}, [app, chessStudyId, dataAdapter, dispatch, moves, setOrientation]);
+	}, [
+		app,
+		chessStudyId,
+		dataAdapter,
+		dispatch,
+		moves,
+		setOrientation,
+		studyColor,
+	]);
 
 	/**
 	 * Ends the session and leaves its report behind. Stopping part way still

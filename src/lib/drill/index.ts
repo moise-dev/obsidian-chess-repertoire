@@ -13,6 +13,18 @@ import {
  */
 const FAMILIAR_WEIGHT = 0.15;
 
+/**
+ * The side a study is drilled for.
+ *
+ * The study's own answer when it has one; otherwise the way the board is
+ * turned, since a repertoire is kept the way round it is played. One helper
+ * rather than two, so the map and the drill can never disagree about it.
+ */
+export const resolveStudyColor = (
+	playerColor: 'w' | 'b' | undefined,
+	orientation: 'white' | 'black'
+): 'w' | 'b' => playerColor ?? (orientation === 'black' ? 'b' : 'w');
+
 /** Whether a move takes part in drills at all. */
 export const isDrillable = (move: ChessStudyMove): boolean => !move.excluded;
 
