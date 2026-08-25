@@ -120,11 +120,63 @@
 	container-type: inline-size;
 }
 
-/* The square the board actually occupies, now that the wrapper is padded. */
+/* The square the board actually occupies, now that the wrapper is padded.
+   Positioned so the promotion picker below can place itself in percentages
+   of this box instead of measuring pixels. */
 .chess-study .cs-board {
+	position: relative;
 	display: block;
 	width: 100%;
 	aspect-ratio: 1 / 1;
+}
+
+/*
+ * The promotion picker: a backdrop over the whole board that closes the
+ * choice on an outside click, and the offer itself sat over the file the
+ * pawn landed on, running from the edge it promoted at toward the middle so
+ * every choice lands on a square that exists.
+ */
+.chess-study .cs-promotion-backdrop {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	background-color: rgba(0, 0, 0, 0.2);
+}
+
+.chess-study .cs-promotion-picker {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	width: 12.5%;
+	height: 50%;
+	background-color: #fff;
+	box-shadow: var(--shadow-s, 0 2px 8px rgba(0, 0, 0, 0.3));
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.chess-study .cs-promotion-choice {
+	position: relative;
+	flex: 1 0 0;
+	border: none;
+	background-color: #fff;
+	cursor: pointer;
+	padding: 0;
+}
+
+.chess-study .cs-promotion-choice:hover {
+	background-color: #e8e8e8;
+}
+
+.chess-study .cs-promotion-picker.cg-wrap piece {
+	position: absolute;
+	inset: 8%;
+	width: auto;
+	height: auto;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	will-change: auto;
 }
 
 /* Stack once the widget itself gets narrow, not once the note does. */

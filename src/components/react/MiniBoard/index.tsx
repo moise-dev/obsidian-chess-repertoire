@@ -4,7 +4,7 @@ import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { fenToBoard } from 'src/lib/move-map';
 
 /** FEN letter to the role name chessground keys its sprites by. */
-const ROLES: Record<string, string> = {
+export const ROLES: Record<string, string> = {
 	k: 'king',
 	q: 'queen',
 	r: 'rook',
@@ -22,7 +22,7 @@ const ROLES: Record<string, string> = {
  * pieces come back as empty boxes - and because a diagram of a study should not
  * show a different set of pieces from the study.
  */
-const Piece = ({ role, color }: { role: string; color: string }) =>
+export const Piece = ({ role, color }: { role: string; color: string }) =>
 	React.createElement('piece', { className: `${role} ${color}` });
 
 export interface MiniBoardProps {

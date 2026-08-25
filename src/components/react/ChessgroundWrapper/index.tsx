@@ -1,12 +1,13 @@
-import { Chess, Move } from 'chess.js';
+import { Chess, Move, PieceSymbol, Square } from 'chess.js';
 import { Chessground as ChessgroundApi } from 'chessground';
 import { Api } from 'chessground/api';
 import { Config } from 'chessground/config';
 import { DrawShape } from 'chessground/draw';
 import * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
-import { playOtherSide, toColor, toDests } from 'src/lib/chess-logic';
+import { isPromotionMove, playOtherSide, toColor, toDests } from 'src/lib/chess-logic';
+import { PromotionPicker } from './PromotionPicker';
 
 export interface ChessgroundProps {
 	api: Api | null;
@@ -40,6 +41,14 @@ export const ChessgroundWrapper = React.memo(
 		config = {},
 	}: ChessgroundProps) => {
 		const ref = useRef<HTMLDivElement>(null);
+
+		// A pawn drop that reaches the last rank waits here for a piece before
+		// it becomes a move: chessground reports orig/dest only, and the choice
+		// isn't chess.js's to make.
+		const [pendingPromotion, setPendingPromotion] = useState<{
+			orig: Square;
+			dest: Square;
+		} | null>(null);
 
 		//Chessground Init
 		useEffect(() => {
@@ -89,6 +98,11 @@ export const ChessgroundWrapper = React.memo(
 					events: {
 						//Hook up the Chessground UI changes to our App State
 						after: (orig, dest, _metadata) => {
+							if (isPromotionMove(chess, orig as Square, dest as Square)) {
+								setPendingPromotion({ orig: orig as Square, dest: dest as Square });
+								return;
+							}
+
 							const handler = playOtherSide(api, chess);
 
 							addMoveToHistory(handler(orig, dest));
@@ -115,9 +129,42 @@ export const ChessgroundWrapper = React.memo(
 			api?.setAutoShapes([...(autoShapes ?? [])]);
 		}, [api, autoShapes]);
 
+		const cancelPromotion = () => {
+			if (!pendingPromotion || !api) return;
+
+			// Nothing was ever played, only shown - chess.js's state didn't move,
+			// so putting the board back is just re-reading it.
+			api.set({
+				fen: chess.fen(),
+				turnColor: toColor(chess),
+				movable: { color: toColor(chess), dests: toDests(chess) },
+				check: chess.isCheck(),
+			});
+			setPendingPromotion(null);
+		};
+
+		const choosePromotion = (piece: PieceSymbol) => {
+			if (!pendingPromotion || !api) return;
+
+			const handler = playOtherSide(api, chess);
+
+			addMoveToHistory(handler(pendingPromotion.orig, pendingPromotion.dest, piece));
+			setPendingPromotion(null);
+		};
+
 		return (
 			<div className={`cs-board ${boardColor}-board`}>
 				<div ref={ref} className="height-width-100" />
+
+				{pendingPromotion && (
+					<PromotionPicker
+						dest={pendingPromotion.dest}
+						color={chess.turn()}
+						orientation={api?.state.orientation ?? 'white'}
+						onChoose={choosePromotion}
+						onCancel={cancelPromotion}
+					/>
+				)}
 			</div>
 		);
 	}
