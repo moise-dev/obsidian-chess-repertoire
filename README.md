@@ -12,6 +12,7 @@
 
 - [What v2 adds](#what-v2-adds)
 	- [Trainer](#trainer)
+	- [The map](#the-map)
 	- [PGN import that keeps your annotations](#pgn-import-that-keeps-your-annotations)
 	- [Variations at any depth](#variations-at-any-depth)
 	- [Move classifications](#move-classifications)
@@ -63,6 +64,16 @@ When the line runs out - no continuation for you, or nothing left for the study 
 Nothing a session does is written to your study. Its history is a separate file, and the study itself is untouched: correct moves navigate, refused ones put the board back so a drill can never leave stray variations behind, and anything drawn on the board while one is running is dropped when the position moves on.
 
 That last part is not only tidiness. The board library reports the whole set of shapes on every change rather than a delta, so with a move's saved arrows hidden, a single stroke drawn mid-drill would stand in for all of them and the rest would be silently gone. Hiding the saved arrows and declining to record new ones are the same rule: a drill cannot edit the study.
+
+### The map
+
+The network button opens the study as a diagram. One card per run of moves with nothing to decide in it, and a fork wherever the line branches, so a repertoire reads as what it actually is: a trunk, and the points where your opponent gets to choose.
+
+Each card carries the position its run ends on, the moves that got there, and a coloured edge saying how the line is holding up - drilled clean, shaky, never drilled, excluded, or **no reply recorded yet**. That last one is the useful one: a line that stops on your opponent's move is a hole in the repertoire, and on the map it is a stub sitting next to lines that run to move fifteen.
+
+Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
+
+The map reads for whichever side the board is turned to, since nothing in a study records which colour it was written for and a repertoire is kept the way round it is played. Flip the board to read it the other way.
 
 ### PGN import that keeps your annotations
 

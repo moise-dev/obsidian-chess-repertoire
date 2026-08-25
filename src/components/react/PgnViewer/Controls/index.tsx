@@ -6,6 +6,7 @@ import {
 	Copy,
 	FlipVertical2,
 	GraduationCap,
+	Network,
 	Save,
 	Undo2,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ export interface ControlActions {
 	/** A training session is running; the study is read-only while it is. */
 	isTraining: boolean;
 	onTrainButtonClick: () => void;
+	onMapButtonClick: () => void;
 	onUndoButtonClick: () => void;
 	onFirstButtonClick: () => void;
 	onBackButtonClick: () => void;
@@ -82,6 +84,14 @@ export const Controls = (props: ControlActions) => {
 				onClick={() => props.onTrainButtonClick()}
 			>
 				<GraduationCap size={18} />
+			</button>
+			<button
+				className="cs-icon-button"
+				title="Open the study map"
+				aria-label="Open the study map"
+				onClick={() => props.onMapButtonClick()}
+			>
+				<Network size={18} />
 			</button>
 			<button
 				className="cs-icon-button"

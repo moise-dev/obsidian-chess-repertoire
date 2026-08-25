@@ -45,6 +45,7 @@ import {
 } from 'src/lib/ui-state';
 import { useImmerReducer } from 'use-immer';
 import { ConfirmModal } from '../obsidian/ConfirmModal';
+import { MoveMapModal } from '../obsidian/MoveMapModal';
 import { ChessgroundProps, ChessgroundWrapper } from './ChessgroundWrapper';
 import { CommentSection } from './CommentSection';
 import { PgnViewer } from './PgnViewer';
@@ -725,6 +726,39 @@ export const ChessStudy = ({
 		[gameState.study.moves]
 	);
 
+	/**
+	 * Opens the study as a diagram.
+	 *
+	 * The side the map reads for is taken from the board's orientation: a
+	 * repertoire study is kept the way round it is played, and the flip button
+	 * is the way to say otherwise. Nothing in the study records it, and asking
+	 * on every open would be a question with an obvious answer.
+	 */
+	const onOpenMap = useCallback(() => {
+		new MoveMapModal(app, {
+			moves: gameState.study.moves,
+			rootFEN: gameState.study.rootFEN,
+			title: gameState.study.header?.title ?? null,
+			currentMoveId: gameState.currentMove?.moveId ?? null,
+			firstPlayer,
+			initialMoveNumber,
+			userColor: orientation === 'black' ? 'b' : 'w',
+			loadStats: async () => (await dataAdapter.loadDrillData(chessStudyId)).stats,
+			onSelectMove: (moveId: string) =>
+				dispatch({ type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY', moveId }),
+		}).open();
+	}, [
+		app,
+		chessStudyId,
+		dataAdapter,
+		dispatch,
+		firstPlayer,
+		gameState.currentMove?.moveId,
+		gameState.study,
+		initialMoveNumber,
+		orientation,
+	]);
+
 	const onKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
 			// Never hijack keys while anything is being typed into. ProseMirror is
@@ -876,6 +910,7 @@ export const ChessStudy = ({
 					onTrainButtonClick={() =>
 						trainer.isActive ? trainer.stop() : trainer.start()
 					}
+					onMapButtonClick={onOpenMap}
 					onTitleChange={(title: string | null) =>
 						dispatch({ type: 'SET_TITLE', title })
 					}

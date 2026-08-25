@@ -879,3 +879,266 @@
 	color: var(--text-success);
 	font-weight: 600;
 }
+
+/* ------------------------------------------------------------------ *
+ * Study map
+ * ------------------------------------------------------------------ */
+
+/*
+ * The map wants the whole screen: a repertoire is wider than a note column,
+ * which is the reason it does not live inside the widget.
+ */
+.cs-map-modal {
+	width: min(1400px, 94vw);
+	max-width: 94vw;
+	height: 88vh;
+}
+
+.cs-map-modal .modal-content {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+.cs-map {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+}
+
+.cs-map-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cs-map-title {
+	font-weight: 600;
+}
+
+.cs-map-spacer {
+	flex: 1 1 auto;
+}
+
+.cs-map-legend {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-muted);
+	font-size: 0.78em;
+}
+
+.cs-map-key {
+	width: 9px;
+	height: 9px;
+	margin-left: 6px;
+	border-radius: 2px;
+	background-color: var(--cs-map-state, var(--text-faint));
+}
+
+/*
+ * Drag to pan, wheel to zoom. `touch-action: none` so a trackpad gesture
+ * reaches the handlers instead of scrolling the modal behind them.
+ */
+.cs-map-viewport {
+	position: relative;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+	background-color: var(--background-primary);
+	cursor: grab;
+	touch-action: none;
+}
+
+.cs-map-viewport:active {
+	cursor: grabbing;
+}
+
+.cs-map-world {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transform-origin: 0 0;
+}
+
+.cs-map-edges {
+	position: absolute;
+	top: 0;
+	left: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.cs-map-edge {
+	fill: none;
+	stroke: var(--background-modifier-border);
+	stroke-width: 2;
+}
+
+/* State colours, shared by the cards and the legend keys. */
+.cs-map-card.is-known,
+.cs-map-key.is-known {
+	--cs-map-state: var(--color-green, #47a065);
+}
+
+.cs-map-card.is-shaky,
+.cs-map-key.is-shaky {
+	--cs-map-state: var(--color-orange, #e08c3e);
+}
+
+.cs-map-card.is-untested,
+.cs-map-key.is-untested {
+	--cs-map-state: var(--text-faint);
+}
+
+.cs-map-card.is-hole,
+.cs-map-key.is-hole {
+	--cs-map-state: var(--color-red, #c1554a);
+}
+
+.cs-map-card.is-excluded,
+.cs-map-key.is-excluded {
+	--cs-map-state: var(--background-modifier-border);
+}
+
+.cs-map-card {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+	/* The state is the card's left edge, so a column reads as a column of
+	   verdicts before any of the moves are taken in. */
+	border-left: 3px solid var(--cs-map-state, var(--text-faint));
+	border-radius: 6px;
+	background-color: var(--background-secondary);
+	box-sizing: border-box;
+}
+
+.cs-map-card.is-excluded {
+	opacity: 0.55;
+}
+
+.cs-map-card.is-current {
+	border-color: var(--text-accent);
+	box-shadow: 0 0 0 1px var(--text-accent);
+}
+
+.cs-map-card-head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-muted);
+	font-size: 0.75em;
+}
+
+.cs-map-card-state {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background-color: var(--cs-map-state, var(--text-faint));
+}
+
+.cs-map-card-body {
+	display: flex;
+	gap: 8px;
+}
+
+.cs-map-card-note {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 0.75em;
+	font-style: italic;
+}
+
+.cs-map-moves {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 2px;
+	min-width: 0;
+}
+
+.cs-map-move {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 3px;
+	padding: 1px 4px;
+	border: none;
+	border-radius: 3px;
+	background: none;
+	box-shadow: none;
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: 0.82em;
+	line-height: 1.5;
+	cursor: pointer;
+}
+
+.cs-map-move:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.cs-map-move.is-current {
+	color: var(--text-accent);
+	font-weight: 700;
+}
+
+.cs-map-move.is-undrilled {
+	color: var(--text-faint);
+}
+
+.cs-map-move-number {
+	color: var(--text-faint);
+	font-size: 0.9em;
+	font-weight: 600;
+}
+
+/*
+ * A board drawn from the FEN the segment ends on. Text glyphs rather than the
+ * board library: a map can hold a hundred of these, and a hundred live boards
+ * is a different kind of feature.
+ */
+.cs-map-board {
+	flex: 0 0 auto;
+	display: grid;
+	grid-template-columns: repeat(8, 1fr);
+	width: 72px;
+	height: 72px;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.cs-map-square {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 7px;
+	line-height: 1;
+}
+
+.cs-map-square.is-light {
+	background-color: var(--cs-sq-light, #e9edf6);
+}
+
+.cs-map-square.is-dark {
+	background-color: var(--cs-sq-dark, #4b7399);
+}
+
+/*
+ * Both sides use the filled glyphs and are told apart by colour: the outline
+ * ones for White disappear against a light square.
+ */
+.cs-map-piece.is-white {
+	color: #fff;
+	text-shadow: 0 0 1px #000, 0 0 1px #000, 0 0 1px #000;
+}
+
+.cs-map-piece.is-black {
+	color: #101010;
+	text-shadow: 0 0 1px rgba(255, 255, 255, 0.6);
+}
