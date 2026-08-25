@@ -5,13 +5,14 @@ A chess study helper, PGN viewer/editor and opening trainer for [Obsidian](https
 
 Chess Study v2 is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes).
 
-![Chess Study v2 in use](imgs/v2-demo.gif)
+![Chess Study v2 in use](imgs/general-view.png)
 
 <!-- omit in toc -->
 ## Table of contents
 
 - [Trainer](#trainer)
 - [The map](#the-map)
+- [Export](#export)
 - [Minor features](#minor-features)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -55,22 +56,30 @@ The map can also be exported as an Obsidian **canvas**: the same cards, laid out
 
 ![A map exported as a canvas](imgs/map-to-canvas.png)
 
-## Minor features
+## Export
 
-![The widget, board and move list together](imgs/general-view.png)
+The download button opens the study as text, in either of two formats, with a button to copy whichever is showing to the clipboard.
+
+![Exporting a study as PGN or FEN](imgs/game-export.png)
+
+**PGN** is the whole study, not just the line you are standing on: variations come out nested in brackets, your notes as `{}` comments, and your classifications as the standard glyphs - `$1`, `$3`, `$4` and so on. It is the exact counterpart of the importer, so a study exported and pasted back in comes out the same study. A study that starts from a position rather than the standard array carries a `[FEN]` header, so it opens where it should.
+
+**FEN** is the position on the board right now, for pasting into an engine or another board.
+
+Two labels are chess.com's own invention rather than standard notation - Excellent and Good - and have no glyph to be written as, so they are left off the move rather than guessed at.
+
+## Minor features
 
 - **Variations at any depth**, promoted, reordered, or deleted from a right-click menu.
 - **Move classifications** - seven chess.com-style labels, set with `1`-`7`, shown as a badge on the move and the board.
 - **Board flip** from the control strip.
 - **Notes and drawings** on any move - Markdown notes plus arrows and circles on the board.
 - **Annotations visible from the move list** - a dot for notes, a dot for arrows, without stepping through the game to find them. The orange dot indicate the presence of a comment, a green dot represents the presence of an annotation.
-- **PGN import and export**, comments, classifications and variations included - importing reads them from chess.com and Lichess games, exporting writes them back out as NAGs and `{}` comments. The export button also offers the current position as a FEN, either way with a button to copy it to the clipboard.
+- **PGN import that keeps your annotations** - comments become notes, glyphs become classifications, and variations import nested, straight from a chess.com or Lichess game.
 - **Merge several studies in a note** into one combined tree.
 - **A board with no study behind it**, for showing a bare position in a note.
 - **Autosave**, with a visible indicator whenever there's something unsaved.
 - **A resizable, theme-aware widget** that fills the note's width.
-
-![Exporting a study as PGN or FEN](imgs/game-export.png)
 
 ## Installation
 
