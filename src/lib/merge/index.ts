@@ -1,22 +1,17 @@
 import { hasComment } from 'src/lib/comments';
-import { getReplies } from 'src/lib/move-tree';
+import { MoveTree, ROOT_MOVE_ID, getReplies } from 'src/lib/move-tree';
 import {
 	ChessRepertoireDrillData,
 	ChessRepertoireFileData,
 	ChessRepertoireMove,
 	MoveDrillStats,
+	Variant,
 } from 'src/lib/storage';
 
 export interface MergeResult {
 	repertoire: ChessRepertoireFileData;
 	/** Repertoires left out because they start from another position. */
 	skipped: number;
-	/**
-	 * Moves that had nowhere to go: an alternative to a repertoire's very first move.
-	 * Nothing precedes it, so the tree has no move to hang it off - the same
-	 * limitation the PGN importer has.
-	 */
-	dropped: number;
 }
 
 /**
@@ -60,14 +55,15 @@ const cloneMove = (move: ChessRepertoireMove): ChessRepertoireMove => ({
  * `afterMove` is the move both trees are standing on, `null` at the root. At
  * each position the replies are compared by SAN: one the target already has is
  * descended into, and one it lacks is hung off `afterMove` as a new variation -
- * which is where variations live, an alternative to the move that follows.
+ * which is where variations live, an alternative to the move that follows. At
+ * the root that home is the tree's own `rootVariants`, so an alternative first
+ * move arrives like any other.
  */
 const graft = (
-	target: ChessRepertoireMove[],
-	source: ChessRepertoireMove[],
+	target: MoveTree,
+	source: MoveTree,
 	targetAfter: ChessRepertoireMove | null,
-	sourceAfter: ChessRepertoireMove | null,
-	result: { dropped: number }
+	sourceAfter: ChessRepertoireMove | null
 ): void => {
 	const targetReplies = getReplies(target, targetAfter?.moveId ?? null);
 
@@ -76,22 +72,18 @@ const graft = (
 
 		if (existing) {
 			fillAnnotations(existing, reply);
-			graft(target, source, existing, reply, result);
+			graft(target, source, existing, reply);
 
 			continue;
 		}
 
-		if (!targetAfter) {
-			// An alternative to the first move of the game. Nothing precedes it,
-			// so there is no move to hang it off.
-			result.dropped += 1;
+		const home: Variant[] = targetAfter
+			? targetAfter.variants
+			: target.rootVariants;
 
-			continue;
-		}
-
-		targetAfter.variants.push({
+		home.push({
 			variantId: reply.moveId,
-			parentMoveId: targetAfter.moveId,
+			parentMoveId: targetAfter?.moveId ?? ROOT_MOVE_ID,
 			moves: [reply, ...restOfLine(source, reply)].map(cloneMove),
 		});
 	}
@@ -99,13 +91,13 @@ const graft = (
 
 /** The moves after `move` in its own line, which travel with it when grafted. */
 const restOfLine = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	move: ChessRepertoireMove
 ): ChessRepertoireMove[] => {
 	const line: ChessRepertoireMove[] = [];
 
 	for (let cursor = move; ; ) {
-		const [next] = getReplies(moves, cursor.moveId);
+		const [next] = getReplies(tree, cursor.moveId);
 
 		if (!next) return line;
 
@@ -147,25 +139,28 @@ export const mergeRepertoires = (
 	const mergeable = rest.filter(
 		(repertoire) => repertoire.rootFEN === first.rootFEN
 	);
-	const result = { dropped: 0 };
+	const trunk: MoveTree = {
+		moves: first.moves.map(cloneMove),
+		rootVariants: first.rootVariants.map((variant) => ({
+			...variant,
+			moves: variant.moves.map(cloneMove),
+		})),
+	};
 
-	const moves = first.moves.map(cloneMove);
-
-	for (const repertoire of mergeable)
-		graft(moves, repertoire.moves, null, null, result);
+	for (const repertoire of mergeable) graft(trunk, repertoire, null, null);
 
 	return {
 		repertoire: {
 			version,
 			header: { title: mergeTitles([first, ...mergeable]) },
-			moves,
+			moves: trunk.moves,
+			rootVariants: trunk.rootVariants,
 			rootFEN: first.rootFEN,
 			playerColor: [first, ...mergeable].find(
 				(repertoire) => repertoire.playerColor
 			)?.playerColor,
 		},
 		skipped: rest.length - mergeable.length,
-		dropped: result.dropped,
 	};
 };
 

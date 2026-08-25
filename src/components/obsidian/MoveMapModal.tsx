@@ -4,10 +4,11 @@ import * as ReactDOM from 'react-dom/client';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { MoveMap } from 'src/components/react/MoveMap';
 import { JsonCanvas } from 'src/lib/canvas';
-import { ChessRepertoireMove, MoveDrillStats } from 'src/lib/storage';
+import { MoveTree } from 'src/lib/move-tree';
+import { MoveDrillStats } from 'src/lib/storage';
 
 export interface MoveMapModalOptions {
-	moves: ChessRepertoireMove[];
+	tree: MoveTree;
 	rootFEN: string;
 	title: string | null;
 	currentMoveId: string | null;

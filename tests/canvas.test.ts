@@ -31,12 +31,10 @@ const va = (
 
 /** a b, then a fork into c d and x1. */
 const layout = () => {
-	const root = buildSegments([
-		mv('a'),
-		mv('b', [va('v1', 'b', [mv('x1')])]),
-		mv('c'),
-		mv('d'),
-	])!;
+	const root = buildSegments({
+		moves: [mv('a'), mv('b', [va('v1', 'b', [mv('x1')])]), mv('c'), mv('d')],
+		rootVariants: [],
+	})!;
 
 	return {
 		root,

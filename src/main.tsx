@@ -41,21 +41,13 @@ export const ROOT_FEN =
 // 2) Display correct move after removing the last move
 
 /** What a merge did, in one line. */
-const mergeNotice = (
-	merged: number,
-	skipped: number,
-	dropped: number
-): string =>
+const mergeNotice = (merged: number, skipped: number): string =>
 	[
 		`Merged ${merged} repertoires into a new one.`,
 		skipped &&
 			`${skipped} ${
 				skipped === 1 ? 'repertoire starts' : 'repertoires start'
 			} from another position and ${skipped === 1 ? 'was' : 'were'} left out.`,
-		dropped &&
-			`${dropped} alternative first ${
-				dropped === 1 ? 'move has' : 'moves have'
-			} nowhere to hang and ${dropped === 1 ? 'was' : 'were'} dropped.`,
 	]
 		.filter(Boolean)
 		.join(' ');
@@ -117,6 +109,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 								title: parsed ? titleFromHeaders(parsed.headers) : null,
 							},
 							moves: parsed?.moves ?? [],
+							rootVariants: parsed?.rootVariants ?? [],
 							rootFEN: isFen ? chessStringTrimmed : parsed?.rootFEN ?? ROOT_FEN,
 						};
 
@@ -159,7 +152,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 						ids.map((id) => this.dataAdapter.loadFile(id))
 					);
 
-					const { repertoire, skipped, dropped } = mergeRepertoires(
+					const { repertoire, skipped } = mergeRepertoires(
 						repertoires,
 						CURRENT_STORAGE_VERSION
 					);
@@ -185,7 +178,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 						cursorPosition
 					);
 
-					new Notice(mergeNotice(ids.length - skipped, skipped, dropped));
+					new Notice(mergeNotice(ids.length - skipped, skipped));
 				} catch (e) {
 					console.error(
 						'chess-repertoire: could not merge the repertoires in this note',

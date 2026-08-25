@@ -170,6 +170,12 @@ const Variations = ({ variants, depth, ...rest }: VariationsProps) => {
 
 interface PgnViewerProps extends ControlActions, MoveListContext {
 	history: ChessRepertoireMove[];
+	/**
+	 * Alternatives to the first move. Drawn under it like any other variation,
+	 * since that is the move they replace - they simply have no move before it to
+	 * hang off, so the tree keeps them itself.
+	 */
+	rootVariants: Variant[];
 	title: string | null;
 	onTitleChange: (title: string | null) => void;
 	/** The side the repertoire is written for, or undefined until it has said. */
@@ -207,6 +213,7 @@ const PlayerColorChip = ({
 export const PgnViewer = React.memo((props: PgnViewerProps) => {
 	const {
 		history,
+		rootVariants,
 		currentMoveId,
 		firstPlayer,
 		initialMoveNumber,
@@ -312,6 +319,18 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 												onDeleteMove={() => onDeleteMove(entry.move.moveId)}
 											/>
 										)
+								)}
+								{/* The alternatives to the first move come before the ones
+								    hanging off it: they replace an earlier move, so they
+								    belong higher in the list. */}
+								{pairIndex === 0 && (
+									<Variations
+										key="variants-root"
+										variants={rootVariants}
+										startPly={0}
+										depth={1}
+										{...context}
+									/>
 								)}
 								{variations.map((entry) => (
 									<Variations

@@ -1,5 +1,14 @@
-import { getReplies } from 'src/lib/move-tree';
+import { MoveTree, getReplies } from 'src/lib/move-tree';
 import { ChessRepertoireMove } from 'src/lib/storage';
+
+/**
+ * The id of the card standing for the starting position itself.
+ *
+ * Only drawn where the repertoire offers more than one first move, which is what
+ * an imported position tends to: the fork has to hang off something, and there
+ * is no move to hang it off. A `moveId` is a nanoid, so this cannot collide.
+ */
+export const ROOT_SEGMENT_ID = 'root';
 
 /**
  * A run of moves with no choice in it, ending where the line branches.
@@ -10,8 +19,12 @@ import { ChessRepertoireMove } from 'src/lib/storage';
  * fits on a screen.
  */
 export interface MapSegment {
-	/** The id of the segment's first move, which is unique across the tree. */
+	/**
+	 * The id of the segment's first move, which is unique across the tree, or
+	 * `ROOT_SEGMENT_ID` for the starting position's own card.
+	 */
 	id: string;
+	/** Empty only for the root card, which stands for a position, not a run. */
 	moves: ChessRepertoireMove[];
 	/** Half-move number of the first move, counting from 0 at the mainline's. */
 	startPly: number;
@@ -22,7 +35,7 @@ export interface MapSegment {
 }
 
 const buildFrom = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	first: ChessRepertoireMove,
 	startPly: number,
 	depth: number
@@ -33,7 +46,7 @@ const buildFrom = (
 	// Walk while the line offers exactly one continuation. Two or more ends the
 	// segment and opens a child for each; none ends it as a leaf.
 	for (;;) {
-		const replies = getReplies(moves, cursor);
+		const replies = getReplies(tree, cursor);
 
 		if (replies.length === 1) {
 			run.push(replies[0]);
@@ -47,19 +60,35 @@ const buildFrom = (
 			startPly,
 			depth,
 			children: replies.map((reply) =>
-				buildFrom(moves, reply, startPly + run.length, depth + 1)
+				buildFrom(tree, reply, startPly + run.length, depth + 1)
 			),
 		};
 	}
 };
 
-/** The whole repertoire as segments, or null when it has no moves. */
-export const buildSegments = (
-	moves: ChessRepertoireMove[]
-): MapSegment | null => {
-	const first = getReplies(moves, null)[0];
+/**
+ * The whole repertoire as segments, or null when it has no moves.
+ *
+ * A repertoire recording more than one first move forks before any move is
+ * played, so the trunk is the starting position itself: a card with no moves on
+ * it, showing the board the alternatives branch from. With a single first move -
+ * every repertoire that starts from the standard array, and most that do not -
+ * the trunk is that move's own run, exactly as before.
+ */
+export const buildSegments = (tree: MoveTree): MapSegment | null => {
+	const replies = getReplies(tree, null);
 
-	return first ? buildFrom(moves, first, 0, 0) : null;
+	if (!replies.length) return null;
+
+	if (replies.length === 1) return buildFrom(tree, replies[0], 0, 0);
+
+	return {
+		id: ROOT_SEGMENT_ID,
+		moves: [],
+		startPly: 0,
+		depth: 0,
+		children: replies.map((reply) => buildFrom(tree, reply, 0, 1)),
+	};
 };
 
 /** Every segment in the tree, parents before children. */

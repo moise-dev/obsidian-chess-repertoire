@@ -7,7 +7,12 @@ import {
 	readClassification,
 } from 'src/lib/classification';
 import { commentToPlainText, hasComment } from 'src/lib/comments';
-import { MAX_VARIATION_DEPTH, moveNumberAtPly } from 'src/lib/move-tree';
+import {
+	MAX_VARIATION_DEPTH,
+	MoveTree,
+	ROOT_MOVE_ID,
+	moveNumberAtPly,
+} from 'src/lib/move-tree';
 import { ChessRepertoireMove, Variant } from 'src/lib/storage';
 
 /**
@@ -120,9 +125,9 @@ type AttachVariation = (moves: ChessRepertoireMove[]) => void;
  *
  * `attachSibling` is how a variation on this line's *first* move is stored:
  * such a move has nothing before it to hang off, so the alternative belongs
- * beside this line rather than inside it. On the mainline there is no such
- * place, which is the one thing a repertoire cannot represent - alternatives to the
- * game's first move are read and dropped.
+ * beside this line rather than inside it. On the mainline that place is the
+ * tree's `rootVariants`, so an alternative to the game's first move imports like
+ * any other.
  */
 const parseLine = (
 	state: ParseState,
@@ -163,9 +168,12 @@ const parseLine = (
 						})
 				: attachSibling;
 
-			const line = parseLine(state, last.before, depth + 1, attach);
+			// Hanging off a move nests one level; standing beside this line does
+			// not, which is what keeps the count matching `pathDepth`.
+			const lineDepth = host ? depth + 1 : depth;
+			const line = parseLine(state, last.before, lineDepth, attach);
 
-			if (line.length && attach && depth + 1 <= MAX_VARIATION_DEPTH) {
+			if (line.length && attach && lineDepth <= MAX_VARIATION_DEPTH) {
 				attach(line);
 			}
 
@@ -220,11 +228,10 @@ const parseLine = (
 	return moves;
 };
 
-export interface ParsedPgn {
+export interface ParsedPgn extends MoveTree {
 	headers: Record<string, string>;
 	/** The position the game starts from, `[FEN]` header included. */
 	rootFEN: string;
-	moves: ChessRepertoireMove[];
 	/** How many moves could not be played out; 0 for a clean import. */
 	skipped: number;
 }
@@ -256,9 +263,25 @@ export const parsePgn = (
 		skipped: 0,
 	};
 
-	const moves = parseLine(state, startFen, 0, null);
+	// An alternative to the game's first move has no move to hang off, so it
+	// lands beside the mainline rather than inside it.
+	const rootVariants: Variant[] = [];
 
-	return { headers, rootFEN: startFen, moves, skipped: state.skipped };
+	const moves = parseLine(state, startFen, 0, (line) =>
+		rootVariants.push({
+			variantId: makeId(),
+			parentMoveId: ROOT_MOVE_ID,
+			moves: line,
+		})
+	);
+
+	return {
+		headers,
+		rootFEN: startFen,
+		moves,
+		rootVariants,
+		skipped: state.skipped,
+	};
 };
 
 /**
@@ -315,13 +338,19 @@ const moveToken = (move: ChessRepertoireMove): string => {
  * index of `moves[0]` counted from the repertoire's own start, matching
  * `plyAtPath` - a variation hangs off the move it replaces, so it starts at
  * the same ply as that move rather than one after it.
+ *
+ * `beforeFirst` holds the variations that belong to the first move, which has no
+ * move before it to carry them. Only the mainline has any: they are the tree's
+ * `rootVariants`, and PGN writes them in the same place it writes every other
+ * alternative - straight after the move they replace.
  */
 const serializeLine = (
 	moves: ChessRepertoireMove[],
 	plyOffset: number,
 	firstPlayer: string,
 	initialMoveNumber: number,
-	forceFirstNumber: boolean
+	forceFirstNumber: boolean,
+	beforeFirst: Variant[] = []
 ): string => {
 	const tokens: string[] = [];
 	let needsNumber = forceFirstNumber;
@@ -335,7 +364,7 @@ const serializeLine = (
 		tokens.push(moveToken(move));
 		needsNumber = false;
 
-		const variants: Variant[] = i > 0 ? moves[i - 1].variants : [];
+		const variants: Variant[] = i > 0 ? moves[i - 1].variants : beforeFirst;
 
 		for (const variant of variants) {
 			tokens.push(
@@ -361,7 +390,7 @@ const serializeLine = (
  * array where it began somewhere else.
  */
 export const exportPgn = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	rootFEN: string,
 	standardFEN: string,
 	title: string | null
@@ -378,7 +407,14 @@ export const exportPgn = (
 		headers.push('[SetUp "1"]', `[FEN "${rootFEN}"]`);
 	}
 
-	const movetext = serializeLine(moves, 0, firstPlayer, initialMoveNumber, true);
+	const movetext = serializeLine(
+		tree.moves,
+		0,
+		firstPlayer,
+		initialMoveNumber,
+		true,
+		tree.rootVariants as Variant[]
+	);
 
 	return [...headers, '', `${movetext}${movetext ? ' ' : ''}*`].join('\n');
 };

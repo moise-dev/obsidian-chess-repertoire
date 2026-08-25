@@ -1,4 +1,9 @@
-import { collectSubtree, flattenMoves, getReplies } from 'src/lib/move-tree';
+import {
+	MoveTree,
+	collectSubtree,
+	flattenTree,
+	getReplies,
+} from 'src/lib/move-tree';
 import {
 	ChessRepertoireDrillData,
 	ChessRepertoireMove,
@@ -37,9 +42,9 @@ export const isDrillable = (move: ChessRepertoireMove): boolean =>
  * dropping it here is enough to leave the whole branch alone.
  */
 export const getDrillableReplies = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	moveId: string | null
-): ChessRepertoireMove[] => getReplies(moves, moveId).filter(isDrillable);
+): ChessRepertoireMove[] => getReplies(tree, moveId).filter(isDrillable);
 
 /**
  * Every move a drill can never reach, by id: the ones carrying the flag and
@@ -53,11 +58,11 @@ export const getDrillableReplies = (
  * A variation counts as reachable through the move it hangs off, since that is
  * the move that has to be played to be offered it.
  */
-export const collectExcludedMoveIds = (
+const collectExcludedInLine = (
 	moves: ChessRepertoireMove[],
-	inherited = false,
-	found: Set<string> = new Set()
-): Set<string> => {
+	inherited: boolean,
+	found: Set<string>
+): void => {
 	let excluded = inherited;
 
 	for (const move of moves) {
@@ -66,8 +71,19 @@ export const collectExcludedMoveIds = (
 		if (excluded) found.add(move.moveId);
 
 		for (const variant of move.variants ?? [])
-			collectExcludedMoveIds(variant.moves, excluded, found);
+			collectExcludedInLine(variant.moves, excluded, found);
 	}
+};
+
+export const collectExcludedMoveIds = (tree: MoveTree): Set<string> => {
+	const found = new Set<string>();
+
+	// Each top-level line starts clean: a root alternative branches from the
+	// start, so nothing on the mainline can have excluded it.
+	collectExcludedInLine(tree.moves, false, found);
+
+	for (const variant of tree.rootVariants)
+		collectExcludedInLine(variant.moves, false, found);
 
 	return found;
 };
@@ -87,12 +103,12 @@ export interface DrillRecord {
  * user never has to find.
  */
 export const subtreeRecord = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	move: ChessRepertoireMove,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b'
 ): DrillRecord =>
-	collectSubtree(moves, move.moveId)
+	collectSubtree(tree, move.moveId)
 		.filter((entry) => entry.color === userColor && isDrillable(entry))
 		.reduce(
 			(record, entry) => {
@@ -124,13 +140,13 @@ export interface WeightedReply {
  * do recency properly later.
  */
 export const weighReplies = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	moveId: string | null,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b'
 ): WeightedReply[] =>
-	getDrillableReplies(moves, moveId).map((move) => {
-		const { attempts, misses } = subtreeRecord(moves, move, stats, userColor);
+	getDrillableReplies(tree, moveId).map((move) => {
+		const { attempts, misses } = subtreeRecord(tree, move, stats, userColor);
 
 		return {
 			move,
@@ -150,13 +166,13 @@ export const weighReplies = (
  * `random` is injected so a session can be made repeatable in tests.
  */
 export const chooseReply = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	moveId: string | null,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b',
 	random: () => number = Math.random
 ): ChessRepertoireMove | null => {
-	const replies = weighReplies(moves, moveId, stats, userColor);
+	const replies = weighReplies(tree, moveId, stats, userColor);
 
 	if (!replies.length) return null;
 
@@ -208,9 +224,9 @@ export const recordAttempt = (
  */
 export const pruneDrillData = (
 	data: ChessRepertoireDrillData,
-	moves: ChessRepertoireMove[]
+	tree: MoveTree
 ): ChessRepertoireDrillData => {
-	const live = new Set(flattenMoves(moves).map((move) => move.moveId));
+	const live = new Set(flattenTree(tree).map((move) => move.moveId));
 
 	const stats = Object.fromEntries(
 		Object.entries(data.stats).filter(([moveId]) => live.has(moveId))

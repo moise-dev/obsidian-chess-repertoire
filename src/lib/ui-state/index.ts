@@ -5,6 +5,7 @@ import { GameState } from 'src/components/react/ChessRepertoire';
 import { toColor, toDests } from '../chess-logic';
 import {
 	MovePath,
+	MoveTree,
 	findMovePath,
 	getListAtPath,
 	getMoveAtPath,
@@ -15,9 +16,9 @@ import {
 import { ChessRepertoireMove } from '../storage';
 
 export const findMovePathById = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	moveId: string
-): MovePath | null => findMovePath(moves, moveId);
+): MovePath | null => findMovePath(tree, moveId);
 
 /** Puts a position on the board and syncs the chess.js logic to match. */
 const showPosition = (
@@ -59,17 +60,17 @@ export const displayMoveInHistory = (
 	}
 ): Draft<GameState> => {
 	const { offset, selectedMoveId } = options;
-	const moves = draft.repertoire.moves;
+	const tree = draft.repertoire;
 
 	let moveToDisplay: Draft<ChessRepertoireMove> | null = null;
 
 	const baseMoveId = selectedMoveId || draft.currentMove?.moveId;
 
 	if (baseMoveId) {
-		const path = findMovePath(moves, baseMoveId);
+		const path = findMovePath(tree, baseMoveId);
 
 		if (path) {
-			const list = getListAtPath(moves, path);
+			const list = getListAtPath(tree, path);
 			const index = path[path.length - 1];
 			const target = list?.[index + offset];
 
@@ -77,11 +78,12 @@ export const displayMoveInHistory = (
 				moveToDisplay = target as Draft<ChessRepertoireMove>;
 			} else if (offset < 0) {
 				// Off the front of a variation: fall back to its parent move. On the
-				// mainline there is no parent, so this leaves the root position.
+				// mainline there is no parent, so this leaves the root position - and
+				// so does an alternative to the first move, whose parent is the root.
 				const parentPath = getParentMovePath(path);
 
 				moveToDisplay = parentPath
-					? (getMoveAtPath(moves, parentPath) as Draft<ChessRepertoireMove>)
+					? (getMoveAtPath(tree, parentPath) as Draft<ChessRepertoireMove>)
 					: null;
 			} else {
 				// Off the end of a line: stay put rather than jumping somewhere
@@ -90,7 +92,7 @@ export const displayMoveInHistory = (
 			}
 		}
 	} else if (offset > 0) {
-		moveToDisplay = (moves[0] as Draft<ChessRepertoireMove>) ?? null;
+		moveToDisplay = (tree.moves[0] as Draft<ChessRepertoireMove>) ?? null;
 	} else if (offset < 0) {
 		return draft;
 	}
@@ -136,10 +138,10 @@ export const getCurrentMove = (
 
 	if (!currentMoveId) return null;
 
-	const path = findMovePath(draft.repertoire.moves, currentMoveId);
+	const path = findMovePath(draft.repertoire, currentMoveId);
 
 	return path
-		? (getMoveAtPath(draft.repertoire.moves, path) as Draft<ChessRepertoireMove>)
+		? (getMoveAtPath(draft.repertoire, path) as Draft<ChessRepertoireMove>)
 		: null;
 };
 
@@ -148,15 +150,15 @@ export const getCurrentMove = (
  * heading of the notes panel.
  */
 export const getMoveLabel = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	moveId: string | null,
 	firstPlayer: string,
 	initialMoveNumber: number
 ): string | null => {
 	if (!moveId) return null;
 
-	const path = findMovePath(moves, moveId);
-	const move = path && getMoveAtPath(moves, path);
+	const path = findMovePath(tree, moveId);
+	const move = path && getMoveAtPath(tree, path);
 
 	if (!move || !path) return null;
 

@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import {
 	MapSegment,
+	ROOT_SEGMENT_ID,
 	anchorMove,
 	buildSegments,
 	fenToBoard,
@@ -11,6 +12,7 @@ import {
 	positionKey,
 	toScoresheet,
 } from '../src/lib/move-map';
+import { MoveTree } from '../src/lib/move-tree';
 import { ChessRepertoireMove } from '../src/lib/storage';
 
 const mv = (
@@ -47,15 +49,24 @@ const va = (
  * So the line runs a b, then forks three ways after b: c d, x1 x2 and z1. x1
  * forks again into x2 and y1 y2.
  */
-const tree = (): ChessRepertoireMove[] => [
-	mv('a'),
-	mv('b', [
-		va('v1', 'b', [mv('x1', [va('v3', 'x1', [mv('y1'), mv('y2')])]), mv('x2')]),
-		va('v2', 'b', [mv('z1')]),
-	]),
-	mv('c'),
-	mv('d'),
-];
+const tree = (): MoveTree => ({
+	moves: [
+		mv('a'),
+		mv('b', [
+			va('v1', 'b', [mv('x1', [va('v3', 'x1', [mv('y1'), mv('y2')])]), mv('x2')]),
+			va('v2', 'b', [mv('z1')]),
+		]),
+		mv('c'),
+		mv('d'),
+	],
+	rootVariants: [],
+});
+
+/** A bare mainline, for the cases that need no branching. */
+const mainline = (...moves: ChessRepertoireMove[]): MoveTree => ({
+	moves,
+	rootVariants: [],
+});
 
 const sans = (segment: MapSegment) =>
 	segment.moves.map((move) => move.san).join(' ');
@@ -74,11 +85,11 @@ const options = {
 
 describe('buildSegments', () => {
 	it('has nothing to draw for an empty repertoire', () => {
-		assert.equal(buildSegments([]), null);
+		assert.equal(buildSegments(mainline()), null);
 	});
 
 	it('collapses a repertoire with no branches into a single segment', () => {
-		const root = buildSegments([mv('a'), mv('b'), mv('c')]);
+		const root = buildSegments(mainline(mv('a'), mv('b'), mv('c')));
 
 		assert.equal(sans(root!), 'a b c');
 		assert.deepEqual(root!.children, []);
@@ -89,6 +100,34 @@ describe('buildSegments', () => {
 
 		assert.equal(sans(root), 'a b');
 		assert.deepEqual(root.children.map(sans), ['c d', 'x1', 'z1']);
+	});
+
+	it('draws the starting position as the trunk when the first move forks', () => {
+		const root = buildSegments({
+			moves: [mv('a'), mv('b')],
+			rootVariants: [va('r1', '', [mv('p'), mv('q')])],
+		})!;
+
+		// The fork happens before any move, so the trunk is the position itself:
+		// a card with nothing on it, and one child per candidate first move.
+		assert.equal(root.id, ROOT_SEGMENT_ID);
+		assert.deepEqual(root.moves, []);
+		assert.equal(anchorMove(root), null, 'so the card shows the root FEN');
+		assert.deepEqual(root.children.map(sans), ['a b', 'p q']);
+		assert.deepEqual(
+			root.children.map((child) => child.depth),
+			[1, 1]
+		);
+	});
+
+	it('keeps the first move as the trunk when it is the only one', () => {
+		const root = buildSegments({
+			moves: [mv('a'), mv('b')],
+			rootVariants: [],
+		})!;
+
+		assert.equal(root.id, 'a');
+		assert.equal(sans(root), 'a b');
 	});
 
 	it('keeps forking inside a variation', () => {
@@ -148,7 +187,7 @@ describe('anchorMove', () => {
 	});
 
 	it('shows a repertoire with no branches its last move', () => {
-		const root = buildSegments([mv('a'), mv('b'), mv('c')])!;
+		const root = buildSegments(mainline(mv('a'), mv('b'), mv('c')))!;
 
 		assert.equal(anchorMove(root)?.san, 'c');
 	});
@@ -229,7 +268,7 @@ describe('toScoresheet', () => {
 	const numberAtPly = (ply: number) => Math.floor(ply / 2) + 1;
 
 	it('pairs the moves under their number', () => {
-		const root = buildSegments(line('e4', 'e5', 'Nf3', 'Nc6'))!;
+		const root = buildSegments(mainline(...line('e4', 'e5', 'Nf3', 'Nc6')))!;
 
 		assert.deepEqual(
 			toScoresheet(root, numberAtPly).map((row) => [
@@ -246,9 +285,10 @@ describe('toScoresheet', () => {
 
 	it('leaves the White column empty when a segment starts on Black', () => {
 		const moves = line('e4', 'e5', 'Nf3', 'Nc6');
+		const t = mainline(...moves);
 		// A branch after 2.Nf3 starts on Black's move, at ply 3.
-		const segment = buildSegments(moves)!.children[0] ?? {
-			...buildSegments(moves)!,
+		const segment = buildSegments(t)!.children[0] ?? {
+			...buildSegments(t)!,
 			startPly: 3,
 			moves: moves.slice(3),
 		};
@@ -261,7 +301,7 @@ describe('toScoresheet', () => {
 	});
 
 	it('carries an odd move onto a row of its own', () => {
-		const root = buildSegments(line('e4', 'e5', 'Nf3'))!;
+		const root = buildSegments(mainline(...line('e4', 'e5', 'Nf3')))!;
 		const rows = toScoresheet(root, numberAtPly);
 
 		assert.equal(rows.length, 2);
@@ -321,7 +361,7 @@ describe('findTranspositions', () => {
 	];
 
 	it('pairs up the moves that land in the same place', () => {
-		const found = findTranspositions(buildSegments(transposing())!);
+		const found = findTranspositions(buildSegments(mainline(...transposing()))!);
 
 		assert.deepEqual([...found.keys()].sort(), ['4', '8']);
 		assert.equal(found.get('4')?.[0].san, 'Nf6');
@@ -329,8 +369,7 @@ describe('findTranspositions', () => {
 	});
 
 	it('names the card the other line sits in', () => {
-		const moves = transposing();
-		const root = buildSegments(moves)!;
+		const root = buildSegments(mainline(...transposing()))!;
 		const found = findTranspositions(root);
 
 		const otherSegment = found.get('4')?.[0].segmentId;
@@ -341,11 +380,13 @@ describe('findTranspositions', () => {
 
 	it('ignores a position repeated inside one run of moves', () => {
 		// A repetition, not a transposition: same card, so nothing to point at.
-		const root = buildSegments([
-			mv('Nf3', [], 'w', 'P'),
-			mv('Nf6', [], 'b', 'Q'),
-			mv('Ng1', [], 'w', 'P'),
-		])!;
+		const root = buildSegments(
+			mainline(
+				mv('Nf3', [], 'w', 'P'),
+				mv('Nf6', [], 'b', 'Q'),
+				mv('Ng1', [], 'w', 'P')
+			)
+		)!;
 
 		assert.equal(findTranspositions(root).size, 0);
 	});

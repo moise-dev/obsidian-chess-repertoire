@@ -169,14 +169,45 @@ describe('parsePgn', () => {
 		assert.equal(sans(moves[1].variants[1].moves), 'd4');
 	});
 
-	it("drops an alternative to the game's very first move", () => {
-		// Nothing precedes it, so the tree has nowhere to put it. The rest of the
-		// game still has to survive.
-		const { moves, skipped } = parse('1. e4 (1. d4 d5) e5 2. Nf3');
+	it("keeps an alternative to the game's very first move at the root", () => {
+		// Nothing precedes it, so it hangs off the starting position rather than
+		// off a move.
+		const { moves, rootVariants, skipped } = parse('1. e4 (1. d4 d5) e5 2. Nf3');
 
 		assert.equal(sans(moves), 'e4 e5 Nf3');
 		assert.equal(skipped, 0);
-		assert.equal(moves[0].variants.length, 0);
+		assert.equal(moves[0].variants.length, 0, 'not hung off the first move');
+		assert.equal(rootVariants.length, 1);
+		assert.equal(sans(rootVariants[0].moves), 'd4 d5');
+	});
+
+	it('keeps several alternative first moves side by side', () => {
+		const { moves, rootVariants } = parse('1. e4 (1. d4) (1. c4) e5');
+
+		assert.equal(sans(moves), 'e4 e5');
+		// In the order the PGN gives them, like any other run of siblings.
+		assert.deepEqual(
+			rootVariants.map((variant) => sans(variant.moves)),
+			['d4', 'c4']
+		);
+	});
+
+	it('reads alternative first moves for a game that starts from a position', () => {
+		// The case this exists for: a position imported mid-game, where the first
+		// move is a real choice rather than an opening.
+		const blackToMove =
+			'r1bq2nr/pppp1kp1/1b5p/nP2N3/4P3/2P5/P2P1PPP/RNBQK2R b KQ - 0 8';
+		const { moves, rootVariants, skipped } = parse(
+			'8... Kf8 (8... Ke8) (8... Ke7 9. O-O) 9. O-O',
+			blackToMove
+		);
+
+		assert.equal(skipped, 0);
+		assert.equal(sans(moves), 'Kf8 O-O');
+		assert.deepEqual(
+			rootVariants.map((variant) => sans(variant.moves)),
+			['Ke8', 'Ke7 O-O']
+		);
 	});
 
 	it('starts from the position in a FEN header', () => {
@@ -255,74 +286,102 @@ describe('titleFromHeaders', () => {
 
 describe('exportPgn', () => {
 	it('writes a plain mainline', () => {
-		const { moves } = parse('1. e4 e5 2. Nf3 Nc6');
+		const parsed = parse('1. e4 e5 2. Nf3 Nc6');
 
 		assert.equal(
-			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
 			'\n1. e4 e5 2. Nf3 Nc6 *'
 		);
 	});
 
 	it('carries classifications back out as NAGs', () => {
-		const { moves } = parse('1. e4! e5?? 2. Nf3!!');
+		const parsed = parse('1. e4! e5?? 2. Nf3!!');
 
 		assert.equal(
-			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
 			'\n1. e4 $1 e5 $4 2. Nf3 $3 *'
 		);
 	});
 
 	it('carries comments back out as {}', () => {
-		const { moves } = parse('1. e4 {best by test} e5');
+		const parsed = parse('1. e4 {best by test} e5');
 
 		assert.equal(
-			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
 			'\n1. e4 {best by test} e5 *'
 		);
 	});
 
 	it('writes a variation right after the move it replaces', () => {
-		const { moves } = parse('1. e4 e5 (1... c5 2. Nf3) 2. Nf3 Nc6');
+		const parsed = parse('1. e4 e5 (1... c5 2. Nf3) 2. Nf3 Nc6');
 
 		assert.equal(
-			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
 			'\n1. e4 e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *'
 		);
 	});
 
 	it('restates the move number for the mainline move right after a variation', () => {
-		const { moves } = parse('1. e4 e5 2. Nf3 (2. Bc4) Nc6');
+		const parsed = parse('1. e4 e5 2. Nf3 (2. Bc4) Nc6');
 
 		assert.equal(
-			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
 			'\n1. e4 e5 2. Nf3 (2. Bc4) 2... Nc6 *'
 		);
 	});
 
 	it('adds a FEN header for a repertoire that starts elsewhere, and an Event header for its title', () => {
 		const blackToMove = '4k3/8/8/8/8/8/4P3/4K3 b - - 0 7';
-		const { moves } = parse('7... Kd7 8. e4', blackToMove);
+		const parsed = parse('7... Kd7 8. e4', blackToMove);
 
 		assert.equal(
-			exportPgn(moves, blackToMove, ROOT_FEN, 'King and pawn'),
+			exportPgn(parsed, blackToMove, ROOT_FEN, 'King and pawn'),
 			`[Event "King and pawn"]\n[SetUp "1"]\n[FEN "${blackToMove}"]\n\n7... Kd7 8. e4 *`
+		);
+	});
+
+	it('writes an alternative first move right after the move it replaces', () => {
+		const parsed = parse('1. e4 (1. d4 d5) e5');
+
+		assert.equal(
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 (1. d4 d5) 1... e5 *'
+		);
+	});
+
+	it('round-trips alternative first moves from a position', () => {
+		const blackToMove =
+			'r1bq2nr/pppp1kp1/1b5p/nP2N3/4P3/2P5/P2P1PPP/RNBQK2R b KQ - 0 8';
+		const original = parse(
+			'8... Kf8 (8... Ke8) (8... Ke7 9. O-O) 9. O-O',
+			blackToMove
+		);
+		const reparsed = parse(
+			exportPgn(original, blackToMove, ROOT_FEN, null),
+			blackToMove
+		);
+
+		assert.equal(sans(reparsed.moves), sans(original.moves));
+		assert.deepEqual(
+			reparsed.rootVariants.map((variant) => sans(variant.moves)),
+			original.rootVariants.map((variant) => sans(variant.moves))
 		);
 	});
 
 	it('round-trips through the importer', () => {
 		const original =
 			'1. e4 e5 (1... c5 2. Nf3 d6) 2. Nf3 $1 {developing} Nc6 3. Bb5 a6';
-		const { moves } = parse(original);
-		const reparsed = parse(exportPgn(moves, ROOT_FEN, ROOT_FEN, null)).moves;
+		const parsed = parse(original);
+		const reparsed = parse(exportPgn(parsed, ROOT_FEN, ROOT_FEN, null)).moves;
 
-		assert.equal(sans(reparsed), sans(moves));
+		assert.equal(sans(reparsed), sans(parsed.moves));
 		assert.deepEqual(
 			reparsed.map((move) => move.classification),
-			moves.map((move) => move.classification)
+			parsed.moves.map((move) => move.classification)
 		);
 		assert.equal(
 			reparsed[0].variants[0].moves.map((m) => m.san).join(' '),
-			moves[0].variants[0].moves.map((m) => m.san).join(' ')
+			parsed.moves[0].variants[0].moves.map((m) => m.san).join(' ')
 		);
 	});
 });

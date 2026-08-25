@@ -13,6 +13,7 @@ import {
 	recordAttempt,
 } from 'src/lib/drill';
 import {
+	MoveTree,
 	findMovePath,
 	getContinuation,
 	getMoveAtPath,
@@ -20,7 +21,6 @@ import {
 import {
 	CURRENT_DRILL_VERSION,
 	ChessRepertoireDataAdapter,
-	ChessRepertoireMove,
 	MoveDrillStats,
 } from 'src/lib/storage';
 import {
@@ -83,7 +83,7 @@ interface UseTrainerOptions {
 	/** Where the drill history for this repertoire is read and written. */
 	dataAdapter: ChessRepertoireDataAdapter;
 	chessRepertoireId: string;
-	moves: ChessRepertoireMove[];
+	tree: MoveTree;
 	/** The colour the repertoire is written for, if it has said. */
 	repertoireColor: 'w' | 'b' | undefined;
 	currentMoveId: string | null;
@@ -115,7 +115,7 @@ export const useTrainer = ({
 	app,
 	dataAdapter,
 	chessRepertoireId,
-	moves,
+	tree,
 	repertoireColor,
 	currentMoveId,
 	chess,
@@ -151,25 +151,25 @@ export const useTrainer = ({
 	// are alternatives you could have chosen and did not, so they are not other
 	// answers to the same question.
 	const expected = useMemo(() => {
-		const next = getContinuation(moves, currentMoveId);
+		const next = getContinuation(tree, currentMoveId);
 
 		return next && isDrillable(next) ? next : null;
-	}, [currentMoveId, moves]);
+	}, [currentMoveId, tree]);
 
 	// What the repertoire may play against you here. Excluded branches are left out,
 	// so a line kept for reference is never played into.
 	const replies = useMemo(
-		() => getDrillableReplies(moves, currentMoveId),
-		[currentMoveId, moves]
+		() => getDrillableReplies(tree, currentMoveId),
+		[currentMoveId, tree]
 	);
 
 	const currentMove = useMemo(() => {
 		if (!currentMoveId) return null;
 
-		const path = findMovePath(moves, currentMoveId);
+		const path = findMovePath(tree, currentMoveId);
 
-		return path ? getMoveAtPath(moves, path) : null;
-	}, [currentMoveId, moves]);
+		return path ? getMoveAtPath(tree, path) : null;
+	}, [currentMoveId, tree]);
 
 	const stages = useMemo(
 		() => buildHintStages(expected, currentMove),
@@ -201,7 +201,7 @@ export const useTrainer = ({
 			// Drawn here rather than in a memo, which would roll again on every
 			// render and change the reply while it was being waited for.
 			const reply =
-				settled ?? chooseReply(moves, currentMoveId, statsRef.current, userColor);
+				settled ?? chooseReply(tree, currentMoveId, statsRef.current, userColor);
 
 			if (!reply) return;
 
@@ -219,20 +219,20 @@ export const useTrainer = ({
 		dispatch,
 		isActive,
 		isPlayerTurn,
-		moves,
+		tree,
 		replies,
 		userColor,
 	]);
 
 	const start = useCallback(() => {
-		if (!moves.length) {
+		if (!tree.moves.length) {
 			new Notice('This repertoire has no moves to train yet.');
 			return;
 		}
 
 		// Excluding the repertoire's first move takes the whole thing out of drills.
 		// Saying so beats starting a session that ends on its own move.
-		if (!getDrillableReplies(moves, null).length) {
+		if (!getDrillableReplies(tree, null).length) {
 			new Notice('Every line in this repertoire is excluded from drills.');
 			return;
 		}
@@ -269,7 +269,7 @@ export const useTrainer = ({
 				// longer has.
 				statsRef.current = pruneDrillData(
 					await dataAdapter.loadDrillData(chessRepertoireId),
-					moves
+					tree
 				).stats;
 				repliesRef.current = {};
 
@@ -287,7 +287,7 @@ export const useTrainer = ({
 		chessRepertoireId,
 		dataAdapter,
 		dispatch,
-		moves,
+		tree,
 		setOrientation,
 		repertoireColor,
 	]);
@@ -351,7 +351,7 @@ export const useTrainer = ({
 					recordMistake(tally, {
 						atMoveId: currentMoveId,
 						label: expected
-							? moveNumberLabel(moves, expected, firstPlayer, initialMoveNumber)
+							? moveNumberLabel(tree, expected, firstPlayer, initialMoveNumber)
 							: '',
 						played: move.san,
 						expected: expected?.san ?? '',
@@ -385,7 +385,7 @@ export const useTrainer = ({
 			firstPlayer,
 			hintIndex,
 			initialMoveNumber,
-			moves,
+			tree,
 		]
 	);
 

@@ -12,13 +12,21 @@ import { ROOT_FEN } from 'src/main';
 // nothing has to be migrated.
 // 0.0.6 adds `playerColor` to the repertoire. Also optional; absent means the colour
 // is not known yet and the board's orientation stands in.
-export const CURRENT_STORAGE_VERSION = '0.0.6';
+// 0.0.7 adds `rootVariants`: alternatives to the repertoire's first move, which
+// have no move to hang off. Backfilled to `[]` on load.
+export const CURRENT_STORAGE_VERSION = '0.0.7';
 
 /** Drill records are their own file and their own version line. */
 export const CURRENT_DRILL_VERSION = '0.0.1';
 
 export interface Variant {
 	variantId: string;
+	/**
+	 * The move this variation is an alternative to the continuation of.
+	 *
+	 * `ROOT_MOVE_ID` - the empty string - for a variation in `rootVariants`,
+	 * which hangs off the root position rather than off a move.
+	 */
 	parentMoveId: string;
 	moves: ChessRepertoireMove[];
 }
@@ -75,6 +83,15 @@ export interface ChessRepertoireFileData {
 	version: string;
 	header: { title: string | null };
 	moves: ChessRepertoireMove[];
+	/**
+	 * Alternatives to the repertoire's first move.
+	 *
+	 * Every other variation hangs off the move before the alternatives it holds,
+	 * and the first move has no such move - so the ones belonging to the root
+	 * position are kept here, beside the mainline they branch from. Together with
+	 * `moves` this is the whole tree; `MoveTree` is the pair.
+	 */
+	rootVariants: Variant[];
 	rootFEN: string;
 	/**
 	 * The side the repertoire is written for: the one whose moves are the mainline,
@@ -133,6 +150,12 @@ export class ChessRepertoireDataAdapter {
 		//Storage versions before 0.0.4 gave `variants` only to mainline moves.
 		//Filling it in here means nothing downstream has to test for it.
 		normaliseMoves(jsonData.moves);
+
+		//Storage versions before 0.0.7 had nowhere to put an alternative to the
+		//first move, so an older repertoire simply has none.
+		if (!Array.isArray(jsonData.rootVariants)) jsonData.rootVariants = [];
+
+		for (const variant of jsonData.rootVariants) normaliseMoves(variant.moves);
 
 		return jsonData;
 	}

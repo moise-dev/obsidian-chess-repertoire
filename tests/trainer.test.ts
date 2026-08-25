@@ -1,7 +1,7 @@
 import { JSONContent } from '@tiptap/react';
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { getContinuation } from '../src/lib/move-tree';
+import { MoveTree, getContinuation } from '../src/lib/move-tree';
 import { ChessRepertoireMove } from '../src/lib/storage';
 import {
 	buildHintStages,
@@ -50,16 +50,25 @@ const note = (text: string): JSONContent => ({
  *   e5  ->  v1: Nc6 Bc4
  *           v2: d6
  */
-const tree = (): ChessRepertoireMove[] => [
-	mv('e4'),
-	mv('e5', {
-		variants: [
-			va('v1', 'e5', [mv('Nc6'), mv('Bc4')]),
-			va('v2', 'e5', [mv('d6')]),
-		],
-	}),
-	mv('Nf3'),
-];
+const tree = (): MoveTree => ({
+	moves: [
+		mv('e4'),
+		mv('e5', {
+			variants: [
+				va('v1', 'e5', [mv('Nc6'), mv('Bc4')]),
+				va('v2', 'e5', [mv('d6')]),
+			],
+		}),
+		mv('Nf3'),
+	],
+	rootVariants: [],
+});
+
+/** A bare mainline, for the cases that need no branching. */
+const mainline = (...moves: ChessRepertoireMove[]): MoveTree => ({
+	moves,
+	rootVariants: [],
+});
 
 const san = (move: ChessRepertoireMove | null) => move?.san ?? null;
 
@@ -88,13 +97,13 @@ describe('getContinuation', () => {
 	});
 
 	it('offers nothing after a move whose only sequels are variations', () => {
-		const moves = [mv('e4', { variants: [va('v1', 'e4', [mv('c5')])] })];
+		const t = mainline(mv('e4', { variants: [va('v1', 'e4', [mv('c5')])] }));
 
-		assert.equal(getContinuation(moves, 'e4'), null);
+		assert.equal(getContinuation(t, 'e4'), null);
 	});
 
 	it('offers nothing at all for an empty repertoire', () => {
-		assert.equal(getContinuation([], null), null);
+		assert.equal(getContinuation(mainline(), null), null);
 	});
 });
 
@@ -183,24 +192,30 @@ describe('moveNumberLabel', () => {
 	];
 
 	it('numbers mainline moves, with dots for Black', () => {
-		assert.equal(moveNumberLabel(line, line[0], 'w', 1), '1.');
-		assert.equal(moveNumberLabel(line, line[1], 'w', 1), '1...');
-		assert.equal(moveNumberLabel(line, line[2], 'w', 1), '2.');
+		assert.equal(moveNumberLabel(mainline(...line), line[0], 'w', 1), '1.');
+		assert.equal(moveNumberLabel(mainline(...line), line[1], 'w', 1), '1...');
+		assert.equal(moveNumberLabel(mainline(...line), line[2], 'w', 1), '2.');
 	});
 
 	it('numbers a variation from the move it branches off', () => {
 		const [bishop, knight] = line[1].variants[0].moves;
 
-		assert.equal(moveNumberLabel(line, bishop, 'w', 1), '2.');
-		assert.equal(moveNumberLabel(line, knight, 'w', 1), '2...');
+		assert.equal(moveNumberLabel(mainline(...line), bishop, 'w', 1), '2.');
+		assert.equal(moveNumberLabel(mainline(...line), knight, 'w', 1), '2...');
 	});
 
 	it('counts from the first move number the repertoire starts at', () => {
 		// A repertoire opened from a FEN can start mid-game, and on Black's move.
 		const midGame: ChessRepertoireMove[] = [mv('Nf6', { color: 'b' }), mv('c4')];
 
-		assert.equal(moveNumberLabel(midGame, midGame[0], 'b', 12), '12...');
-		assert.equal(moveNumberLabel(midGame, midGame[1], 'b', 12), '13.');
+		assert.equal(
+			moveNumberLabel(mainline(...midGame), midGame[0], 'b', 12),
+			'12...'
+		);
+		assert.equal(
+			moveNumberLabel(mainline(...midGame), midGame[1], 'b', 12),
+			'13.'
+		);
 	});
 });
 

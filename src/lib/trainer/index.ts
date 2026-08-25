@@ -1,7 +1,12 @@
 import { Square } from 'chess.js';
 import { DrawShape } from 'chessground/draw';
 import { commentToPlainText, hasComment } from 'src/lib/comments';
-import { findMovePath, moveNumberAtPly, plyAtPath } from 'src/lib/move-tree';
+import {
+	MoveTree,
+	findMovePath,
+	moveNumberAtPly,
+	plyAtPath,
+} from 'src/lib/move-tree';
 import { ChessRepertoireMove } from 'src/lib/storage';
 
 export type TrainerColor = 'white' | 'black';
@@ -94,12 +99,12 @@ export interface TrainerMistake {
 
 /** e.g. `4.` or `4...` - which move of the game `move` is. */
 export const moveNumberLabel = (
-	moves: ChessRepertoireMove[],
+	tree: MoveTree,
 	move: ChessRepertoireMove,
 	firstPlayer: string,
 	initialMoveNumber: number
 ): string => {
-	const path = findMovePath(moves, move.moveId);
+	const path = findMovePath(tree, move.moveId);
 
 	if (!path) return '';
 

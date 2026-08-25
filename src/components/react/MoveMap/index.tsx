@@ -22,7 +22,7 @@ import {
 	layoutSegments,
 	toScoresheet,
 } from 'src/lib/move-map';
-import { moveNumberAtPly } from 'src/lib/move-tree';
+import { MoveTree, moveNumberAtPly } from 'src/lib/move-tree';
 import { ChessRepertoireMove, MoveDrillStats } from 'src/lib/storage';
 
 const CARD_WIDTH = 248;
@@ -49,6 +49,15 @@ const positionLabel = (move: ChessRepertoireMove | null, number: number) => {
 	return `After ${number}${move.color === 'b' ? '...' : '.'} ${move.san}`;
 };
 
+/** What a card says it holds. The root card holds a choice rather than a run. */
+const countLabel = (segment: MapSegment): string => {
+	const count = segment.moves.length;
+
+	if (!count) return 'first moves';
+
+	return `${count} ${count === 1 ? 'move' : 'moves'}`;
+};
+
 /** How well the moves you own inside one segment have held up under drilling. */
 interface SegmentState {
 	/** No drill can reach this segment. */
@@ -69,7 +78,8 @@ const segmentState = (
 	const own = segment.moves.filter((move) => move.color === userColor);
 
 	return {
-		isExcluded: excluded.has(segment.moves[0].moveId),
+		// The root card holds no move of its own, so nothing can exclude it.
+		isExcluded: !!segment.moves[0] && excluded.has(segment.moves[0].moveId),
 		isHole: !segment.children.length && !!last && last.color !== userColor,
 		attempts: own.reduce(
 			(total, move) => total + (stats[move.moveId]?.attempts ?? 0),
@@ -172,7 +182,7 @@ const TranspositionMark = ({
 };
 
 interface MoveMapProps {
-	moves: ChessRepertoireMove[];
+	tree: MoveTree;
 	rootFEN: string;
 	title: string | null;
 	currentMoveId: string | null;
@@ -198,7 +208,7 @@ interface MoveMapProps {
  * there, a branch is an indent that could be one move or forty.
  */
 export const MoveMap = ({
-	moves,
+	tree,
 	rootFEN,
 	title,
 	currentMoveId,
@@ -233,8 +243,8 @@ export const MoveMap = ({
 		};
 	}, [loadStats]);
 
-	const root = useMemo(() => buildSegments(moves), [moves]);
-	const excluded = useMemo(() => collectExcludedMoveIds(moves), [moves]);
+	const root = useMemo(() => buildSegments(tree), [tree]);
+	const excluded = useMemo(() => collectExcludedMoveIds(tree), [tree]);
 	const transpositions = useMemo(
 		() => (root ? findTranspositions(root) : new Map()),
 		[root]
@@ -428,10 +438,11 @@ export const MoveMap = ({
 				segmentId: segment.id,
 				fen: anchor ? anchor.after : rootFEN,
 				flipped: userColor === 'b',
-				range:
-					rows[0].number === rows[rows.length - 1].number
-						? `${rows[0].number}`
-						: `${rows[0].number}\u2013${rows[rows.length - 1].number}`,
+				range: !rows.length
+					? 'Start'
+					: rows[0].number === rows[rows.length - 1].number
+					? `${rows[0].number}`
+					: `${rows[0].number}\u2013${rows[rows.length - 1].number}`,
 				rows: rows.map((row) => ({
 					number: row.number,
 					white: labelled(row.white),
@@ -587,13 +598,13 @@ export const MoveMap = ({
 								<div className="cs-map-card-head" title={stateTitle(state)}>
 									<span className="cs-map-card-state" />
 									<span className="cs-map-card-range">
-										{rows[0].number === rows[rows.length - 1].number
+										{!rows.length
+											? 'Start'
+											: rows[0].number === rows[rows.length - 1].number
 											? rows[0].number
 											: `${rows[0].number}\u2013${rows[rows.length - 1].number}`}
 									</span>
-									<span className="cs-map-card-count">
-										{segment.moves.length} {segment.moves.length === 1 ? 'move' : 'moves'}
-									</span>
+									<span className="cs-map-card-count">{countLabel(segment)}</span>
 								</div>
 
 								<MiniBoard

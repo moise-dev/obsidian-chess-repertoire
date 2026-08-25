@@ -70,7 +70,7 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 
 ## Minor features
 
-- **Variations at any depth**, promoted, reordered, or deleted from a right-click menu.
+- **Variations at any depth**, promoted, reordered, or deleted from a right-click menu - including alternatives to the repertoire's very first move, which matters most for a repertoire opened from a mid-game position, where that move is a real choice rather than an opening.
 - **Move classifications** - seven chess.com-style labels, set with `1`-`7`, shown as a badge on the move and the board.
 - **Board flip** from the control strip.
 - **Notes and drawings** on any move - Markdown notes plus arrows and circles on the board.
@@ -139,7 +139,6 @@ Click a repertoire to give it the keys; click away to give them back. Works in b
 ## Known limitations
 
 - Desktop only - the widget isn't adapted for touch.
-- On import, an alternative to a game's very first move is dropped.
 - The map draws a tree, not a graph: transposing lines are two linked cards, not one shared card.
 
 ## Credits

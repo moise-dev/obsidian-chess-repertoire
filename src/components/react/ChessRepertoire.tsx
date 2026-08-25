@@ -25,6 +25,7 @@ import { collectExcludedMoveIds, resolveRepertoireColor } from 'src/lib/drill';
 import { registerRepertoireKeys, setActiveRepertoire } from 'src/lib/keyboard';
 import {
 	MAX_VARIATION_DEPTH,
+	ROOT_MOVE_ID,
 	countMoves,
 	getListAtPath,
 	getMoveAtPath,
@@ -216,13 +217,12 @@ export const ChessRepertoire = ({
 				case 'REMOVE_LAST_MOVE_FROM_HISTORY': {
 					if (!chessView || hasNoMoves) return draft;
 
-					const moves = draft.repertoire.moves;
 					const currentMoveId = draft.currentMove?.moveId;
 
 					if (!currentMoveId) return draft;
 
-					const path = findMovePathById(moves, currentMoveId);
-					const list = path && getListAtPath(moves, path);
+					const path = findMovePathById(draft.repertoire, currentMoveId);
+					const list = path && getListAtPath(draft.repertoire, path);
 
 					if (!path || !list) return draft;
 
@@ -238,7 +238,7 @@ export const ChessRepertoire = ({
 						selectedMoveId: currentMoveId,
 					});
 
-					removeMoveAtPath(moves, path);
+					removeMoveAtPath(draft.repertoire, path);
 
 					return draft;
 				}
@@ -305,9 +305,8 @@ export const ChessRepertoire = ({
 					// The keyboard shortcut labels the current move; the context menu
 					// names the one it was opened on.
 					const moveId = action.moveId ?? draft.currentMove?.moveId;
-					const moves = draft.repertoire.moves;
-					const path = moveId ? findMovePathById(moves, moveId) : null;
-					const move = path && getMoveAtPath(moves, path);
+					const path = moveId ? findMovePathById(draft.repertoire, moveId) : null;
+					const move = path && getMoveAtPath(draft.repertoire, path);
 
 					if (!move) return draft;
 
@@ -323,9 +322,8 @@ export const ChessRepertoire = ({
 					return draft;
 				}
 				case 'SET_EXCLUDED': {
-					const moves = draft.repertoire.moves;
-					const path = findMovePathById(moves, action.moveId);
-					const move = path && getMoveAtPath(moves, path);
+					const path = findMovePathById(draft.repertoire, action.moveId);
+					const move = path && getMoveAtPath(draft.repertoire, path);
 
 					if (!move) return draft;
 
@@ -339,14 +337,12 @@ export const ChessRepertoire = ({
 					return draft;
 				}
 				case 'PROMOTE_VARIATION': {
-					const moves = draft.repertoire.moves;
-
 					if (action.toMainline) {
-						promoteToMainline(moves, action.moveId, nanoid);
+						promoteToMainline(draft.repertoire, action.moveId, nanoid);
 					} else {
-						const path = findMovePathById(moves, action.moveId);
+						const path = findMovePathById(draft.repertoire, action.moveId);
 
-						if (path) promoteVariationAtPath(moves, path, nanoid);
+						if (path) promoteVariationAtPath(draft.repertoire, path, nanoid);
 					}
 
 					// Promotion only moves lines around, so the position on the board
@@ -356,21 +352,22 @@ export const ChessRepertoire = ({
 				case 'DELETE_VARIATION': {
 					if (!chessView) return draft;
 
-					const moves = draft.repertoire.moves;
-					const path = findMovePathById(moves, action.moveId);
+					const path = findMovePathById(draft.repertoire, action.moveId);
 
 					if (!path) return draft;
 
 					// Where to land if the move we are looking at is inside the
 					// variation about to disappear.
 					const parentPath = getParentMovePath(path);
-					const fallback = parentPath ? getMoveAtPath(moves, parentPath) : null;
+					const fallback = parentPath
+						? getMoveAtPath(draft.repertoire, parentPath)
+						: null;
 
-					if (!removeVariationAtPath(moves, path)) return draft;
+					if (!removeVariationAtPath(draft.repertoire, path)) return draft;
 
 					const currentId = draft.currentMove?.moveId;
 
-					if (currentId && !findMovePathById(moves, currentId)) {
+					if (currentId && !findMovePathById(draft.repertoire, currentId)) {
 						displayPosition(draft, chessView, setChessLogic, fallback ?? null);
 					}
 
@@ -379,9 +376,8 @@ export const ChessRepertoire = ({
 				case 'DELETE_FROM_MOVE': {
 					if (!chessView) return draft;
 
-					const moves = draft.repertoire.moves;
-					const path = findMovePathById(moves, action.moveId);
-					const list = path && getListAtPath(moves, path);
+					const path = findMovePathById(draft.repertoire, action.moveId);
+					const list = path && getListAtPath(draft.repertoire, path);
 
 					if (!path || !list) return draft;
 
@@ -393,24 +389,23 @@ export const ChessRepertoire = ({
 						index > 0
 							? list[index - 1]
 							: parentPath
-							? getMoveAtPath(moves, parentPath)
+							? getMoveAtPath(draft.repertoire, parentPath)
 							: null;
 
-					if (!removeMovesFromPath(moves, path)) return draft;
+					if (!removeMovesFromPath(draft.repertoire, path)) return draft;
 
 					const currentId = draft.currentMove?.moveId;
 
-					if (currentId && !findMovePathById(moves, currentId)) {
+					if (currentId && !findMovePathById(draft.repertoire, currentId)) {
 						displayPosition(draft, chessView, setChessLogic, fallback ?? null);
 					}
 
 					return draft;
 				}
 				case 'REORDER_VARIATION': {
-					const moves = draft.repertoire.moves;
-					const path = findMovePathById(moves, action.moveId);
+					const path = findMovePathById(draft.repertoire, action.moveId);
 
-					if (path) moveVariationAtPath(moves, path, action.delta);
+					if (path) moveVariationAtPath(draft.repertoire, path, action.delta);
 
 					return draft;
 				}
@@ -437,10 +432,11 @@ export const ChessRepertoire = ({
 							classification: null,
 						} as Draft<ChessRepertoireMove>);
 
-					// Nothing selected: we are at the root position.
+					// Nothing selected: we are at the root position, whose replies are
+					// the mainline's first move and the alternatives beside it.
 					if (!currentMoveId) {
-						// Replaying the mainline from the start should follow it, not
-						// append a duplicate at the end.
+						// Replaying a line from the start should follow it, not append a
+						// duplicate at the end.
 						if (moves[0]?.san === newMove.san) {
 							draft.currentMove = moves[0];
 							return draft;
@@ -454,16 +450,33 @@ export const ChessRepertoire = ({
 							return draft;
 						}
 
-						// Variations hang off the move before them, and the first move
-						// has none. Saying so beats the move quietly not appearing.
-						new Notice('The first move of a repertoire cannot have variations.');
+						const existingRoot = draft.repertoire.rootVariants.find(
+							(variant) => variant.moves[0]?.san === newMove.san
+						);
+
+						if (existingRoot) {
+							draft.currentMove = existingRoot.moves[0];
+							return draft;
+						}
+
+						// A second first move. It has no move before it to hang off, so
+						// it stands beside the mainline instead.
+						const move = makeMove();
+
+						draft.repertoire.rootVariants.push({
+							variantId: nanoid(),
+							parentMoveId: ROOT_MOVE_ID,
+							moves: [move],
+						});
+
+						draft.currentMove = move;
 
 						return draft;
 					}
 
-					const path = findMovePathById(moves, currentMoveId);
-					const list = path && getListAtPath(moves, path);
-					const currentMove = path && getMoveAtPath(moves, path);
+					const path = findMovePathById(draft.repertoire, currentMoveId);
+					const list = path && getListAtPath(draft.repertoire, path);
+					const currentMove = path && getMoveAtPath(draft.repertoire, path);
 
 					if (!path || !list || !currentMove) return draft;
 
@@ -706,10 +719,10 @@ export const ChessRepertoire = ({
 				case 'delete': {
 					// There is no undo and autosave commits moments later, so say how
 					// much is about to go and make the user agree to it.
-					const path = findMovePathById(gameState.repertoire.moves, moveId);
-					const ref = path && getVariationRef(gameState.repertoire.moves, path);
+					const path = findMovePathById(gameState.repertoire, moveId);
+					const ref = path && getVariationRef(gameState.repertoire, path);
 					const moveCount = ref
-						? countMoves(ref.parentMove.variants[ref.variantIndex].moves)
+						? countMoves(ref.variants[ref.variantIndex].moves)
 						: 0;
 
 					if (!moveCount) return;
@@ -726,14 +739,13 @@ export const ChessRepertoire = ({
 				}
 			}
 		},
-		[app, dispatch, gameState.repertoire.moves]
+		[app, dispatch, gameState.repertoire]
 	);
 
 	const onDeleteMove = useCallback(
 		(moveId: string) => {
-			const moves = gameState.repertoire.moves;
-			const path = findMovePathById(moves, moveId);
-			const list = path && getListAtPath(moves, path);
+			const path = findMovePathById(gameState.repertoire, moveId);
+			const list = path && getListAtPath(gameState.repertoire, path);
 
 			if (!path || !list) return;
 
@@ -752,7 +764,7 @@ export const ChessRepertoire = ({
 				onConfirm: () => dispatch({ type: 'DELETE_FROM_MOVE', moveId }),
 			}).open();
 		},
-		[app, dispatch, gameState.repertoire.moves]
+		[app, dispatch, gameState.repertoire]
 	);
 
 	/**
@@ -760,8 +772,8 @@ export const ChessRepertoire = ({
 	 * whole line rather than only the move the flag sits on.
 	 */
 	const excludedMoveIds = useMemo(
-		() => collectExcludedMoveIds(gameState.repertoire.moves),
-		[gameState.repertoire.moves]
+		() => collectExcludedMoveIds(gameState.repertoire),
+		[gameState.repertoire]
 	);
 
 	/**
@@ -809,7 +821,7 @@ export const ChessRepertoire = ({
 	 */
 	const onOpenMap = useCallback(() => {
 		new MoveMapModal(app, {
-			moves: gameState.repertoire.moves,
+			tree: gameState.repertoire,
 			rootFEN: gameState.repertoire.rootFEN,
 			title: gameState.repertoire.header?.title ?? null,
 			currentMoveId: gameState.currentMove?.moveId ?? null,
@@ -846,7 +858,7 @@ export const ChessRepertoire = ({
 		app,
 		dataAdapter,
 		chessRepertoireId,
-		moves: gameState.repertoire.moves,
+		tree: gameState.repertoire,
 		repertoireColor: gameState.repertoire.playerColor,
 		currentMoveId,
 		chess: chessLogic,
@@ -954,12 +966,12 @@ export const ChessRepertoire = ({
 	const moveLabel = useMemo(
 		() =>
 			getMoveLabel(
-				gameState.repertoire.moves,
+				gameState.repertoire,
 				currentMoveId,
 				firstPlayer,
 				initialMoveNumber
 			),
-		[currentMoveId, firstPlayer, gameState.repertoire.moves, initialMoveNumber]
+		[currentMoveId, firstPlayer, gameState.repertoire, initialMoveNumber]
 	);
 
 	return (
@@ -1008,6 +1020,7 @@ export const ChessRepertoire = ({
 
 				<PgnViewer
 					history={gameState.repertoire.moves}
+					rootVariants={gameState.repertoire.rootVariants}
 					currentMoveId={currentMoveId}
 					firstPlayer={firstPlayer}
 					initialMoveNumber={initialMoveNumber}
@@ -1063,7 +1076,7 @@ export const ChessRepertoire = ({
 						new ExportModal(app, {
 							fen: chessLogic.fen(),
 							pgn: exportPgn(
-								gameState.repertoire.moves,
+								gameState.repertoire,
 								gameState.repertoire.rootFEN,
 								ROOT_FEN,
 								gameState.repertoire.header?.title ?? null

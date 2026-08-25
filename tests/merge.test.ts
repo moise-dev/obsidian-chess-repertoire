@@ -50,9 +50,10 @@ const repertoire = (
 	moves: ChessRepertoireMove[],
 	overrides: Partial<ChessRepertoireFileData> = {}
 ): ChessRepertoireFileData => ({
-	version: '0.0.6',
+	version: '0.0.7',
 	header: { title: null },
 	moves,
+	rootVariants: [],
 	rootFEN: ROOT,
 	...overrides,
 });
@@ -72,7 +73,6 @@ describe('mergeRepertoires', () => {
 
 		assert.deepEqual(outline(merged.repertoire.moves), ['e4', 'e5']);
 		assert.equal(merged.skipped, 0);
-		assert.equal(merged.dropped, 0);
 	});
 
 	it('adds nothing when the second repertoire says the same thing', () => {
@@ -166,14 +166,40 @@ describe('mergeRepertoires', () => {
 		assert.deepEqual(outline(merged.repertoire.moves), ['e4']);
 	});
 
-	it('counts an alternative first move it cannot hang anywhere', () => {
+	it('keeps an alternative first move beside the mainline', () => {
 		const merged = mergeRepertoires(
 			[repertoire([mv('e4'), mv('e5')]), repertoire([mv('d4'), mv('d5')])],
-			'0.0.6'
+			'0.0.7'
 		);
 
-		assert.equal(merged.dropped, 1);
+		// Nothing precedes it, so it hangs off the root rather than off a move -
+		// but it is kept, not dropped.
 		assert.deepEqual(outline(merged.repertoire.moves), ['e4', 'e5']);
+		assert.deepEqual(
+			merged.repertoire.rootVariants.map((variant) => outline(variant.moves)),
+			[['d4', 'd5']]
+		);
+	});
+
+	it('descends into an alternative first move it already has', () => {
+		const merged = mergeRepertoires(
+			[
+				repertoire([mv('e4'), mv('e5')], {
+					rootVariants: [va([mv('d4'), mv('d5')])],
+				}),
+				repertoire([mv('d4'), mv('Nf6')]),
+			],
+			'0.0.7'
+		);
+
+		// d4 already stands at the root, so Nf6 joins it as a variation there
+		// rather than opening a second d4 beside it.
+		assert.equal(merged.repertoire.rootVariants.length, 1);
+		assert.deepEqual(outline(merged.repertoire.rootVariants[0].moves), [
+			'd4',
+			'  Nf6',
+			'd5',
+		]);
 	});
 
 	it('fills in annotations the first repertoire lacks without overwriting any', () => {
