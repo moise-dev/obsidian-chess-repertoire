@@ -39,7 +39,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Go to the start position"
 				onClick={() => props.onFirstButtonClick()}
 			>
-				<ChevronsLeft size={18} />
+				<ChevronsLeft size={22} />
 			</button>
 			<button
 				className="cs-icon-button"
@@ -47,7 +47,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Go to the previous move"
 				onClick={() => props.onBackButtonClick()}
 			>
-				<ArrowLeft size={18} />
+				<ArrowLeft size={22} />
 			</button>
 			<button
 				className="cs-icon-button"
@@ -55,7 +55,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Go to the next move"
 				onClick={() => props.onForwardButtonClick()}
 			>
-				<ArrowRight size={18} />
+				<ArrowRight size={22} />
 			</button>
 			<button
 				className="cs-icon-button"
@@ -63,7 +63,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Go to the last move"
 				onClick={() => props.onLastButtonClick()}
 			>
-				<ChevronsRight size={18} />
+				<ChevronsRight size={22} />
 			</button>
 
 			<span className="cs-controls-divider" />
@@ -74,7 +74,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Flip the board"
 				onClick={() => props.onFlipButtonClick()}
 			>
-				<FlipVertical2 size={18} />
+				<FlipVertical2 size={22} />
 			</button>
 			<button
 				className={`cs-icon-button${props.isTraining ? ' is-active' : ''}`}
@@ -83,7 +83,7 @@ export const Controls = (props: ControlActions) => {
 				aria-pressed={props.isTraining}
 				onClick={() => props.onTrainButtonClick()}
 			>
-				<GraduationCap size={18} />
+				<GraduationCap size={22} />
 			</button>
 			<button
 				className="cs-icon-button"
@@ -91,7 +91,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Open the study map"
 				onClick={() => props.onMapButtonClick()}
 			>
-				<Network size={18} />
+				<Network size={22} />
 			</button>
 			<button
 				className="cs-icon-button"
@@ -100,7 +100,7 @@ export const Controls = (props: ControlActions) => {
 				disabled={props.isTraining}
 				onClick={() => props.onUndoButtonClick()}
 			>
-				<Undo2 size={18} />
+				<Undo2 size={22} />
 			</button>
 			<button
 				className="cs-icon-button"
@@ -108,7 +108,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Copy the current position as FEN"
 				onClick={() => props.onCopyButtonClick()}
 			>
-				<Copy size={18} />
+				<Copy size={22} />
 			</button>
 			<button
 				className={`cs-icon-button cs-icon-button--primary${
@@ -118,7 +118,7 @@ export const Controls = (props: ControlActions) => {
 				aria-label="Save the study"
 				onClick={() => props.onSaveButtonClick()}
 			>
-				<Save size={18} />
+				<Save size={22} />
 			</button>
 		</div>
 	);

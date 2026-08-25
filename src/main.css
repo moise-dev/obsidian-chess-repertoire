@@ -261,8 +261,8 @@
 }
 
 .chess-study .cs-color-dot {
-	width: 8px;
-	height: 8px;
+	width: 12px;
+	height: 12px;
 	border: 1px solid var(--text-faint);
 	border-radius: 50%;
 }
@@ -467,12 +467,12 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	/* Compress before wrapping: at a fixed 28px the row overflows the side panel
+	/* Compress before wrapping: at a fixed 32px the row overflows the side panel
 	   once the widget is resized down, dropping Save onto a line of its own. */
-	flex: 0 1 28px;
-	width: 28px;
-	min-width: 21px;
-	height: 28px;
+	flex: 0 1 32px;
+	width: 32px;
+	min-width: 25px;
+	height: 32px;
 	padding: 0;
 	border: none;
 	border-radius: 6px;
@@ -692,8 +692,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 19px;
-	height: 18px;
+	min-width: 23px;
+	height: 22px;
 	margin-left: 5px;
 	padding: 0 3px;
 	border-radius: 4px;
@@ -704,7 +704,7 @@
 	);
 	color: var(--cs-classification);
 	font-family: var(--font-monospace);
-	font-size: 12px;
+	font-size: 14px;
 	font-weight: 700;
 	line-height: 1;
 	vertical-align: middle;
