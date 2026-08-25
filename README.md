@@ -5,11 +5,7 @@
 
 **Chess Study v2** is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes). The original turns a PGN into a playable, annotatable board inside a note, with comments and arrows stored in your vault. This fork keeps all of that and adds the parts that turn a set of notes into something you can actually rehearse: an importer that brings a chess.com or Lichess game in whole, variations of any depth, chess.com-style move classifications, a rebuilt widget, and a **trainer** that plays your study back at you and tells you where you went wrong.
 
-<!-- SCREENSHOT: the hero shot. A study open in a note, board on the left with a
-     couple of arrows drawn, move list on the right showing a mainline plus one
-     or two nested variations, notes panel open underneath with some text in it.
-     Full widget width, light or dark theme - whichever your vault uses. -->
-![Chess Study v2](imgs/v2-overview.png)
+![Chess Study v2 in use](imgs/v2-demo.gif)
 
 <!-- omit in toc -->
 ## Table of contents
@@ -42,10 +38,6 @@ The graduation-cap button in the control strip starts a drill. It asks which col
 
 From there you play your colour and the study plays the other. A move the study does not know is refused: the board snaps back, the attempted move is drawn as a red arrow, and it goes on the tally. Only the line counts. Variations are alternatives to the move being asked for, not answers alongside it, so playing into one is a mistake like any other.
 
-<!-- SCREENSHOT: a session in progress. Board with a hint arrow or a marked
-     piece on it, the move list showing "Moves are hidden while training", and
-     the trainer strip underneath with the Hint counter part-used (say 2/3) and
-     an error tally showing. -->
 ![Training a line](imgs/v2-trainer.png)
 
 Hints escalate, one per press, and a stage with nothing to offer is skipped so the first press always reveals something:
@@ -58,9 +50,6 @@ Hints are drawn as board decorations that are never saved, and they reset as soo
 
 When the line runs out, the drill ends and leaves a report: moves played, mistakes made, and a row per mistake giving the move number, what you played, and what the study wanted. The same wrong move in the same position counts once, with a multiplier.
 
-<!-- SCREENSHOT: the end-of-session report. Ideally with three or four mistakes
-     listed so the struck-through move / arrow / correct move layout is clear,
-     and at least one showing a x2 multiplier. -->
 ![Session report](imgs/v2-trainer-report.png)
 
 Nothing a session does is written to your study. Correct moves navigate and refused ones put the board back, so a drill can never leave stray variations behind.
@@ -74,12 +63,6 @@ An annotated game from chess.com or Lichess comes in whole rather than as a bare
 - **Variations** become variations, nested, keeping their own comments and glyphs.
 - A **`[FEN]` header** is honoured, so a game that starts from a position starts there.
 
-<!-- SCREENSHOT: an annotated chess.com game just after importing. Worth
-     choosing one where the move list shows a classification badge or two, a
-     note marker, and a variation, so it is clear all three survived the
-     import. -->
-![Importing an annotated game](imgs/v2-pgn-import.png)
-
 The original could not read these games at all: a `[Link "https://..."]` header was enough to make it reject the paste as a malformed FEN. The library underneath it also drops variations, has no notion of glyphs, and files comments by position rather than by move. A move that will not play no longer takes the whole import down with it either: it is left out, and the notice says how many were.
 
 ### Variations at any depth
@@ -90,10 +73,6 @@ Right-clicking any variation move opens a menu to **promote** it (one level, or 
 
 **Delete move** is on the same menu for every move, mainline included. It removes that move and the rest of the line it sits in: inside a variation that means the rest of that branch and nothing else, so the line it hangs off carries on. Variations growing out of the removed moves go with them, and the count is named before anything happens.
 
-<!-- SCREENSHOT: the move list only (crop it), showing a mainline with a
-     variation two or three levels deep so the coloured rails and the stepped
-     indents are visible, and the right-click menu open over one of the
-     variation moves. -->
 ![Nested variations](imgs/v2-variations.png)
 
 Playing a move that an existing variation already starts with follows that variation rather than creating a second one saying the same thing, and stepping back off the front of a variation lands on the move it hangs off.
@@ -102,10 +81,6 @@ Playing a move that an existing variation already starts with follows that varia
 
 Seven chess.com-style labels (Brilliant, Great, Excellent, Good, Inaccuracy, Mistake, Blunder) set by pressing `1`-`7` (`0` clears), from a picker in the notes panel, or from the right-click menu on any move. Each shows as a coloured badge beside the move in the list and on the destination square of the board.
 
-<!-- SCREENSHOT: a position where the current move carries a classification, so
-     the badge on the board square and the matching badge in the move list are
-     both visible. The notes panel open with the classification picker row
-     showing would make it clearer still. -->
 ![Move classifications](imgs/v2-classifications.png)
 
 ### A rebuilt widget
@@ -116,6 +91,8 @@ Seven chess.com-style labels (Brilliant, Great, Excellent, Good, Inaccuracy, Mis
 - **Coordinates drawn inside the board**, chess.com style. The original positioned them outside it, where the widget clipped them.
 - **Flip the board**, and **copy the current FEN** to the clipboard.
 - A **notes panel** that is labelled, collapsible, and shows which move a note belongs to.
+
+![The widget](imgs/v2-overview.png)
 
 ### Annotations you can see from the move list
 
@@ -187,8 +164,6 @@ showCoordinates: false
 | `boardSize`        | number of pixels                              | Widget width. Written automatically when you drag to resize.  |
 | `viewComments`     | `true` \| `false`                             | Whether the notes panel starts open                           |
 
-<!-- SCREENSHOT: the plugin's settings tab, so the defaults are visible at a
-     glance. Settings -> Community plugins -> Chess Study v2. -->
 ![Settings](imgs/v2-settings.png)
 
 ## Keyboard shortcuts
