@@ -4,9 +4,11 @@ import {
 	CLASSIFICATIONS,
 	CLASSIFICATION_ORDER,
 	MoveClassification,
+	readClassification,
 } from 'src/lib/classification';
-import { MAX_VARIATION_DEPTH } from 'src/lib/move-tree';
-import { ChessStudyMove } from 'src/lib/storage';
+import { commentToPlainText, hasComment } from 'src/lib/comments';
+import { MAX_VARIATION_DEPTH, moveNumberAtPly } from 'src/lib/move-tree';
+import { ChessStudyMove, Variant } from 'src/lib/storage';
 
 /**
  * PGN import.
@@ -278,4 +280,105 @@ export const titleFromHeaders = (
 	const black = named(headers.Black);
 
 	return white && black ? `${white} vs ${black}` : null;
+};
+
+/**
+ * PGN export.
+ *
+ * The inverse of the importer above: comments, classifications and variations
+ * all round-trip. A classification exports as its NAG where one exists
+ * (`CLASSIFICATIONS[key].nag`); `excellent` and `good` are chess.com's own
+ * invention and have none, so they are left off the move the same way an
+ * import would drop a glyph this build cannot label.
+ */
+
+/** `{}` cannot contain a literal `}`, so it is folded into a `)`. */
+const escapeComment = (text: string): string => text.replace(/\}/g, ')');
+
+const moveToken = (move: ChessStudyMove): string => {
+	let token = move.san;
+
+	const classification = readClassification(move.classification);
+	const nag = classification ? CLASSIFICATIONS[classification].nag : null;
+
+	if (nag !== null) token += ` $${nag}`;
+
+	if (hasComment(move.comment)) {
+		token += ` {${escapeComment(commentToPlainText(move.comment, Infinity))}}`;
+	}
+
+	return token;
+};
+
+/**
+ * One line of play, recursing into variations. `plyOffset` is the half-move
+ * index of `moves[0]` counted from the study's own start, matching
+ * `plyAtPath` - a variation hangs off the move it replaces, so it starts at
+ * the same ply as that move rather than one after it.
+ */
+const serializeLine = (
+	moves: ChessStudyMove[],
+	plyOffset: number,
+	firstPlayer: string,
+	initialMoveNumber: number,
+	forceFirstNumber: boolean
+): string => {
+	const tokens: string[] = [];
+	let needsNumber = forceFirstNumber;
+
+	moves.forEach((move, i) => {
+		const number = moveNumberAtPly(plyOffset + i, firstPlayer, initialMoveNumber);
+
+		if (move.color === 'w') tokens.push(`${number}.`);
+		else if (needsNumber) tokens.push(`${number}...`);
+
+		tokens.push(moveToken(move));
+		needsNumber = false;
+
+		const variants: Variant[] = i > 0 ? moves[i - 1].variants : [];
+
+		for (const variant of variants) {
+			tokens.push(
+				`(${serializeLine(
+					variant.moves,
+					plyOffset + i,
+					firstPlayer,
+					initialMoveNumber,
+					true
+				)})`
+			);
+			// The variation just closed, so the mainline's own move number is
+			// restated even if this next move is Black's.
+			needsNumber = true;
+		}
+	});
+
+	return tokens.join(' ');
+};
+
+/**
+ * The whole study as a movetext, from its own start rather than the standard
+ * array where it began somewhere else.
+ */
+export const exportPgn = (
+	moves: ChessStudyMove[],
+	rootFEN: string,
+	standardFEN: string,
+	title: string | null
+): string => {
+	const chess = new Chess(rootFEN);
+	const firstPlayer = chess.turn();
+	const initialMoveNumber = chess.moveNumber();
+
+	const headers: string[] = [];
+
+	if (title) headers.push(`[Event "${title}"]`);
+
+	if (rootFEN !== standardFEN) {
+		headers.push('[SetUp "1"]', `[FEN "${rootFEN}"]`);
+	}
+
+	const movetext = serializeLine(moves, 0, firstPlayer, initialMoveNumber, true);
+
+	return [...headers, '', `${movetext}${movetext ? ' ' : ''}*`].join('\n');
 };

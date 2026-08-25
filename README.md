@@ -59,10 +59,10 @@ The map can also be exported as an Obsidian **canvas**: the same cards, laid out
 
 - **Variations at any depth**, promoted, reordered, or deleted from a right-click menu.
 - **Move classifications** - seven chess.com-style labels, set with `1`-`7`, shown as a badge on the move and the board.
-- **Board flip** and one-click FEN copy from the control strip.
+- **Board flip** from the control strip.
 - **Notes and drawings** on any move - Markdown notes plus arrows and circles on the board.
 - **Annotations visible from the move list** - a dot for notes, a dot for arrows, without stepping through the game to find them. The orange dot indicate the presence of a comment, a green dot represents the presence of an annotation.
-- **PGN import that keeps comments, glyphs, and variations** from chess.com and Lichess games.
+- **PGN import and export**, comments, classifications and variations included - importing reads them from chess.com and Lichess games, exporting writes them back out as NAGs and `{}` comments. The export button also offers the current position as a FEN, either way with a button to copy it to the clipboard.
 - **Merge several studies in a note** into one combined tree.
 - **A board with no study behind it**, for showing a bare position in a note.
 - **Autosave**, with a visible indicator whenever there's something unsaved.
@@ -130,7 +130,6 @@ Click a study to give it the keys; click away to give them back. Works in both R
 ## Known limitations
 
 - Desktop only - the widget isn't adapted for touch.
-- No PGN export yet.
 - On import, an alternative to a game's very first move is dropped.
 - The map draws a tree, not a graph: transposing lines are two linked cards, not one shared card.
 

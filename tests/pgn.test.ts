@@ -1,6 +1,11 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { looksLikeFen, parsePgn, titleFromHeaders } from '../src/lib/pgn';
+import {
+	exportPgn,
+	looksLikeFen,
+	parsePgn,
+	titleFromHeaders,
+} from '../src/lib/pgn';
 import { ChessStudyMove } from '../src/lib/storage';
 
 const ROOT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -245,5 +250,79 @@ describe('titleFromHeaders', () => {
 	it('treats the placeholders a PGN writes as absent', () => {
 		assert.equal(titleFromHeaders({ White: '?', Black: '?' }), null);
 		assert.equal(titleFromHeaders({}), null);
+	});
+});
+
+describe('exportPgn', () => {
+	it('writes a plain mainline', () => {
+		const { moves } = parse('1. e4 e5 2. Nf3 Nc6');
+
+		assert.equal(
+			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 e5 2. Nf3 Nc6 *'
+		);
+	});
+
+	it('carries classifications back out as NAGs', () => {
+		const { moves } = parse('1. e4! e5?? 2. Nf3!!');
+
+		assert.equal(
+			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 $1 e5 $4 2. Nf3 $3 *'
+		);
+	});
+
+	it('carries comments back out as {}', () => {
+		const { moves } = parse('1. e4 {best by test} e5');
+
+		assert.equal(
+			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 {best by test} e5 *'
+		);
+	});
+
+	it('writes a variation right after the move it replaces', () => {
+		const { moves } = parse('1. e4 e5 (1... c5 2. Nf3) 2. Nf3 Nc6');
+
+		assert.equal(
+			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *'
+		);
+	});
+
+	it('restates the move number for the mainline move right after a variation', () => {
+		const { moves } = parse('1. e4 e5 2. Nf3 (2. Bc4) Nc6');
+
+		assert.equal(
+			exportPgn(moves, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 e5 2. Nf3 (2. Bc4) 2... Nc6 *'
+		);
+	});
+
+	it('adds a FEN header for a study that starts elsewhere, and an Event header for its title', () => {
+		const blackToMove = '4k3/8/8/8/8/8/4P3/4K3 b - - 0 7';
+		const { moves } = parse('7... Kd7 8. e4', blackToMove);
+
+		assert.equal(
+			exportPgn(moves, blackToMove, ROOT_FEN, 'King and pawn'),
+			`[Event "King and pawn"]\n[SetUp "1"]\n[FEN "${blackToMove}"]\n\n7... Kd7 8. e4 *`
+		);
+	});
+
+	it('round-trips through the importer', () => {
+		const original =
+			'1. e4 e5 (1... c5 2. Nf3 d6) 2. Nf3 $1 {developing} Nc6 3. Bb5 a6';
+		const { moves } = parse(original);
+		const reparsed = parse(exportPgn(moves, ROOT_FEN, ROOT_FEN, null)).moves;
+
+		assert.equal(sans(reparsed), sans(moves));
+		assert.deepEqual(
+			reparsed.map((move) => move.classification),
+			moves.map((move) => move.classification)
+		);
+		assert.equal(
+			reparsed[0].variants[0].moves.map((m) => m.san).join(' '),
+			moves[0].variants[0].moves.map((m) => m.san).join(' ')
+		);
 	});
 });

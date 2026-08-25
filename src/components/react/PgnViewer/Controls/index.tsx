@@ -3,7 +3,7 @@ import {
 	ArrowRight,
 	ChevronsLeft,
 	ChevronsRight,
-	Copy,
+	Download,
 	FlipVertical2,
 	GraduationCap,
 	Network,
@@ -27,7 +27,7 @@ export interface ControlActions {
 	onLastButtonClick: () => void;
 	onFlipButtonClick: () => void;
 	onSaveButtonClick: () => void;
-	onCopyButtonClick: () => void;
+	onExportButtonClick: () => void;
 }
 
 export const Controls = (props: ControlActions) => {
@@ -104,11 +104,11 @@ export const Controls = (props: ControlActions) => {
 			</button>
 			<button
 				className="cs-icon-button"
-				title="Copy FEN"
-				aria-label="Copy the current position as FEN"
-				onClick={() => props.onCopyButtonClick()}
+				title="Export study"
+				aria-label="Export the study as PGN or FEN"
+				onClick={() => props.onExportButtonClick()}
 			>
-				<Copy size={22} />
+				<Download size={22} />
 			</button>
 			<button
 				className={`cs-icon-button cs-icon-button--primary${

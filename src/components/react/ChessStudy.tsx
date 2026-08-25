@@ -39,6 +39,7 @@ import {
 	removeVariationAtPath,
 } from 'src/lib/move-tree';
 import { parseUserConfig } from 'src/lib/obsidian';
+import { exportPgn } from 'src/lib/pgn';
 import {
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
@@ -51,8 +52,10 @@ import {
 	getCurrentMove,
 	getMoveLabel,
 } from 'src/lib/ui-state';
+import { ROOT_FEN } from 'src/main';
 import { useImmerReducer } from 'use-immer';
 import { ConfirmModal } from '../obsidian/ConfirmModal';
+import { ExportModal } from '../obsidian/ExportModal';
 import { MoveMapModal } from '../obsidian/MoveMapModal';
 import { ChessgroundProps, ChessgroundWrapper } from './ChessgroundWrapper';
 import { CommentSection } from './CommentSection';
@@ -1048,13 +1051,16 @@ export const ChessStudy = ({
 						})
 					}
 					onSaveButtonClick={onSaveButtonClick}
-					onCopyButtonClick={() => {
-						try {
-							navigator.clipboard.writeText(chessLogic.fen());
-							new Notice('Copied to clipboard!');
-						} catch (e) {
-							new Notice(`Could not copy to clipboard: ${e}`);
-						}
+					onExportButtonClick={() => {
+						new ExportModal(app, {
+							fen: chessLogic.fen(),
+							pgn: exportPgn(
+								gameState.study.moves,
+								gameState.study.rootFEN,
+								ROOT_FEN,
+								gameState.study.header?.title ?? null
+							),
+						}).open();
 					}}
 				/>
 			</div>
