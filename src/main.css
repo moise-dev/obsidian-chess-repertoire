@@ -1131,6 +1131,9 @@
 .cs-map-board {
 	display: grid;
 	grid-template-columns: repeat(8, 1fr);
+	/* Rows spelled out rather than left to auto: a piece sized against an
+	   indefinite row resolves to nothing and the board comes out empty. */
+	grid-template-rows: repeat(8, 1fr);
 	width: 100%;
 	height: 100%;
 	border: 1px solid var(--background-modifier-border);
@@ -1148,9 +1151,10 @@
  * absolutely over one board, while these sit one to a grid cell.
  */
 .cs-map-board-wrap.cg-wrap piece {
-	position: static;
-	width: 100%;
-	height: 100%;
+	position: absolute;
+	inset: 0;
+	width: auto;
+	height: auto;
 	background-size: contain;
 	background-repeat: no-repeat;
 	background-position: center;
