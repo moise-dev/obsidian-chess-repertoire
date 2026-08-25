@@ -3,7 +3,7 @@
 
 > A chess study helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
 
-**Chess Study v2** is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes). The original turns a PGN into a playable, annotatable board inside a note, with comments and arrows stored in your vault. This fork keeps all of that and adds the parts that turn a set of notes into something you can actually rehearse: an importer that brings a chess.com or Lichess game in whole, variations of any depth, chess.com-style move classifications, a rebuilt widget, and a **trainer** that plays your study back at you and tells you where you went wrong.
+**Chess Study v2** is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes). The original turns a PGN into a playable, annotatable board inside a note, with comments and arrows stored in your vault. This fork keeps all of that and adds the parts that turn a set of notes into a repertoire you can actually rehearse: an importer that brings a chess.com or Lichess game in whole, variations of any depth, chess.com-style move classifications, a rebuilt widget, a **trainer** that plays your study back at you and tells you where you went wrong, and a **map** that draws the whole thing as the branching decision it really is.
 
 ![Chess Study v2 in use](imgs/v2-demo.gif)
 
@@ -71,6 +71,8 @@ That last part is not only tidiness. The board library reports the whole set of 
 
 The network button opens the study as a diagram. One card per run of moves with nothing to decide in it, and a fork wherever the line branches, so a repertoire reads as what it actually is: a trunk, and the points where your opponent gets to choose.
 
+![The study map](imgs/v2-map.png)
+
 Each card carries a position, the moves around it as a scoresheet with whatever labels they were given, and a coloured edge saying how the line is holding up - drilled clean, shaky, never drilled, excluded, or **no reply recorded yet**. That last one is the useful one: a line that stops on your opponent's move is a hole in the repertoire, and on the map it is a stub sitting next to lines that run to move fifteen.
 
 Which position depends on where the card sits. The trunk shows where it hands over - the one your opponent makes their first choice in - and every branch shows the move that opened it, since a branch card answers "what if they play this?" and that position is the answer. Where a line ends up is what the moves underneath are for.
@@ -80,6 +82,8 @@ A move that reaches a position some other line also reaches carries a small ⇄,
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
 The last button exports the diagram as an Obsidian **canvas** file beside the note - a card per line, where the map put it, with its board, its moves as a table, their labels, and how the line is holding up. Notes and arrows are left behind: a card is for finding your way, and those are what you open the study for. That one is a snapshot: nothing reads it back, and it goes stale as soon as the study changes. That is what it is for. The map cannot be drawn on or rearranged, and a canvas can, so a repertoire you want to spread out and scribble over goes there. An existing file is never overwritten - the name is suffixed - so a canvas you have already annotated survives a second export.
+
+![A map exported as a canvas](imgs/v2-map-canvas.png)
 
 The boards on those cards are `chessPosition` blocks, which means they are drawn by this plugin rather than baked into the file. In the vault you exported from that is no different from any other board; open the canvas somewhere without the plugin and the cards keep their notation and lose their diagrams.
 
@@ -142,6 +146,7 @@ Seven chess.com-style labels (Brilliant, Great, Excellent, Good, Inaccuracy, Mis
 - **Coordinates drawn inside the board**, chess.com style. The original positioned them outside it, where the widget clipped them.
 - **Flip the board**, and **copy the current FEN** to the clipboard.
 - A **notes panel** that is labelled, collapsible, and shows which move a note belongs to.
+- A chip beside the move list saying **which side the study is written for**, which is what the drill and the map read.
 
 ![The widget](imgs/v2-overview.png)
 
@@ -219,7 +224,9 @@ showCoordinates: false
 
 ## Keyboard shortcuts
 
-Click a study first: the shortcuts act on the one you last clicked, and a thin accent ring shows which that is.
+Click a study first. The shortcuts act on the one you last clicked and give the keys back the moment you click anywhere else, so typing in the note is never swallowed by the study you were just reading.
+
+They work in **Live Preview as well as Reading view**, Vim mode included. In Live Preview a study is a CodeMirror widget, so the keys are caught by an editor extension that runs ahead of the Vim keymap; everywhere else a capture-phase listener does the same job. Only a key the study actually wants is taken - the rest reach the editor untouched.
 
 | Key       | Action                     |
 | --------- | -------------------------- |
@@ -230,13 +237,14 @@ Click a study first: the shortcuts act on the one you last clicked, and a thin a
 
 ## Known limitations
 
-- **Shortcuts only work in Reading view.** In Live Preview the widget is rendered inside CodeMirror, which takes the keys first, more so with Vim mode enabled. The buttons and mouse work everywhere.
 - **Desktop only.** The widget has not been adapted for touch.
 - **Underpromotion is not supported**: pawns reaching the last rank always promote to a queen.
 - **No PGN export yet.** Studies live as JSON; classifications already record their NAG codes for a future exporter.
 - **On import, an alternative to the game's very first move is dropped.** Nothing precedes it, so the move tree has nowhere to hang it. Alternatives to every later move import fine.
 - **On import, a glyph with no matching label is dropped** rather than guessed at, `$5` and `!?` among them.
 - **Clicking an empty square or an enemy piece clears the arrows** drawn on the current move. That is the board library's own erase gesture; picking up your own piece leaves them alone.
+- **The map draws a tree, not a graph.** Two move orders reaching the same position are two cards that point at each other rather than one card both lines run into.
+- **A canvas exported from the map needs the plugin to draw its boards**, since they are `chessPosition` blocks rather than pictures baked into the file. The notation survives anywhere.
 
 ## Development
 
@@ -256,16 +264,16 @@ Before this can be submitted as a community plugin:
 
 - [x] Give the plugin its own `id`, `name` and `author` in `manifest.json`
 - [x] Align `manifest.json`, `package.json` and `versions.json` on 2.0.0
-- [ ] Replace the inherited screenshots with v2 ones
+- [ ] Replace the inherited screenshots with v2 ones, and add the two the map section is waiting on: `imgs/v2-map.png` and `imgs/v2-map-canvas.png`
 - [ ] Tag `2.0.0` and publish the draft release the workflow builds
 - [ ] Submit to [obsidian-releases](https://github.com/obsidianmd/obsidian-releases), explaining what the fork adds over the original
 
 Beyond that:
 
-- [ ] Get the shortcuts working in Live Preview
 - [ ] PGN export, including classifications as NAGs
 - [ ] A view to manage stored studies
-- [ ] Spaced repetition across studies, built on the trainer
+- [ ] Merge transpositions on the map, so two move orders into one position are one card rather than two that point at each other
+- [ ] Spaced repetition across studies, built on the drill histories the trainer now keeps
 - [ ] Mobile support
 
 ## Credits
