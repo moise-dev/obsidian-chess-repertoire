@@ -28,9 +28,9 @@ const studies = new Map<HTMLElement, StudyKeyHandler>();
 /** The study last interacted with, which is the one the keys belong to. */
 let active: HTMLElement | null = null;
 
-/** `window.CHESS_STUDY_DEBUG_KEYS = true` narrates where a key press went. */
+/** `window.CHESS_REPERTOIRE_DEBUG_KEYS = true` narrates where a key press went. */
 const isDebugging = () =>
-	!!(window as unknown as Record<string, unknown>).CHESS_STUDY_DEBUG_KEYS;
+	!!(window as unknown as Record<string, unknown>).CHESS_REPERTOIRE_DEBUG_KEYS;
 
 const describe = (node: Element | null): string => {
 	if (!node) return 'none';

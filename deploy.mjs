@@ -1,15 +1,21 @@
 /**
- * Copy the built plugin into the Obsidian vault.
+ * Copy the built plugin into an Obsidian vault, for local development.
  *
- * Override the target with CHESS_STUDY_VAULT_PLUGIN_DIR when working against a
- * different vault.
+ * No default path: this repo is public, and a vault path is specific to
+ * whoever is running it. Point CHESS_REPERTOIRE_VAULT_PLUGIN_DIR at
+ * `<vault>/.obsidian/plugins/chess-repertoire` before running `npm run deploy`.
  */
 import { copyFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const target =
-	process.env.CHESS_STUDY_VAULT_PLUGIN_DIR ??
-	'/mnt/TheKnowledge/.obsidian/plugins/chess-repertoire';
+const target = process.env.CHESS_REPERTOIRE_VAULT_PLUGIN_DIR;
+
+if (!target) {
+	console.error(
+		'Set CHESS_REPERTOIRE_VAULT_PLUGIN_DIR to <vault>/.obsidian/plugins/chess-repertoire first.'
+	);
+	process.exit(1);
+}
 
 if (!existsSync(target)) {
 	console.error(`Target plugin folder does not exist: ${target}`);
