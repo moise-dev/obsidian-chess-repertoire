@@ -158,6 +158,19 @@ export const layoutSegments = (
 	};
 };
 
+/**
+ * The move whose position a card shows.
+ *
+ * The trunk shows where it hands over: the position the first choice is made
+ * in. Every other card shows the move that brought it into being, because a
+ * branch card answers "what if they play this?" and that position is the
+ * answer - where the line ends up is what the moves underneath are for.
+ */
+export const anchorMove = (segment: MapSegment): ChessStudyMove | null =>
+	(segment.depth === 0
+		? segment.moves[segment.moves.length - 1]
+		: segment.moves[0]) ?? null;
+
 /** One line of a scoresheet: a move number and the two moves under it. */
 export interface ScoresheetRow {
 	number: number;

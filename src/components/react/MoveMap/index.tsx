@@ -12,6 +12,7 @@ import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MapSegment,
+	anchorMove,
 	buildSegments,
 	fenToBoard,
 	layoutSegments,
@@ -36,6 +37,13 @@ const FIT_PADDING = 32;
 
 const clamp = (value: number, low: number, high: number) =>
 	Math.min(Math.max(value, low), high);
+
+/** Which position a card's board is showing, for its tooltip. */
+const positionLabel = (move: ChessStudyMove | null, number: number) => {
+	if (!move) return 'Starting position';
+
+	return `After ${number}${move.color === 'b' ? '...' : '.'} ${move.san}`;
+};
 
 /** FEN letter to the role name chessground keys its sprites by. */
 const ROLES: Record<string, string> = {
@@ -63,10 +71,13 @@ const MiniBoard = ({
 	fen,
 	flipped,
 	boardColor,
+	label,
 }: {
 	fen: string;
 	flipped: boolean;
 	boardColor: BoardColor;
+	/** Which position this is, since a card no longer always shows its last. */
+	label: string;
 }) => {
 	const ranks = useMemo(() => {
 		const board = fenToBoard(fen);
@@ -77,7 +88,7 @@ const MiniBoard = ({
 	// `cg-wrap` on the outside is what lets chessground's sprite rules find the
 	// pieces; the grid itself carries the board colours.
 	return (
-		<div className="cs-map-board-wrap cg-wrap">
+		<div className="cs-map-board-wrap cg-wrap" title={label}>
 			<div className={`cs-map-board ${boardColor}-board`} aria-hidden="true">
 				{ranks.map((rank, rankIndex) =>
 					rank.map((piece, fileIndex) => (
@@ -443,7 +454,17 @@ export const MoveMap = ({
 					{layout.nodes.map((node) => {
 						const { segment } = node;
 						const state = segmentState(segment, excluded, stats, userColor);
-						const last = segment.moves[segment.moves.length - 1];
+						// The trunk's board is its last position; every branch shows the
+						// move that opened it.
+						const anchor = anchorMove(segment);
+						const anchorPly =
+							segment.depth === 0
+								? segment.startPly + segment.moves.length - 1
+								: segment.startPly;
+						const anchorLabel = positionLabel(
+							anchor,
+							moveNumberAtPly(anchorPly, firstPlayer, initialMoveNumber)
+						);
 						const rows = toScoresheet(segment, (ply) =>
 							moveNumberAtPly(ply, firstPlayer, initialMoveNumber)
 						);
@@ -480,9 +501,10 @@ export const MoveMap = ({
 								</div>
 
 								<MiniBoard
-									fen={last ? last.after : rootFEN}
+									fen={anchor ? anchor.after : rootFEN}
 									flipped={userColor === 'b'}
 									boardColor={boardColor}
+									label={anchorLabel}
 								/>
 
 								<div className="cs-map-sheet">

@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import {
 	MapSegment,
+	anchorMove,
 	buildSegments,
 	fenToBoard,
 	flattenSegments,
@@ -123,6 +124,29 @@ describe('buildSegments', () => {
 			root.children[1].children.map((child) => child.startPly),
 			[3, 3]
 		);
+	});
+});
+
+describe('anchorMove', () => {
+	it('shows the trunk where it hands over', () => {
+		const root = buildSegments(tree())!;
+
+		assert.equal(anchorMove(root)?.san, 'b');
+	});
+
+	it('shows a branch the move that opened it', () => {
+		const root = buildSegments(tree())!;
+
+		assert.deepEqual(
+			root.children.map((child) => anchorMove(child)?.san),
+			['c', 'x1', 'z1']
+		);
+	});
+
+	it('shows a study with no branches its last move', () => {
+		const root = buildSegments([mv('a'), mv('b'), mv('c')])!;
+
+		assert.equal(anchorMove(root)?.san, 'c');
 	});
 });
 
