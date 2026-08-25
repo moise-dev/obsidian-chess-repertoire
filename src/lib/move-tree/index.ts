@@ -306,3 +306,64 @@ export const getContinuation = (
 
 	return list?.[path[path.length - 1] + 1] ?? null;
 };
+
+/**
+ * Every move that may follow the move at `moveId` - the continuation of its
+ * line, then the first move of each variation hanging off it. Passing `null`
+ * asks for the root position.
+ *
+ * The variations belong to the move *before* the alternatives they hold: a
+ * variation on `moveId` replaces what comes after `moveId`, which is why
+ * promoting one splices it in after the parent. So the whole set of replies
+ * available at a position is reachable from the single move that precedes it -
+ * and why an alternative to the game's very first move has nowhere to live.
+ *
+ * Order is the continuation first, then variations in their stored order, which
+ * is the order they are listed in the move list.
+ */
+export const getReplies = (
+	moves: ChessStudyMove[],
+	moveId: string | null
+): ChessStudyMove[] => {
+	if (!moveId) return moves[0] ? [moves[0]] : [];
+
+	const path = findMovePath(moves, moveId);
+	const move = path && getMoveAtPath(moves, path);
+
+	if (!path || !move) return [];
+
+	const continuation = getListAtPath(moves, path)?.[path[path.length - 1] + 1];
+
+	return [
+		...(continuation ? [continuation] : []),
+		...(move.variants ?? [])
+			.map((variant) => variant.moves[0])
+			.filter((first): first is ChessStudyMove => Boolean(first)),
+	];
+};
+
+/** Every move in a line, nested variations included, flattened. */
+export const flattenMoves = (moves: ChessStudyMove[]): ChessStudyMove[] =>
+	moves.flatMap((move) => [
+		move,
+		...(move.variants ?? []).flatMap((variant) => flattenMoves(variant.moves)),
+	]);
+
+/**
+ * The move at `moveId` and everything reachable from it: the rest of its line
+ * and every variation growing out of those moves.
+ *
+ * The same span `removeMovesFromPath` deletes, which is what makes it the right
+ * unit for both excluding a branch and judging how well one is known.
+ */
+export const collectSubtree = (
+	moves: ChessStudyMove[],
+	moveId: string
+): ChessStudyMove[] => {
+	const path = findMovePath(moves, moveId);
+	const list = path && getListAtPath(moves, path);
+
+	if (!path || !list) return [];
+
+	return flattenMoves(list.slice(path[path.length - 1]));
+};
