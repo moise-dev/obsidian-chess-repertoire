@@ -21,6 +21,8 @@ import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
 import { nanoid } from 'nanoid';
 import { findCodeBlocks } from './lib/blocks';
+import { handleStudyKey, releaseOnOutsideClick } from './lib/keyboard';
+import { chessStudyKeymap } from './lib/keyboard/extension';
 import { mergeDrillStats, mergeStudies } from './lib/merge';
 import { parseUserConfig } from './lib/obsidian';
 import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';
@@ -194,6 +196,8 @@ export default class ChessStudyPlugin extends Plugin {
 			},
 		});
 
+		this.registerStudyKeyboard();
+
 		this.registerPositionBlock();
 
 		// Add chess study code block processor
@@ -230,6 +234,30 @@ export default class ChessStudyPlugin extends Plugin {
 				}
 			}
 		);
+	}
+
+	/**
+	 * Routes the widget's shortcuts around CodeMirror.
+	 *
+	 * Two ways in, because neither covers everything on its own. The editor
+	 * extension is the one that matters in Live Preview, where it runs ahead of
+	 * the Vim keymap; the window listener catches Reading view and anywhere the
+	 * extension does not reach. Whichever arrives first stops the other, so a
+	 * key is never acted on twice.
+	 */
+	private registerStudyKeyboard() {
+		this.registerEditorExtension(chessStudyKeymap());
+
+		this.registerDomEvent(
+			window,
+			'keydown',
+			(event) => handleStudyKey(event, 'window'),
+			{ capture: true }
+		);
+
+		this.registerDomEvent(document, 'pointerdown', releaseOnOutsideClick, {
+			capture: true,
+		});
 	}
 
 	/**

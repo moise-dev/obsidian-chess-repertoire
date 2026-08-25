@@ -22,6 +22,7 @@ import {
 	readClassification,
 } from 'src/lib/classification';
 import { collectExcludedMoveIds, resolveStudyColor } from 'src/lib/drill';
+import { registerStudyKeys, setActiveStudy } from 'src/lib/keyboard';
 import {
 	MAX_VARIATION_DEPTH,
 	countMoves,
@@ -657,6 +658,12 @@ export const ChessStudy = ({
 		(event: React.PointerEvent<HTMLDivElement>) => {
 			const target = event.target as HTMLElement;
 
+			// Claiming the keys happens on any click in the study, the notes
+			// editor and the buttons included: in Live Preview CodeMirror keeps
+			// the focus for itself, so the click is the only record of where the
+			// reader actually is.
+			setActiveStudy(rootRef.current);
+
 			if (target.closest('.ProseMirror') || target.closest('button')) return;
 
 			rootRef.current?.focus({ preventScroll: true });
@@ -741,12 +748,6 @@ export const ChessStudy = ({
 	);
 
 	/**
-	 * Opens the study as a diagram.
-	 *
-	 * The side it reads for is the study's own when it has one, falling back to
-	 * the way the board is turned - see `resolveStudyColor`.
-	 */
-	/**
 	 * Writes the map out as a canvas beside the note.
 	 *
 	 * A snapshot rather than a second copy of the study: nothing reads it back,
@@ -784,6 +785,12 @@ export const ChessStudy = ({
 		[app, ctx.sourcePath, gameState.study.header?.title]
 	);
 
+	/**
+	 * Opens the study as a diagram.
+	 *
+	 * The side it reads for is the study's own when it has one, falling back to
+	 * the way the board is turned - see `resolveStudyColor`.
+	 */
 	const onOpenMap = useCallback(() => {
 		new MoveMapModal(app, {
 			moves: gameState.study.moves,
@@ -813,17 +820,25 @@ export const ChessStudy = ({
 		orientation,
 	]);
 
-	const onKeyDown = useCallback(
-		(event: React.KeyboardEvent<HTMLDivElement>) => {
-			// Never hijack keys while anything is being typed into. ProseMirror is
-			// a contenteditable div, so this one check covers the notes editor and
-			// the title field both.
-			if (
-				(event.target as HTMLElement).closest(
-					'input, textarea, [contenteditable="true"]'
-				)
-			)
-				return;
+	/**
+	 * A shortcut the study wants, or false to let it pass.
+	 *
+	 * Preventing and stopping is the caller's business, not this function's:
+	 * the same handler answers for a React event in Reading view and a native
+	 * one caught before CodeMirror in Live Preview.
+	 */
+	const handleKey = useCallback(
+		(event: KeyboardEvent): boolean => {
+			// Never hijack keys while something is being typed into. Only fields
+			// inside this study count: in Live Preview the study itself sits
+			// inside the editor's own contenteditable, so asking for the nearest
+			// editable ancestor without that check answers yes to every key and
+			// the shortcuts go dead.
+			const editable = (event.target as HTMLElement | null)?.closest?.(
+				'input, textarea, [contenteditable="true"]'
+			);
+
+			if (editable && rootRef.current?.contains(editable)) return false;
 
 			const shortcut = classificationForKey(event.key);
 
@@ -832,33 +847,43 @@ export const ChessStudy = ({
 					type: 'SET_CLASSIFICATION',
 					classification: shortcut.classification,
 				});
-				event.preventDefault();
-				event.stopPropagation();
-				return;
+
+				return true;
 			}
 
 			switch (event.key) {
 				case 'ArrowLeft':
 					dispatch({ type: 'DISPLAY_PREVIOUS_MOVE_IN_HISTORY' });
-					break;
+
+					return true;
 				case 'ArrowRight':
 					dispatch({ type: 'DISPLAY_NEXT_MOVE_IN_HISTORY' });
-					break;
+
+					return true;
 				case 'ArrowUp':
 					dispatch({ type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' });
-					break;
+
+					return true;
 				case 'ArrowDown':
 					dispatch({ type: 'DISPLAY_LAST_MOVE_IN_HISTORY' });
-					break;
-				default:
-					return;
-			}
 
-			event.preventDefault();
-			event.stopPropagation();
+					return true;
+				default:
+					return false;
+			}
 		},
 		[dispatch]
 	);
+
+	// On the register for as long as the study is on screen. Module-level, so a
+	// Live Preview remount does not lose which study the reader is in.
+	useEffect(() => {
+		const root = rootRef.current;
+
+		if (!root) return;
+
+		return registerStudyKeys(root, handleKey);
+	}, [handleKey]);
 
 	const currentMoveId = gameState.currentMove?.moveId ?? null;
 
@@ -921,7 +946,12 @@ export const ChessStudy = ({
 				width ? ({ '--cs-width': `${width}px` } as React.CSSProperties) : undefined
 			}
 			tabIndex={0}
-			onKeyDown={onKeyDown}
+			onKeyDown={(event) => {
+				if (handleKey(event.nativeEvent)) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			}}
 			onPointerDownCapture={onPointerDownCapture}
 		>
 			<div className="cs-main">
