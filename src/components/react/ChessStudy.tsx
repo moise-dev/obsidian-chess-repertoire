@@ -14,6 +14,7 @@ import {
 	classificationForKey,
 	readClassification,
 } from 'src/lib/classification';
+import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MAX_VARIATION_DEPTH,
 	countMoves,
@@ -101,6 +102,8 @@ export type GameActions =
 	| { type: 'DELETE_VARIATION'; moveId: string }
 	/** The move and the rest of its line, that line only. */
 	| { type: 'DELETE_FROM_MOVE'; moveId: string }
+	/** Keep the move but take it, and the line under it, out of drills. */
+	| { type: 'SET_EXCLUDED'; moveId: string; excluded: boolean }
 	| { type: 'REORDER_VARIATION'; moveId: string; delta: number };
 
 export const ChessStudy = ({
@@ -284,6 +287,22 @@ export const ChessStudy = ({
 					move.classification = action.classification;
 
 					if (draft.currentMove?.moveId === moveId) draft.currentMove = move;
+
+					return draft;
+				}
+				case 'SET_EXCLUDED': {
+					const moves = draft.study.moves;
+					const path = findMovePathById(moves, action.moveId);
+					const move = path && getMoveAtPath(moves, path);
+
+					if (!move) return draft;
+
+					// Removed rather than set to false, so a study that has never
+					// excluded anything carries no trace of the flag.
+					if (action.excluded) move.excluded = true;
+					else delete move.excluded;
+
+					if (draft.currentMove?.moveId === action.moveId) draft.currentMove = move;
 
 					return draft;
 				}
@@ -697,6 +716,15 @@ export const ChessStudy = ({
 		[app, dispatch, gameState.study.moves]
 	);
 
+	/**
+	 * Every move a drill can no longer reach, so the move list can grey the
+	 * whole line rather than only the move the flag sits on.
+	 */
+	const excludedMoveIds = useMemo(
+		() => collectExcludedMoveIds(gameState.study.moves),
+		[gameState.study.moves]
+	);
+
 	const onKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
 			// Never hijack keys while anything is being typed into. ProseMirror is
@@ -856,6 +884,10 @@ export const ChessStudy = ({
 					}
 					onVariationAction={onVariationAction}
 					onDeleteMove={onDeleteMove}
+					excludedMoveIds={excludedMoveIds}
+					onSetExcluded={(moveId: string, excluded: boolean) =>
+						dispatch({ type: 'SET_EXCLUDED', moveId, excluded })
+					}
 					onUndoButtonClick={() =>
 						dispatch({ type: 'REMOVE_LAST_MOVE_FROM_HISTORY' })
 					}

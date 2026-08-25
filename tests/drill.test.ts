@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import {
 	chooseReply,
+	collectExcludedMoveIds,
 	getDrillableReplies,
 	pruneDrillData,
 	recordAttempt,
@@ -90,6 +91,39 @@ describe('replies', () => {
 		moves[0].variants[0].moves[0].excluded = true;
 
 		assert.equal(sans(getDrillableReplies(moves, 'e4')), 'e5 e6');
+	});
+});
+
+describe('collectExcludedMoveIds', () => {
+	it('finds nothing in a study with no exclusions', () => {
+		assert.equal(collectExcludedMoveIds(tree()).size, 0);
+	});
+
+	it('takes the rest of the line with the flagged move', () => {
+		const moves = tree();
+
+		moves[1].excluded = true;
+
+		assert.deepEqual([...collectExcludedMoveIds(moves)], ['e5', 'Nf3']);
+	});
+
+	it('takes the variations hanging off it too, since they need it played', () => {
+		const moves = tree();
+
+		moves[0].excluded = true;
+
+		assert.deepEqual(
+			[...collectExcludedMoveIds(moves)].sort(),
+			['Nc3', 'Nf3', 'c5', 'd4', 'e4', 'e5', 'e6']
+		);
+	});
+
+	it('leaves the line a variation branches from alone', () => {
+		const moves = tree();
+
+		moves[0].variants[0].moves[0].excluded = true;
+
+		assert.deepEqual([...collectExcludedMoveIds(moves)], ['c5', 'Nc3']);
 	});
 });
 

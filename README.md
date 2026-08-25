@@ -42,6 +42,8 @@ The two sides are asked different questions, because a repertoire is not symmetr
 
 Which reply comes up is not uniform. Lines you have never drilled go first, since a repertoire is only prepared once every branch has been seen at least once. After that it is a weighted draw favouring the lines you get wrong, with a floor under the rest so a line you know cold still comes round. A move found only after a hint counts as one you did not know.
 
+A branch you would rather keep than rehearse - a sideline you have written up but not learnt, an opponent's reply you have decided to meet over the board - can be taken out of drills without deleting it. **Exclude from drills** is on any move's right-click menu, and it takes the rest of that line and every variation hanging off it: those are only reachable by playing the move you excluded. The move list dims the whole span and rings the move the flag sits on, so it is clear both where drilling stops and how far that reaches. Nothing else changes: the moves stay in the study, in the move list, and on the board.
+
 That history lives in `<id>.drill.json` beside the study rather than inside it, so drilling never touches the study file, the record can be deleted on its own to start over, and a study you share carries no one's progress. Losing it costs you the weighting and nothing else.
 
 ![Training a line](imgs/v2-trainer.png)
@@ -219,7 +221,6 @@ Before this can be submitted as a community plugin:
 
 Beyond that:
 
-- [ ] A way to exclude a branch from drills from the move list, now that the trainer honours the flag
 - [ ] Get the shortcuts working in Live Preview
 - [ ] PGN export, including classifications as NAGs
 - [ ] A view to manage stored studies

@@ -225,6 +225,13 @@ export const useTrainer = ({
 			return;
 		}
 
+		// Excluding the study's first move takes the whole thing out of drills.
+		// Saying so beats starting a session that ends on its own move.
+		if (!getDrillableReplies(moves, null).length) {
+			new Notice('Every line in this study is excluded from drills.');
+			return;
+		}
+
 		new ColorChoiceModal(app, {
 			body:
 				'The drill runs the study from its first move. Your opponent picks from the replies you wrote down, so no two sessions need take the same line.',

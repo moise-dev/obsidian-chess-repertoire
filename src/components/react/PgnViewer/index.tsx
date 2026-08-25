@@ -33,6 +33,9 @@ interface MoveListContext {
 	) => void;
 	onVariationAction: (moveId: string, action: VariationAction) => void;
 	onDeleteMove: (moveId: string) => void;
+	/** Moves no drill can reach: the flagged ones and the lines under them. */
+	excludedMoveIds: Set<string>;
+	onSetExcluded: (moveId: string, excluded: boolean) => void;
 }
 
 interface VariationsProps extends MoveListContext {
@@ -96,6 +99,9 @@ const VariationMoves = ({
 				comment={move.comment}
 				shapes={move.shapes}
 				classification={move.classification}
+				excluded={move.excluded}
+				isUndrilled={context.excludedMoveIds.has(move.moveId)}
+				onSetExcluded={(excluded) => context.onSetExcluded(move.moveId, excluded)}
 				moveIndicator={moveIndicator}
 				variation={{ depth, index, siblingCount }}
 				onMoveItemClick={() => context.onMoveItemClick(move.moveId)}
@@ -180,6 +186,8 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onClassify,
 		onVariationAction,
 		onDeleteMove,
+		excludedMoveIds,
+		onSetExcluded,
 		...controlActions
 	} = props;
 
@@ -193,6 +201,8 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onClassify,
 		onVariationAction,
 		onDeleteMove,
+		excludedMoveIds,
+		onSetExcluded,
 	};
 
 	// Pair the moves up by move number, carrying each one's index along so the
@@ -253,6 +263,11 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 												comment={entry.move.comment}
 												shapes={entry.move.shapes}
 												classification={entry.move.classification}
+												excluded={entry.move.excluded}
+												isUndrilled={excludedMoveIds.has(entry.move.moveId)}
+												onSetExcluded={(excluded) =>
+													onSetExcluded(entry.move.moveId, excluded)
+												}
 												isCurrentMove={entry.move.moveId === currentMoveId}
 												onMoveItemClick={() => onMoveItemClick(entry.move.moveId)}
 												onClassify={(classification) =>

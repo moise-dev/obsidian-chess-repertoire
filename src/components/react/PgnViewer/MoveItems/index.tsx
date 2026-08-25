@@ -44,13 +44,20 @@ interface MoveAnnotations {
 	comment?: JSONContent | null;
 	shapes?: DrawShape[];
 	classification?: MoveClassification | null;
+	/** The flag sits on this move, rather than on one earlier in the line. */
+	excluded?: boolean;
 }
 
 /**
  * What was annotated on this move, at a glance: the classification badge, an
  * accent dot for a note, a green dot for board arrows.
  */
-const Markers = ({ comment, shapes, classification }: MoveAnnotations) => {
+const Markers = ({
+	comment,
+	shapes,
+	classification,
+	excluded,
+}: MoveAnnotations) => {
 	// Guarded: a hand-edited file could name a label this build does not have.
 	const known = readClassification(classification);
 
@@ -80,6 +87,14 @@ const Markers = ({ comment, shapes, classification }: MoveAnnotations) => {
 					}`}
 				/>
 			)}
+			{/* Only where the flag actually sits: the ring says where the line
+			    stops being drilled, the dimming says how far that reaches. */}
+			{excluded && (
+				<span
+					className="cs-move-marker cs-move-marker--excluded"
+					title="Drills stop here"
+				/>
+			)}
 		</>
 	);
 };
@@ -92,11 +107,17 @@ const annotationClass = ({ comment, shapes }: MoveAnnotations) =>
 		shapes?.length ? ' has-shapes' : ''
 	}`;
 
+/** Marks the whole span a drill can no longer reach, not only the flagged move. */
+const undrilledClass = (isUndrilled?: boolean) =>
+	isUndrilled ? ' is-undrilled' : '';
+
 interface MoveMenuOptions {
 	classification: MoveClassification | null | undefined;
 	onClassify?: (classification: MoveClassification | null) => void;
 	/** Delete this move and the rest of its line. */
 	onDeleteMove?: () => void;
+	excluded?: boolean;
+	onSetExcluded?: (excluded: boolean) => void;
 	variation?: VariationPosition;
 	onVariationAction?: (action: VariationAction) => void;
 }
@@ -110,6 +131,8 @@ const useMoveMenu = ({
 	classification,
 	onClassify,
 	onDeleteMove,
+	excluded,
+	onSetExcluded,
 	variation,
 	onVariationAction,
 }: MoveMenuOptions) =>
@@ -142,6 +165,17 @@ const useMoveMenu = ({
 					.setDisabled(!classification)
 					.onClick(() => onClassify(null))
 			);
+
+			if (onSetExcluded) {
+				menu.addSeparator();
+				menu.addItem((item) =>
+					item
+						.setTitle('Exclude from drills')
+						.setIcon('ban')
+						.setChecked(!!excluded)
+						.onClick(() => onSetExcluded(!excluded))
+				);
+			}
 
 			if (onDeleteMove) {
 				menu.addSeparator();
@@ -199,15 +233,26 @@ const useMoveMenu = ({
 
 			menu.showAtMouseEvent(event.nativeEvent);
 		},
-		[classification, onClassify, onDeleteMove, onVariationAction, variation]
+		[
+			classification,
+			excluded,
+			onClassify,
+			onDeleteMove,
+			onSetExcluded,
+			onVariationAction,
+			variation,
+		]
 	);
 
 interface MoveItemProps extends MoveAnnotations {
 	isCurrentMove: boolean;
 	san: string;
+	/** Out of drills, whether by its own flag or one earlier in the line. */
+	isUndrilled?: boolean;
 	onMoveItemClick: () => void;
 	onClassify?: (classification: MoveClassification | null) => void;
 	onDeleteMove?: () => void;
+	onSetExcluded?: (excluded: boolean) => void;
 }
 
 export const MoveItem = ({
@@ -216,15 +261,20 @@ export const MoveItem = ({
 	comment,
 	shapes,
 	classification,
+	excluded,
+	isUndrilled,
 	onMoveItemClick,
 	onClassify,
 	onDeleteMove,
+	onSetExcluded,
 }: MoveItemProps) => {
 	const ref = useScrollIntoView<HTMLParagraphElement>(isCurrentMove);
 	const onContextMenu = useMoveMenu({
 		classification,
 		onClassify,
 		onDeleteMove,
+		excluded,
+		onSetExcluded,
 	});
 
 	return (
@@ -232,7 +282,7 @@ export const MoveItem = ({
 			className={`move-item ${isCurrentMove ? 'active' : ''}${annotationClass({
 				comment,
 				shapes,
-			})} vertical-align`}
+			})}${undrilledClass(isUndrilled)} vertical-align`}
 			ref={ref}
 			title={annotationTitle({ comment })}
 			onClick={(e) => {
@@ -242,7 +292,12 @@ export const MoveItem = ({
 			onContextMenu={onContextMenu}
 		>
 			{san}
-			<Markers comment={comment} shapes={shapes} classification={classification} />
+			<Markers
+				comment={comment}
+				shapes={shapes}
+				classification={classification}
+				excluded={excluded}
+			/>
 		</p>
 	);
 };
@@ -259,9 +314,12 @@ export const VariantMoveItem = ({
 	comment,
 	shapes,
 	classification,
+	excluded,
+	isUndrilled,
 	onMoveItemClick,
 	onClassify,
 	onDeleteMove,
+	onSetExcluded,
 	variation,
 	onVariationAction,
 	moveIndicator = null,
@@ -271,6 +329,8 @@ export const VariantMoveItem = ({
 		classification,
 		onClassify,
 		onDeleteMove,
+		excluded,
+		onSetExcluded,
 		variation,
 		onVariationAction,
 	});
@@ -279,7 +339,7 @@ export const VariantMoveItem = ({
 		<div
 			className={`variant-move-item ${
 				isCurrentMove ? 'active' : ''
-			}${annotationClass({ comment, shapes })}`}
+			}${annotationClass({ comment, shapes })}${undrilledClass(isUndrilled)}`}
 			title={annotationTitle({ comment })}
 			onClick={(e) => {
 				e.stopPropagation();
@@ -290,7 +350,12 @@ export const VariantMoveItem = ({
 		>
 			<span className="variant-move-indicator">{moveIndicator}</span>
 			{san}
-			<Markers comment={comment} shapes={shapes} classification={classification} />
+			<Markers
+				comment={comment}
+				shapes={shapes}
+				classification={classification}
+				excluded={excluded}
+			/>
 		</div>
 	);
 };

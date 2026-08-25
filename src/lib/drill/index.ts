@@ -28,6 +28,37 @@ export const getDrillableReplies = (
 	moveId: string | null
 ): ChessStudyMove[] => getReplies(moves, moveId).filter(isDrillable);
 
+/**
+ * Every move a drill can never reach, by id: the ones carrying the flag and
+ * everything only reachable through them.
+ *
+ * For the move list rather than for the drill. A session walks down from the
+ * root and refuses to enter an excluded move, so it never has to ask about
+ * ancestors - but the list draws the whole tree at once, and greying only the
+ * flagged move would suggest the line under it still gets rehearsed.
+ *
+ * A variation counts as reachable through the move it hangs off, since that is
+ * the move that has to be played to be offered it.
+ */
+export const collectExcludedMoveIds = (
+	moves: ChessStudyMove[],
+	inherited = false,
+	found: Set<string> = new Set()
+): Set<string> => {
+	let excluded = inherited;
+
+	for (const move of moves) {
+		excluded = excluded || !isDrillable(move);
+
+		if (excluded) found.add(move.moveId);
+
+		for (const variant of move.variants ?? [])
+			collectExcludedMoveIds(variant.moves, excluded, found);
+	}
+
+	return found;
+};
+
 /** Lifetime attempts and misses over the user's own moves under `move`. */
 export interface DrillRecord {
 	attempts: number;

@@ -206,6 +206,28 @@
 	background-color: var(--background-modifier-hover);
 }
 
+/*
+ * Out of drills - the flagged move and everything under it. Dimmed rather than
+ * struck through: the line is still part of the study and still reads normally,
+ * it is only left out of rehearsal.
+ */
+.chess-study .move-item.is-undrilled,
+.chess-study .variant-move-item.is-undrilled {
+	color: var(--text-faint);
+}
+
+.chess-study .move-item.is-undrilled:hover,
+.chess-study .variant-move-item.is-undrilled:hover {
+	color: var(--text-muted);
+}
+
+/* The current move stays legible wherever it sits. */
+.chess-study .move-item.is-undrilled.active,
+.chess-study .variant-move-item.is-undrilled.active {
+	color: var(--text-accent);
+	opacity: 0.65;
+}
+
 .chess-study .move-item.active {
 	background-color: var(
 		--background-modifier-active-hover,
@@ -531,6 +553,16 @@
 
 .chess-study .cs-move-marker--shape {
 	background-color: var(--color-green, #47a065);
+}
+
+/*
+ * A hollow ring rather than a filled dot: it marks where drills stop rather
+ * than something the move carries, and the moves it silences are dimmed
+ * instead of marked.
+ */
+.chess-study .cs-move-marker--excluded {
+	background-color: transparent;
+	border: 1px solid var(--text-faint);
 }
 
 /* ------------------------------------------------------------------ *
