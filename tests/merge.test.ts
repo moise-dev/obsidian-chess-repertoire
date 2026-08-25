@@ -4,6 +4,16 @@ import { mergeDrillStats, mergeStudies } from '../src/lib/merge';
 import { ChessStudyFileData, ChessStudyMove } from '../src/lib/storage';
 
 let seq = 0;
+
+const note = (text: string | undefined) => {
+	if (!text) return null;
+
+	return {
+		type: 'doc',
+		content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+	};
+};
+
 const mv = (
 	san: string,
 	options: {
@@ -20,14 +30,7 @@ const mv = (
 		color: 'w',
 		variants: options.variants ?? [],
 		shapes: [],
-		comment: options.comment
-			? {
-					type: 'doc',
-					content: [
-						{ type: 'paragraph', content: [{ type: 'text', text: options.comment }] },
-					],
-			  }
-			: null,
+		comment: note(options.comment),
 		classification: options.classification,
 		excluded: options.excluded,
 	} as unknown as ChessStudyMove);
