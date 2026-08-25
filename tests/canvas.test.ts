@@ -54,7 +54,11 @@ const cards = (root: ReturnType<typeof layout>['root']): CanvasCard[] =>
 		fen: `position-${segment.id} w KQkq - 0 1`,
 		flipped: false,
 		range: `${segment.depth + 1}`,
-		moves: segment.moves.map((move) => move.san).join(' '),
+		rows: segment.moves.map((move, index) => ({
+			number: index + 1,
+			white: move.san,
+			black: index ? null : 'Nf6 !!',
+		})),
 		state: 'Never drilled',
 		color: segment.depth ? '2' : undefined,
 	}));
@@ -86,19 +90,18 @@ describe('toCanvas', () => {
 		assert.equal(at('c').x, 192);
 	});
 
-	it('sizes a card to what is on it rather than to the map', () => {
+	it('sizes a card by how many rows of moves it holds', () => {
 		const { root, layout: placed } = layout();
 		const canvas = toCanvas(placed, cards(root));
 
 		const at = (id: string) => canvas.nodes.find((node) => node.id === id)!;
 
-		assert.ok(canvas.nodes.every((node) => node.height >= 300));
-		// Every card here holds one short line of moves, so all are the same
-		// height - the map's own would have made the trunk the tall one.
-		assert.equal(at('a').height, at('x1').height);
+		// The trunk holds two moves to the branch's one.
+		assert.equal(at('a').height - at('x1').height, 32);
+		assert.ok(canvas.nodes.every((node) => node.height >= 350));
 	});
 
-	it('writes the range, a board, the moves and the state as markdown', () => {
+	it('writes the range, a board, a scoresheet and the state as markdown', () => {
 		const { root, layout: placed } = layout();
 		const canvas = toCanvas(placed, cards(root));
 
@@ -106,7 +109,20 @@ describe('toCanvas', () => {
 
 		assert.equal(
 			trunk.text,
-			'**1**\n\n```chessPosition\nfen: position-a w KQkq - 0 1\n```\n\na b\n\n*Never drilled*'
+			[
+				'**1**',
+				'',
+				'```chessPosition',
+				'fen: position-a w KQkq - 0 1',
+				'```',
+				'',
+				'| # | White | Black |',
+				'| --- | --- | --- |',
+				'| 1 | a | Nf6 !! |',
+				'| 2 | b |  |',
+				'',
+				'*Never drilled*',
+			].join('\n')
 		);
 	});
 

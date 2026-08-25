@@ -32,13 +32,20 @@ export interface JsonCanvas {
 	edges: CanvasEdge[];
 }
 
+/** One line of a card's scoresheet. A move carries its label, where it has one. */
+export interface CanvasRow {
+	number: number;
+	white: string | null;
+	black: string | null;
+}
+
 /** What a card says, handed over rather than recomputed here. */
 export interface CanvasCard {
 	segmentId: string;
 	/** e.g. `1-10`, the moves the card covers. */
 	range: string;
-	/** The moves as one line, e.g. `1. e4 e5 2. Nf3 Nc6`. */
-	moves: string;
+	/** The moves, paired the way a scoresheet pairs them. */
+	rows: CanvasRow[];
 	/** How the line is holding up, or null where there is nothing to say. */
 	state: string | null;
 	/** Canvas preset colour for that state. */
@@ -56,23 +63,40 @@ export interface CanvasCard {
  */
 const SCALE = 1.6;
 const CARD_WIDTH = 400;
-/** The board block, plus the heading and the state line around it. */
-const FIXED_HEIGHT = 300;
-const LINE_HEIGHT = 26;
-/** Roughly how many characters of notation fit across a card. */
-const LINE_LENGTH = 46;
+/** The board block, plus the heading, the state line and the table's own head. */
+const FIXED_HEIGHT = 350;
+const ROW_HEIGHT = 32;
 
 /**
  * A card sized to what is on it.
  *
  * Not the map's own height scaled: those cards hold a 132px board and a
- * scoresheet in fixed columns, while these hold a board sized to the card and
- * the moves as one flowing line. Taking the map's heights left every card
- * mostly empty.
+ * scoresheet in fixed columns, while these hold a board sized to the card and a
+ * table. Taking the map's heights left every card mostly empty; guessing at how
+ * a run of notation would wrap left some of them scrolling. A table's height is
+ * simply its rows.
  */
 const cardHeight = (card: CanvasCard | undefined): number =>
-	FIXED_HEIGHT +
-	Math.ceil((card?.moves.length ?? 0) / LINE_LENGTH) * LINE_HEIGHT;
+	FIXED_HEIGHT + (card?.rows.length ?? 0) * ROW_HEIGHT;
+
+/**
+ * The moves as a table.
+ *
+ * Columns rather than a flowing line, so a card reads down its move numbers the
+ * way the map's cards do - and so its height is something that can be known
+ * rather than estimated from how the notation happens to wrap.
+ */
+const scoresheet = (rows: CanvasRow[]): string => {
+	if (!rows.length) return '';
+
+	return [
+		'| # | White | Black |',
+		'| --- | --- | --- |',
+		...rows.map(
+			(row) => `| ${row.number} | ${row.white ?? ''} | ${row.black ?? ''} |`
+		),
+	].join('\n');
+};
 
 /**
  * The board, as a block this plugin renders.
@@ -116,7 +140,7 @@ export const toCanvas = (
 			text: [
 				`**${card?.range ?? ''}**`,
 				boardBlock(card),
-				card?.moves ?? '',
+				scoresheet(card?.rows ?? []),
 				card?.state ? `*${card.state}*` : '',
 			]
 				.filter(Boolean)

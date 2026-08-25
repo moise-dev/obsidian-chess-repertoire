@@ -1164,6 +1164,26 @@
 	color: var(--text-faint);
 }
 
+/*
+ * The label on a move, carrying its own colour the way the move list's does.
+ * Its own rule rather than the widget's, which is scoped to `.chess-study` and
+ * so never reaches the map's modal.
+ */
+.cs-map-classification {
+	flex: 0 0 auto;
+	margin-left: 3px;
+	padding: 0 3px;
+	border-radius: 3px;
+	background-color: color-mix(
+		in srgb,
+		var(--cs-classification) 22%,
+		transparent
+	);
+	color: var(--cs-classification);
+	font-size: 0.85em;
+	font-weight: 700;
+}
+
 .cs-map-sheet-gap {
 	color: var(--text-faint);
 	text-align: center;

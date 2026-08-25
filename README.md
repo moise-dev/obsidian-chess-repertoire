@@ -71,7 +71,7 @@ That last part is not only tidiness. The board library reports the whole set of 
 
 The network button opens the study as a diagram. One card per run of moves with nothing to decide in it, and a fork wherever the line branches, so a repertoire reads as what it actually is: a trunk, and the points where your opponent gets to choose.
 
-Each card carries a position, the moves around it, and a coloured edge saying how the line is holding up - drilled clean, shaky, never drilled, excluded, or **no reply recorded yet**. That last one is the useful one: a line that stops on your opponent's move is a hole in the repertoire, and on the map it is a stub sitting next to lines that run to move fifteen.
+Each card carries a position, the moves around it as a scoresheet with whatever labels they were given, and a coloured edge saying how the line is holding up - drilled clean, shaky, never drilled, excluded, or **no reply recorded yet**. That last one is the useful one: a line that stops on your opponent's move is a hole in the repertoire, and on the map it is a stub sitting next to lines that run to move fifteen.
 
 Which position depends on where the card sits. The trunk shows where it hands over - the one your opponent makes their first choice in - and every branch shows the move that opened it, since a branch card answers "what if they play this?" and that position is the answer. Where a line ends up is what the moves underneath are for.
 
@@ -79,7 +79,7 @@ A move that reaches a position some other line also reaches carries a small ⇄,
 
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
-The last button exports the diagram as an Obsidian **canvas** file beside the note - a card per line, where the map put it, with its board, its moves and how it is holding up. That one is a snapshot: nothing reads it back, and it goes stale as soon as the study changes. That is what it is for. The map cannot be drawn on or rearranged, and a canvas can, so a repertoire you want to spread out and scribble over goes there. An existing file is never overwritten - the name is suffixed - so a canvas you have already annotated survives a second export.
+The last button exports the diagram as an Obsidian **canvas** file beside the note - a card per line, where the map put it, with its board, its moves as a table, their labels, and how the line is holding up. Notes and arrows are left behind: a card is for finding your way, and those are what you open the study for. That one is a snapshot: nothing reads it back, and it goes stale as soon as the study changes. That is what it is for. The map cannot be drawn on or rearranged, and a canvas can, so a repertoire you want to spread out and scribble over goes there. An existing file is never overwritten - the name is suffixed - so a canvas you have already annotated survives a second export.
 
 The boards on those cards are `chessPosition` blocks, which means they are drawn by this plugin rather than baked into the file. In the vault you exported from that is no different from any other board; open the canvas somewhere without the plugin and the cards keep their notation and lose their diagrams.
 

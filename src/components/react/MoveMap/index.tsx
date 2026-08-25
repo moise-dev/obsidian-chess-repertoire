@@ -11,6 +11,7 @@ import {
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { MiniBoard } from 'src/components/react/MiniBoard';
 import { CanvasCard, JsonCanvas, toCanvas } from 'src/lib/canvas';
+import { CLASSIFICATIONS, readClassification } from 'src/lib/classification';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MapSegment,
@@ -87,6 +88,43 @@ const stateClass = ({ isExcluded, isHole, attempts, misses }: SegmentState) => {
 	if (!attempts) return 'is-untested';
 
 	return misses / attempts > 0.25 ? 'is-shaky' : 'is-known';
+};
+
+/**
+ * A move and the label it carries, as one string. These glyphs are plain enough
+ * to survive a canvas card, unlike the chess pieces.
+ */
+const labelled = (move: ChessStudyMove | null): string | null => {
+	if (!move) return null;
+
+	const known = readClassification(move.classification);
+
+	return known ? `${move.san} ${CLASSIFICATIONS[known].glyph}` : move.san;
+};
+
+/** The label on a move, in the colour it is drawn in everywhere else. */
+const Classification = ({
+	classification,
+}: {
+	classification: ChessStudyMove['classification'];
+}) => {
+	const known = readClassification(classification);
+
+	if (!known) return null;
+
+	return (
+		<span
+			className="cs-map-classification"
+			style={
+				{
+					'--cs-classification': CLASSIFICATIONS[known].color,
+				} as React.CSSProperties
+			}
+			title={CLASSIFICATIONS[known].label}
+		>
+			{CLASSIFICATIONS[known].glyph}
+		</span>
+	);
 };
 
 /** Canvas's preset colours, for the states worth colouring. */
@@ -394,13 +432,11 @@ export const MoveMap = ({
 					rows[0].number === rows[rows.length - 1].number
 						? `${rows[0].number}`
 						: `${rows[0].number}\u2013${rows[rows.length - 1].number}`,
-				moves: rows
-					.map((row) =>
-						[`${row.number}.`, row.white?.san ?? '...', row.black?.san]
-							.filter(Boolean)
-							.join(' ')
-					)
-					.join('  '),
+				rows: rows.map((row) => ({
+					number: row.number,
+					white: labelled(row.white),
+					black: labelled(row.black),
+				})),
 				state: stateTitle(state),
 				color: STATE_COLORS[stateClass(state)],
 			};
@@ -582,6 +618,7 @@ export const MoveMap = ({
 															onClick={() => onMoveClick(move.moveId)}
 														>
 															{move.san}
+															<Classification classification={move.classification} />
 														</button>
 														<TranspositionMark
 															elsewhere={transpositions.get(move.moveId)}
