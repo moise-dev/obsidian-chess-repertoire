@@ -261,19 +261,7 @@ npm run deploy   # build, then copy main.js/styles.css/manifest.json into a vaul
 
 ## Roadmap
 
-Before this can be submitted as a community plugin:
-
-- [x] Give the plugin its own `id`, `name` and `author` in `manifest.json`
-- [x] Align `manifest.json`, `package.json` and `versions.json` on 2.0.0
-- [ ] Replace the inherited screenshots with v2 ones, and add the two the map section is waiting on: `imgs/v2-map.png` and `imgs/v2-map-canvas.png`
-- [ ] Tag `2.0.0` and publish the draft release the workflow builds
-- [ ] Submit to [obsidian-releases](https://github.com/obsidianmd/obsidian-releases), explaining what the fork adds over the original
-
-Beyond that:
-
-- [ ] PGN export, including classifications as NAGs
 - [ ] A view to manage stored studies
-- [ ] Merge transpositions on the map, so two move orders into one position are one card rather than two that point at each other
 - [ ] Spaced repetition across studies, built on the drill histories the trainer now keeps
 - [ ] Mobile support
 
@@ -286,14 +274,6 @@ Chess Study v2 is a fork of [chrislicodes/obsidian-chess-study](https://github.c
 - The notes editor is powered by [TipTap](https://github.com/ueberdosis/tiptap)
 - Icons are provided by [Lucide](https://github.com/lucide-icons/lucide)
 - Everything is tied together by [React](https://github.com/facebook/react)
-
-## Alternatives
-
-If you want to look at FEN snapshots instead, these Obsidian plugins do that:
-
-- [SilentVoid13/Chesser](https://github.com/SilentVoid13/Chesser)
-- [pmorim/obsidian-chess](https://github.com/pmorim/obsidian-chess)
-- [THeK3nger/obsidian-chessboard](https://github.com/THeK3nger/obsidian-chessboard)
 
 ## License
 
