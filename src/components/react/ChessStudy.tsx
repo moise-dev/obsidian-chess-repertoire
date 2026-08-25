@@ -836,6 +836,22 @@ export const ChessStudy = ({
 		orientation,
 	]);
 
+	const currentMoveId = gameState.currentMove?.moveId ?? null;
+
+	const trainer = useTrainer({
+		app,
+		dataAdapter,
+		chessStudyId,
+		moves: gameState.study.moves,
+		studyColor: gameState.study.playerColor,
+		currentMoveId,
+		chess: chessLogic,
+		firstPlayer,
+		initialMoveNumber,
+		dispatch,
+		setOrientation,
+	});
+
 	/**
 	 * A shortcut the study wants, or false to let it pass.
 	 *
@@ -845,6 +861,10 @@ export const ChessStudy = ({
 	 */
 	const handleKey = useCallback(
 		(event: KeyboardEvent): boolean => {
+			// Navigation would let a drill be browsed ahead of rather than played;
+			// a session locks it out along with the move list it would use.
+			if (trainer.isActive) return false;
+
 			// Never hijack keys while something is being typed into. Only fields
 			// inside this study count: in Live Preview the study itself sits
 			// inside the editor's own contenteditable, so asking for the nearest
@@ -888,7 +908,7 @@ export const ChessStudy = ({
 					return false;
 			}
 		},
-		[dispatch]
+		[dispatch, trainer.isActive]
 	);
 
 	// On the register for as long as the study is on screen. Module-level, so a
@@ -900,22 +920,6 @@ export const ChessStudy = ({
 
 		return registerStudyKeys(root, handleKey);
 	}, [handleKey]);
-
-	const currentMoveId = gameState.currentMove?.moveId ?? null;
-
-	const trainer = useTrainer({
-		app,
-		dataAdapter,
-		chessStudyId,
-		moves: gameState.study.moves,
-		studyColor: gameState.study.playerColor,
-		currentMoveId,
-		chess: chessLogic,
-		firstPlayer,
-		initialMoveNumber,
-		dispatch,
-		setOrientation,
-	});
 
 	// chess.com-style badge on the destination square of the current move. This
 	// goes to setAutoShapes, never setShapes, so it can never end up in the

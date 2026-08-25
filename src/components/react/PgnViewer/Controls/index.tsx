@@ -37,6 +37,7 @@ export const Controls = (props: ControlActions) => {
 				className="cs-icon-button"
 				title="Start position"
 				aria-label="Go to the start position"
+				disabled={props.isTraining}
 				onClick={() => props.onFirstButtonClick()}
 			>
 				<ChevronsLeft size={22} />
@@ -45,6 +46,7 @@ export const Controls = (props: ControlActions) => {
 				className="cs-icon-button"
 				title="Previous move"
 				aria-label="Go to the previous move"
+				disabled={props.isTraining}
 				onClick={() => props.onBackButtonClick()}
 			>
 				<ArrowLeft size={22} />
@@ -53,6 +55,7 @@ export const Controls = (props: ControlActions) => {
 				className="cs-icon-button"
 				title="Next move"
 				aria-label="Go to the next move"
+				disabled={props.isTraining}
 				onClick={() => props.onForwardButtonClick()}
 			>
 				<ArrowRight size={22} />
@@ -61,6 +64,7 @@ export const Controls = (props: ControlActions) => {
 				className="cs-icon-button"
 				title="Last move"
 				aria-label="Go to the last move"
+				disabled={props.isTraining}
 				onClick={() => props.onLastButtonClick()}
 			>
 				<ChevronsRight size={22} />
