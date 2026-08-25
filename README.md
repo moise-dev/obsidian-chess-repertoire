@@ -13,6 +13,7 @@
 - [What v2 adds](#what-v2-adds)
 	- [Trainer](#trainer)
 	- [The map](#the-map)
+	- [Merging the studies in a note](#merging-the-studies-in-a-note)
 	- [PGN import that keeps your annotations](#pgn-import-that-keeps-your-annotations)
 	- [Variations at any depth](#variations-at-any-depth)
 	- [Move classifications](#move-classifications)
@@ -78,6 +79,16 @@ A move that reaches a position some other line also reaches carries a small ⇄,
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
 Which side the map reads for is the study's own, shown as a chip beside the move list and switched by clicking it. A study that has never said assumes the side the board is turned to and draws the chip dashed to admit as much; starting a drill and choosing a colour settles it too, since that is the same question.
+
+### Merging the studies in a note
+
+A note tends to collect studies of the same opening - one from a game you lost, one from a video, one you sat down and wrote. **Merge every chess study in this note into one** takes them all and builds a single tree.
+
+The first study is the trunk: its mainline stays the mainline, and every line the others add arrives as a variation off the move it branches from. A line both studies already have is descended into rather than duplicated, and annotations fill in rather than overwrite - the first study keeps its notes, and a later one can only supply what is missing.
+
+The merged study is written as a new one and its block is inserted at the cursor. **The studies it was built from are left exactly as they are**: merging is not a decision to throw them away, and you delete them yourself once you are happy. What you have already drilled comes with it, since the merged tree keeps every move's identity.
+
+Two things it will tell you about rather than guess at: a study that starts from a different position is left out, and an alternative to a study's *first* move has nowhere to hang - nothing precedes it - so it is dropped and counted.
 
 ### PGN import that keeps your annotations
 

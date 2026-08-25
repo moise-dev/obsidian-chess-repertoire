@@ -1,6 +1,7 @@
 import { Chess } from 'chess.js';
 import { Editor, Notice, Plugin, normalizePath } from 'obsidian';
 import {
+	CURRENT_DRILL_VERSION,
 	CURRENT_STORAGE_VERSION,
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
@@ -18,6 +19,8 @@ import 'assets/board/themes.css';
 import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
 import { nanoid } from 'nanoid';
+import { findCodeBlocks } from './lib/blocks';
+import { mergeDrillStats, mergeStudies } from './lib/merge';
 import { parseUserConfig } from './lib/obsidian';
 import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';
 import './main.css';
@@ -32,6 +35,26 @@ export const ROOT_FEN =
 // TODO:
 // 1) Allow to show the root position
 // 2) Display correct move after removing the last move
+
+/** What a merge did, in one line. */
+const mergeNotice = (
+	merged: number,
+	skipped: number,
+	dropped: number
+): string =>
+	[
+		`Merged ${merged} studies into a new one.`,
+		skipped &&
+			`${skipped} ${
+				skipped === 1 ? 'study starts' : 'studies start'
+			} from another position and ${skipped === 1 ? 'was' : 'were'} left out.`,
+		dropped &&
+			`${dropped} alternative first ${
+				dropped === 1 ? 'move has' : 'moves have'
+			} nowhere to hang and ${dropped === 1 ? 'was' : 'were'} dropped.`,
+	]
+		.filter(Boolean)
+		.join(' ');
 
 export default class ChessStudyPlugin extends Plugin {
 	settings: ChessStudyPluginSettings;
@@ -111,6 +134,64 @@ export default class ChessStudyPlugin extends Plugin {
 			},
 		});
 
+		// Combine every study in a note into one
+		this.addCommand({
+			id: 'merge-chess-studies',
+			name: 'Merge every chess study in this note into one',
+			editorCallback: async (editor: Editor) => {
+				const cursorPosition = editor.getCursor();
+				const ids = this.studyIdsIn(editor.getValue());
+
+				if (ids.length < 2) {
+					new Notice(
+						'This note needs at least two chess studies before there is anything to merge.'
+					);
+
+					return;
+				}
+
+				try {
+					const studies = await Promise.all(
+						ids.map((id) => this.dataAdapter.loadFile(id))
+					);
+
+					const { study, skipped, dropped } = mergeStudies(
+						studies,
+						CURRENT_STORAGE_VERSION
+					);
+
+					const mergedId = await this.dataAdapter.saveFile(study);
+
+					// The merged study keeps every move id, so the drills already done
+					// against the originals still name real moves.
+					const stats = mergeDrillStats(
+						await Promise.all(ids.map((id) => this.dataAdapter.loadDrillData(id)))
+					);
+
+					if (Object.keys(stats).length)
+						await this.dataAdapter.saveDrillData(mergedId, {
+							version: CURRENT_DRILL_VERSION,
+							stats,
+						});
+
+					// At the cursor, leaving the studies it was built from alone: a
+					// merge is not a decision to throw the originals away.
+					editor.replaceRange(
+						`\`\`\`chessStudy\nchessStudyId: ${mergedId}\n\`\`\``,
+						cursorPosition
+					);
+
+					new Notice(mergeNotice(ids.length - skipped, skipped, dropped));
+				} catch (e) {
+					console.error('chess-study: could not merge the studies in this note', e);
+					new Notice(
+						'There was an error while merging the studies in this note.',
+						0
+					);
+				}
+			},
+		});
+
 		// Add chess study code block processor
 		this.registerMarkdownCodeBlockProcessor(
 			'chessStudy',
@@ -145,6 +226,23 @@ export default class ChessStudyPlugin extends Plugin {
 				}
 			}
 		);
+	}
+
+	/**
+	 * The study ids of every chessStudy block in a note, in the order they
+	 * appear. A block whose settings will not parse is left out rather than
+	 * taken as an error: it would not render either.
+	 */
+	private studyIdsIn(content: string): string[] {
+		return findCodeBlocks(content, 'chessStudy')
+			.map((body) => {
+				try {
+					return parseUserConfig(this.settings, body).chessStudyId?.trim() ?? '';
+				} catch (e) {
+					return '';
+				}
+			})
+			.filter(Boolean);
 	}
 
 	async loadSettings() {
