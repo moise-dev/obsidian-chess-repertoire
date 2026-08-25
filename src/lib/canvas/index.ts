@@ -52,7 +52,7 @@ export interface CanvasCard {
 	color?: string;
 	/** The position the card is about, drawn as a board on the card. */
 	fen: string;
-	/** Whether that board is turned round, i.e. the study is written for Black. */
+	/** Whether that board is turned round, i.e. the repertoire is written for Black. */
 	flipped: boolean;
 }
 
@@ -104,7 +104,7 @@ const scoresheet = (rows: CanvasRow[]): string => {
  * A canvas card is markdown, so the boards arrive by asking the plugin for
  * them. It does mean the boards are drawn only where the plugin is installed -
  * true of the vault the canvas was written into, and the alternatives are
- * worse: a study file per card, or chess glyphs whose font coverage we already
+ * worse: a repertoire file per card, or chess glyphs whose font coverage we already
  * know is patchy.
  */
 const boardBlock = (card: CanvasCard | undefined): string => {
@@ -121,7 +121,7 @@ const boardBlock = (card: CanvasCard | undefined): string => {
 /**
  * The map as a canvas file.
  *
- * A snapshot, not a second copy of the study: it is a picture of the tree at
+ * A snapshot, not a second copy of the repertoire: it is a picture of the tree at
  * the moment it was taken, for spreading out and annotating. Nothing reads it
  * back.
  */

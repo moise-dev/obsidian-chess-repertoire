@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import ChessStudyPlugin from 'src/main';
+import ChessRepertoirePlugin from 'src/main';
 
 export const BOARD_COLORS = {
 	blue: 'Blue',
@@ -10,7 +10,7 @@ export const BOARD_COLORS = {
 
 export type BoardColor = keyof typeof BOARD_COLORS;
 
-export interface ChessStudyPluginSettings {
+export interface ChessRepertoirePluginSettings {
 	boardOrientation: 'white' | 'black';
 	boardColor: BoardColor;
 	viewComments: true | false;
@@ -24,7 +24,7 @@ export interface ChessStudyPluginSettings {
 	coordinateColor: string;
 }
 
-export const DEFAULT_SETTINGS: ChessStudyPluginSettings = {
+export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 	boardOrientation: 'white',
 	boardColor: 'blue',
 	viewComments: true,
@@ -53,9 +53,9 @@ const themeMutedColor = (): string => {
 };
 
 export class SettingsTab extends PluginSettingTab {
-	plugin: ChessStudyPlugin;
+	plugin: ChessRepertoirePlugin;
 
-	constructor(app: App, plugin: ChessStudyPlugin) {
+	constructor(app: App, plugin: ChessRepertoirePlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -138,7 +138,7 @@ export class SettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Default width')
 			.setDesc(
-				'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual studies can be resized by dragging their bottom-right corner.'
+				'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual repertoires can be resized by dragging their bottom-right corner.'
 			)
 			.addText((text) => {
 				text

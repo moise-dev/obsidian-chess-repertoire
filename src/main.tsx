@@ -3,14 +3,14 @@ import { Editor, Notice, Plugin, normalizePath } from 'obsidian';
 import {
 	CURRENT_DRILL_VERSION,
 	CURRENT_STORAGE_VERSION,
-	ChessStudyDataAdapter,
-	ChessStudyFileData,
+	ChessRepertoireDataAdapter,
+	ChessRepertoireFileData,
 } from 'src/lib/storage';
 import { PositionView } from './components/PositionView';
 import { ReactView } from './components/ReactView';
 import { ChessStringModal } from './components/obsidian/ChessStringModal';
 import {
-	ChessStudyPluginSettings,
+	ChessRepertoirePluginSettings,
 	DEFAULT_SETTINGS,
 	SettingsTab,
 } from './components/obsidian/SettingsTab';
@@ -21,9 +21,9 @@ import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
 import { nanoid } from 'nanoid';
 import { findCodeBlocks } from './lib/blocks';
-import { handleStudyKey, releaseOnOutsideClick } from './lib/keyboard';
-import { chessStudyKeymap } from './lib/keyboard/extension';
-import { mergeDrillStats, mergeStudies } from './lib/merge';
+import { handleRepertoireKey, releaseOnOutsideClick } from './lib/keyboard';
+import { chessRepertoireKeymap } from './lib/keyboard/extension';
+import { mergeDrillStats, mergeRepertoires } from './lib/merge';
 import { parseUserConfig } from './lib/obsidian';
 import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';
 import { parsePositionConfig } from './lib/position';
@@ -47,10 +47,10 @@ const mergeNotice = (
 	dropped: number
 ): string =>
 	[
-		`Merged ${merged} studies into a new one.`,
+		`Merged ${merged} repertoires into a new one.`,
 		skipped &&
 			`${skipped} ${
-				skipped === 1 ? 'study starts' : 'studies start'
+				skipped === 1 ? 'repertoire starts' : 'repertoires start'
 			} from another position and ${skipped === 1 ? 'was' : 'were'} left out.`,
 		dropped &&
 			`${dropped} alternative first ${
@@ -60,9 +60,9 @@ const mergeNotice = (
 		.filter(Boolean)
 		.join(' ');
 
-export default class ChessStudyPlugin extends Plugin {
-	settings: ChessStudyPluginSettings;
-	dataAdapter: ChessStudyDataAdapter;
+export default class ChessRepertoirePlugin extends Plugin {
+	settings: ChessRepertoirePluginSettings;
+	dataAdapter: ChessRepertoireDataAdapter;
 	storagePath = normalizePath(
 		`${this.app.vault.configDir}/plugins/${this.manifest.id}/storage/`
 	);
@@ -72,7 +72,7 @@ export default class ChessStudyPlugin extends Plugin {
 		await this.loadSettings();
 
 		// Register Data Adapter
-		this.dataAdapter = new ChessStudyDataAdapter(
+		this.dataAdapter = new ChessRepertoireDataAdapter(
 			this.app.vault.adapter,
 			this.storagePath
 		);
@@ -84,7 +84,7 @@ export default class ChessStudyPlugin extends Plugin {
 
 		// Add command
 		this.addCommand({
-			id: 'insert-chess-study',
+			id: 'insert-chess-repertoire',
 			name: 'Insert FEN/PGN-Editor at cursor position',
 			editorCallback: (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
@@ -111,7 +111,7 @@ export default class ChessStudyPlugin extends Plugin {
 							);
 						}
 
-						const chessStudyFileData: ChessStudyFileData = {
+						const chessRepertoireFileData: ChessRepertoireFileData = {
 							version: CURRENT_STORAGE_VERSION,
 							header: {
 								title: parsed ? titleFromHeaders(parsed.headers) : null,
@@ -122,14 +122,14 @@ export default class ChessStudyPlugin extends Plugin {
 
 						this.dataAdapter.createStorageFolderIfNotExists();
 
-						const id = await this.dataAdapter.saveFile(chessStudyFileData);
+						const id = await this.dataAdapter.saveFile(chessRepertoireFileData);
 
 						editor.replaceRange(
-							`\`\`\`chessStudy\nchessStudyId: ${id}\n\`\`\``,
+							`\`\`\`chessRepertoire\nchessRepertoireId: ${id}\n\`\`\``,
 							cursorPosition
 						);
 					} catch (e) {
-						console.error('chess-study: could not parse the input', e);
+						console.error('chess-repertoire: could not parse the input', e);
 						new Notice('There was an error during PGN parsing.', 0);
 					}
 				};
@@ -138,35 +138,35 @@ export default class ChessStudyPlugin extends Plugin {
 			},
 		});
 
-		// Combine every study in a note into one
+		// Combine every repertoire in a note into one
 		this.addCommand({
-			id: 'merge-chess-studies',
-			name: 'Merge every chess study in this note into one',
+			id: 'merge-chess-repertoires',
+			name: 'Merge every chess repertoire in this note into one',
 			editorCallback: async (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
-				const ids = this.studyIdsIn(editor.getValue());
+				const ids = this.repertoireIdsIn(editor.getValue());
 
 				if (ids.length < 2) {
 					new Notice(
-						'This note needs at least two chess studies before there is anything to merge.'
+						'This note needs at least two chess repertoires before there is anything to merge.'
 					);
 
 					return;
 				}
 
 				try {
-					const studies = await Promise.all(
+					const repertoires = await Promise.all(
 						ids.map((id) => this.dataAdapter.loadFile(id))
 					);
 
-					const { study, skipped, dropped } = mergeStudies(
-						studies,
+					const { repertoire, skipped, dropped } = mergeRepertoires(
+						repertoires,
 						CURRENT_STORAGE_VERSION
 					);
 
-					const mergedId = await this.dataAdapter.saveFile(study);
+					const mergedId = await this.dataAdapter.saveFile(repertoire);
 
-					// The merged study keeps every move id, so the drills already done
+					// The merged repertoire keeps every move id, so the drills already done
 					// against the originals still name real moves.
 					const stats = mergeDrillStats(
 						await Promise.all(ids.map((id) => this.dataAdapter.loadDrillData(id)))
@@ -178,42 +178,45 @@ export default class ChessStudyPlugin extends Plugin {
 							stats,
 						});
 
-					// At the cursor, leaving the studies it was built from alone: a
+					// At the cursor, leaving the repertoires it was built from alone: a
 					// merge is not a decision to throw the originals away.
 					editor.replaceRange(
-						`\`\`\`chessStudy\nchessStudyId: ${mergedId}\n\`\`\``,
+						`\`\`\`chessRepertoire\nchessRepertoireId: ${mergedId}\n\`\`\``,
 						cursorPosition
 					);
 
 					new Notice(mergeNotice(ids.length - skipped, skipped, dropped));
 				} catch (e) {
-					console.error('chess-study: could not merge the studies in this note', e);
+					console.error(
+						'chess-repertoire: could not merge the repertoires in this note',
+						e
+					);
 					new Notice(
-						'There was an error while merging the studies in this note.',
+						'There was an error while merging the repertoires in this note.',
 						0
 					);
 				}
 			},
 		});
 
-		this.registerStudyKeyboard();
+		this.registerRepertoireKeyboard();
 
 		this.registerPositionBlock();
 
-		// Add chess study code block processor
+		// Add chess repertoire code block processor
 		this.registerMarkdownCodeBlockProcessor(
-			'chessStudy',
+			'chessRepertoire',
 			async (source, el, ctx) => {
-				const { chessStudyId } = parseUserConfig(this.settings, source);
+				const { chessRepertoireId } = parseUserConfig(this.settings, source);
 
-				if (!chessStudyId.trim().length)
+				if (!chessRepertoireId.trim().length)
 					return new Notice(
-						"No chessStudyId parameter found, please add one manually if the file already exists or add it via the 'Insert PGN-Editor at cursor position' command.",
+						"No chessRepertoireId parameter found, please add one manually if the file already exists or add it via the 'Insert PGN-Editor at cursor position' command.",
 						0
 					);
 
 				try {
-					const data = await this.dataAdapter.loadFile(chessStudyId);
+					const data = await this.dataAdapter.loadFile(chessRepertoireId);
 
 					ctx.addChild(
 						new ReactView(
@@ -228,7 +231,7 @@ export default class ChessStudyPlugin extends Plugin {
 					);
 				} catch (e) {
 					new Notice(
-						`There was an error while trying to load ${chessStudyId}.json. You can check the plugin folder if the file exist and if not add one via the 'Insert PGN-Editor at cursor position' command.`,
+						`There was an error while trying to load ${chessRepertoireId}.json. You can check the plugin folder if the file exist and if not add one via the 'Insert PGN-Editor at cursor position' command.`,
 						0
 					);
 				}
@@ -245,13 +248,13 @@ export default class ChessStudyPlugin extends Plugin {
 	 * extension does not reach. Whichever arrives first stops the other, so a
 	 * key is never acted on twice.
 	 */
-	private registerStudyKeyboard() {
-		this.registerEditorExtension(chessStudyKeymap());
+	private registerRepertoireKeyboard() {
+		this.registerEditorExtension(chessRepertoireKeymap());
 
 		this.registerDomEvent(
 			window,
 			'keydown',
-			(event) => handleStudyKey(event, 'window'),
+			(event) => handleRepertoireKey(event, 'window'),
 			{ capture: true }
 		);
 
@@ -261,7 +264,7 @@ export default class ChessStudyPlugin extends Plugin {
 	}
 
 	/**
-	 * A bare position, for anywhere a board is wanted without a study behind it
+	 * A bare position, for anywhere a board is wanted without a repertoire behind it
 	 * - the cards of an exported map, most of all, which would otherwise be
 	 * lines of notation with nothing to look at.
 	 */
@@ -286,15 +289,17 @@ export default class ChessStudyPlugin extends Plugin {
 	}
 
 	/**
-	 * The study ids of every chessStudy block in a note, in the order they
+	 * The repertoire ids of every chessRepertoire block in a note, in the order they
 	 * appear. A block whose settings will not parse is left out rather than
 	 * taken as an error: it would not render either.
 	 */
-	private studyIdsIn(content: string): string[] {
-		return findCodeBlocks(content, 'chessStudy')
+	private repertoireIdsIn(content: string): string[] {
+		return findCodeBlocks(content, 'chessRepertoire')
 			.map((body) => {
 				try {
-					return parseUserConfig(this.settings, body).chessStudyId?.trim() ?? '';
+					return (
+						parseUserConfig(this.settings, body).chessRepertoireId?.trim() ?? ''
+					);
 				} catch (e) {
 					return '';
 				}

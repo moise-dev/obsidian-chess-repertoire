@@ -11,14 +11,14 @@ import {
 	positionKey,
 	toScoresheet,
 } from '../src/lib/move-map';
-import { ChessStudyMove } from '../src/lib/storage';
+import { ChessRepertoireMove } from '../src/lib/storage';
 
 const mv = (
 	san: string,
 	variants: unknown[] = [],
 	color: 'w' | 'b' = 'w',
 	after = `position-${san}`
-): ChessStudyMove =>
+): ChessRepertoireMove =>
 	({
 		san,
 		moveId: san,
@@ -27,7 +27,7 @@ const mv = (
 		variants,
 		shapes: [],
 		comment: null,
-	} as unknown as ChessStudyMove);
+	} as unknown as ChessRepertoireMove);
 
 /** Alternating colours, the way a real line runs. */
 const line = (...sans: string[]) =>
@@ -36,7 +36,7 @@ const line = (...sans: string[]) =>
 const va = (
 	variantId: string,
 	parentMoveId: string,
-	moves: ChessStudyMove[]
+	moves: ChessRepertoireMove[]
 ) => ({ variantId, parentMoveId, moves });
 
 /**
@@ -47,7 +47,7 @@ const va = (
  * So the line runs a b, then forks three ways after b: c d, x1 x2 and z1. x1
  * forks again into x2 and y1 y2.
  */
-const tree = (): ChessStudyMove[] => [
+const tree = (): ChessRepertoireMove[] => [
 	mv('a'),
 	mv('b', [
 		va('v1', 'b', [mv('x1', [va('v3', 'x1', [mv('y1'), mv('y2')])]), mv('x2')]),
@@ -73,11 +73,11 @@ const options = {
 };
 
 describe('buildSegments', () => {
-	it('has nothing to draw for an empty study', () => {
+	it('has nothing to draw for an empty repertoire', () => {
 		assert.equal(buildSegments([]), null);
 	});
 
-	it('collapses a study with no branches into a single segment', () => {
+	it('collapses a repertoire with no branches into a single segment', () => {
 		const root = buildSegments([mv('a'), mv('b'), mv('c')]);
 
 		assert.equal(sans(root!), 'a b c');
@@ -147,7 +147,7 @@ describe('anchorMove', () => {
 		);
 	});
 
-	it('shows a study with no branches its last move', () => {
+	it('shows a repertoire with no branches its last move', () => {
 		const root = buildSegments([mv('a'), mv('b'), mv('c')])!;
 
 		assert.equal(anchorMove(root)?.san, 'c');
@@ -289,7 +289,7 @@ describe('findTranspositions', () => {
 		color: 'w' | 'b',
 		after: string,
 		variants: unknown[] = []
-	): ChessStudyMove =>
+	): ChessRepertoireMove =>
 		({
 			moveId,
 			san,
@@ -298,7 +298,7 @@ describe('findTranspositions', () => {
 			variants,
 			shapes: [],
 			comment: null,
-		} as unknown as ChessStudyMove);
+		} as unknown as ChessRepertoireMove);
 
 	/**
 	 *   mainline  d4 Nf6 c4 e6
@@ -350,7 +350,7 @@ describe('findTranspositions', () => {
 		assert.equal(findTranspositions(root).size, 0);
 	});
 
-	it('finds nothing in a study whose lines never meet', () => {
+	it('finds nothing in a repertoire whose lines never meet', () => {
 		assert.equal(findTranspositions(buildSegments(tree())!).size, 0);
 	});
 });

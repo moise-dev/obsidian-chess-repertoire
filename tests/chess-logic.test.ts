@@ -1,9 +1,10 @@
+import { Chess } from 'chess.js';
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { Chess } from 'chess.js';
 import { isPromotionMove, playOtherSide } from '../src/lib/chess-logic';
 
-const fakeCg = () => ({ set: () => undefined }) as unknown as Parameters<typeof playOtherSide>[0];
+const fakeCg = () =>
+	({ set: () => undefined } as unknown as Parameters<typeof playOtherSide>[0]);
 
 describe('isPromotionMove', () => {
 	it('is true for a pawn move to the last rank', () => {

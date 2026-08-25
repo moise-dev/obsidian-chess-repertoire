@@ -6,7 +6,7 @@ import {
 	parsePgn,
 	titleFromHeaders,
 } from '../src/lib/pgn';
-import { ChessStudyMove } from '../src/lib/storage';
+import { ChessRepertoireMove } from '../src/lib/storage';
 
 const ROOT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -18,10 +18,10 @@ const ids = () => {
 const parse = (pgn: string, rootFEN = ROOT_FEN) =>
 	parsePgn(pgn, rootFEN, ids());
 
-const sans = (moves: ChessStudyMove[]) =>
+const sans = (moves: ChessRepertoireMove[]) =>
 	moves.map((move) => move.san).join(' ');
 
-const noteOn = (move: ChessStudyMove) =>
+const noteOn = (move: ChessRepertoireMove) =>
 	move.comment?.content?.[0]?.content?.[0]?.text ?? null;
 
 describe('looksLikeFen', () => {
@@ -223,7 +223,7 @@ describe('parsePgn', () => {
 
 		const d6 = moves.find((move) => move.san === 'd6');
 		assert.equal(
-			noteOn(d6 as ChessStudyMove),
+			noteOn(d6 as ChessRepertoireMove),
 			'a comment that (parenthetically) mentions $1 and wraps'
 		);
 
@@ -299,7 +299,7 @@ describe('exportPgn', () => {
 		);
 	});
 
-	it('adds a FEN header for a study that starts elsewhere, and an Event header for its title', () => {
+	it('adds a FEN header for a repertoire that starts elsewhere, and an Event header for its title', () => {
 		const blackToMove = '4k3/8/8/8/8/8/4P3/4K3 b - - 0 7';
 		const { moves } = parse('7... Kd7 8. e4', blackToMove);
 

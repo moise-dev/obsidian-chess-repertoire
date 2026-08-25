@@ -2,12 +2,12 @@ import { Square } from 'chess.js';
 import { DrawShape } from 'chessground/draw';
 import { commentToPlainText, hasComment } from 'src/lib/comments';
 import { findMovePath, moveNumberAtPly, plyAtPath } from 'src/lib/move-tree';
-import { ChessStudyMove } from 'src/lib/storage';
+import { ChessRepertoireMove } from 'src/lib/storage';
 
 export type TrainerColor = 'white' | 'black';
 
 /**
- * The three hints, in the order they are handed out: what the study already
+ * The three hints, in the order they are handed out: what the repertoire already
  * says about the move, then the piece to touch, then where it goes.
  *
  * A stage the position cannot offer - a move with no note - is left out of the
@@ -27,8 +27,8 @@ export type HintStage =
  * must stop b5"). Anything else would be about a different position.
  */
 const hintComment = (
-	expected: ChessStudyMove,
-	previous: ChessStudyMove | null
+	expected: ChessRepertoireMove,
+	previous: ChessRepertoireMove | null
 ): string | null => {
 	const source = [expected.comment, previous?.comment].find(hasComment);
 
@@ -41,8 +41,8 @@ const hintComment = (
 
 /** The hints available for `expected`, in the order they are revealed. */
 export const buildHintStages = (
-	expected: ChessStudyMove | null,
-	previous: ChessStudyMove | null
+	expected: ChessRepertoireMove | null,
+	previous: ChessRepertoireMove | null
 ): HintStage[] => {
 	if (!expected) return [];
 
@@ -76,7 +76,7 @@ export const errorShapes = (attempt: {
 	{ orig: attempt.from as Square, dest: attempt.to as Square, brush: 'red' },
 ];
 
-/** A move the study refused, and what it wanted instead. */
+/** A move the repertoire refused, and what it wanted instead. */
 export interface TrainerMistake {
 	/**
 	 * The move the drill was standing on. Two lines can reach the same move
@@ -86,7 +86,7 @@ export interface TrainerMistake {
 	/** e.g. `4.` or `4...` - where in the line it happened. */
 	label: string;
 	played: string;
-	/** The move the study wanted, or empty at the end of a line. */
+	/** The move the repertoire wanted, or empty at the end of a line. */
 	expected: string;
 	/** How often the same wrong move was played in the same position. */
 	count: number;
@@ -94,8 +94,8 @@ export interface TrainerMistake {
 
 /** e.g. `4.` or `4...` - which move of the game `move` is. */
 export const moveNumberLabel = (
-	moves: ChessStudyMove[],
-	move: ChessStudyMove,
+	moves: ChessRepertoireMove[],
+	move: ChessRepertoireMove,
 	firstPlayer: string,
 	initialMoveNumber: number
 ): string => {

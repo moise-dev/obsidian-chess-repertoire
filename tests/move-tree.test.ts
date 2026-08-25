@@ -16,26 +16,26 @@ import {
 	removeMovesFromPath,
 	removeVariationAtPath,
 } from '../src/lib/move-tree';
-import { ChessStudyMove } from '../src/lib/storage';
+import { ChessRepertoireMove } from '../src/lib/storage';
 
 let seq = 0;
 const makeId = () => `generated-${seq++}`;
 
 // Only the fields the tree code touches; the chess.js Move parts are irrelevant
 // to structure, so they are left off rather than faked.
-const mv = (san: string, variants: unknown[] = []): ChessStudyMove =>
+const mv = (san: string, variants: unknown[] = []): ChessRepertoireMove =>
 	({
 		san,
 		moveId: san,
 		variants,
 		shapes: [],
 		comment: null,
-	} as unknown as ChessStudyMove);
+	} as unknown as ChessRepertoireMove);
 
 const va = (
 	variantId: string,
 	parentMoveId: string,
-	moves: ChessStudyMove[]
+	moves: ChessRepertoireMove[]
 ) => ({ variantId, parentMoveId, moves });
 
 /**
@@ -43,7 +43,7 @@ const va = (
  *   b  ->  v1: x1 x2      (x1 -> v3: y1 y2)
  *          v2: z1
  */
-const tree = (): ChessStudyMove[] =>
+const tree = (): ChessRepertoireMove[] =>
 	JSON.parse(
 		JSON.stringify([
 			mv('a'),
@@ -56,8 +56,9 @@ const tree = (): ChessStudyMove[] =>
 		])
 	);
 
-const sans = (moves: ChessStudyMove[]) => moves.map((m) => m.san).join(' ');
-const pathOf = (t: ChessStudyMove[], id: string) => findMovePath(t, id)!;
+const sans = (moves: ChessRepertoireMove[]) =>
+	moves.map((m) => m.san).join(' ');
+const pathOf = (t: ChessRepertoireMove[], id: string) => findMovePath(t, id)!;
 
 describe('addressing', () => {
 	it('finds moves at every depth', () => {
@@ -114,7 +115,10 @@ describe('promoting a variation', () => {
 	});
 
 	it('does not leave an empty variation when the parent had no continuation', () => {
-		const t: ChessStudyMove[] = [mv('a'), mv('b', [va('v1', 'b', [mv('x1')])])];
+		const t: ChessRepertoireMove[] = [
+			mv('a'),
+			mv('b', [va('v1', 'b', [mv('x1')])]),
+		];
 		promoteVariationAtPath(t, pathOf(t, 'x1'), makeId);
 
 		assert.equal(sans(t), 'a b x1');
@@ -185,7 +189,7 @@ describe('reordering variations', () => {
 /**
  * The reducer runs these inside an immer draft, and they move draft objects
  * between arrays. Worth proving separately: a structural-sharing bug here would
- * corrupt a study rather than just render it oddly.
+ * corrupt a repertoire rather than just render it oddly.
  */
 describe('under immer', () => {
 	it('promotes without losing or aliasing moves', () => {
@@ -200,7 +204,7 @@ describe('under immer', () => {
 
 		// Each move must appear exactly once in the new tree.
 		const ids: string[] = [];
-		const walk = (moves: ChessStudyMove[]) => {
+		const walk = (moves: ChessRepertoireMove[]) => {
 			for (const move of moves) {
 				ids.push(move.moveId);
 				for (const variant of move.variants) walk(variant.moves);
@@ -222,7 +226,7 @@ describe('under immer', () => {
 		assert.notEqual(findMovePath(before, 'x1'), null, 'the input is untouched');
 	});
 
-	it('leaves the study object identical when an operation is refused', () => {
+	it('leaves the repertoire object identical when an operation is refused', () => {
 		const before = tree();
 		const after = produce(before, (draft) => {
 			// c is on the mainline, so there is nothing to promote.
@@ -285,7 +289,7 @@ describe('removeMovesFromPath', () => {
 		assert.equal(findMovePath(after, 'y1'), null);
 	});
 
-	it('empties the study when it starts at the first move', () => {
+	it('empties the repertoire when it starts at the first move', () => {
 		const after = produce(tree(), (draft) => {
 			removeMovesFromPath(draft, pathOf(draft, 'a'));
 		});
@@ -293,7 +297,7 @@ describe('removeMovesFromPath', () => {
 		assert.equal(after.length, 0);
 	});
 
-	it('leaves the study alone when the path is not in it', () => {
+	it('leaves the repertoire alone when the path is not in it', () => {
 		const before = tree();
 		const after = produce(before, (draft) => {
 			removeMovesFromPath(draft, [9, 9, 9]);

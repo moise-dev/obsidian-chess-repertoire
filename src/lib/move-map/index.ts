@@ -1,5 +1,5 @@
 import { getReplies } from 'src/lib/move-tree';
-import { ChessStudyMove } from 'src/lib/storage';
+import { ChessRepertoireMove } from 'src/lib/storage';
 
 /**
  * A run of moves with no choice in it, ending where the line branches.
@@ -12,7 +12,7 @@ import { ChessStudyMove } from 'src/lib/storage';
 export interface MapSegment {
 	/** The id of the segment's first move, which is unique across the tree. */
 	id: string;
-	moves: ChessStudyMove[];
+	moves: ChessRepertoireMove[];
 	/** Half-move number of the first move, counting from 0 at the mainline's. */
 	startPly: number;
 	/** How many branch points sit above this segment. */
@@ -22,8 +22,8 @@ export interface MapSegment {
 }
 
 const buildFrom = (
-	moves: ChessStudyMove[],
-	first: ChessStudyMove,
+	moves: ChessRepertoireMove[],
+	first: ChessRepertoireMove,
 	startPly: number,
 	depth: number
 ): MapSegment => {
@@ -53,8 +53,10 @@ const buildFrom = (
 	}
 };
 
-/** The whole study as segments, or null when it has no moves. */
-export const buildSegments = (moves: ChessStudyMove[]): MapSegment | null => {
+/** The whole repertoire as segments, or null when it has no moves. */
+export const buildSegments = (
+	moves: ChessRepertoireMove[]
+): MapSegment | null => {
 	const first = getReplies(moves, null)[0];
 
 	return first ? buildFrom(moves, first, 0, 0) : null;
@@ -227,7 +229,7 @@ export const findTranspositions = (
  * branch card answers "what if they play this?" and that position is the
  * answer - where the line ends up is what the moves underneath are for.
  */
-export const anchorMove = (segment: MapSegment): ChessStudyMove | null =>
+export const anchorMove = (segment: MapSegment): ChessRepertoireMove | null =>
 	(segment.depth === 0
 		? segment.moves[segment.moves.length - 1]
 		: segment.moves[0]) ?? null;
@@ -235,8 +237,8 @@ export const anchorMove = (segment: MapSegment): ChessStudyMove | null =>
 /** One line of a scoresheet: a move number and the two moves under it. */
 export interface ScoresheetRow {
 	number: number;
-	white: ChessStudyMove | null;
-	black: ChessStudyMove | null;
+	white: ChessRepertoireMove | null;
+	black: ChessRepertoireMove | null;
 }
 
 /**

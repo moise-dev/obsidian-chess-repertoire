@@ -38,11 +38,7 @@ export const PromotionPicker = ({
 	const atTop = (orientation === 'white') === (rankIndex === 7);
 
 	return (
-		<div
-			className="cs-promotion-backdrop"
-			onClick={onCancel}
-			role="presentation"
-		>
+		<div className="cs-promotion-backdrop" onClick={onCancel} role="presentation">
 			<div
 				className="cs-promotion-picker cg-wrap"
 				style={{ left: `${left}%`, ...(atTop ? { top: 0 } : { bottom: 0 }) }}

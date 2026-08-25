@@ -2,7 +2,7 @@ import { JSONContent } from '@tiptap/react';
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { getContinuation } from '../src/lib/move-tree';
-import { ChessStudyMove } from '../src/lib/storage';
+import { ChessRepertoireMove } from '../src/lib/storage';
 import {
 	buildHintStages,
 	errorShapes,
@@ -22,7 +22,7 @@ const mv = (
 		comment?: JSONContent | null;
 		variants?: unknown[];
 	} = {}
-): ChessStudyMove =>
+): ChessRepertoireMove =>
 	({
 		san,
 		moveId: san,
@@ -32,12 +32,12 @@ const mv = (
 		comment: options.comment ?? null,
 		variants: options.variants ?? [],
 		shapes: [],
-	} as unknown as ChessStudyMove);
+	} as unknown as ChessRepertoireMove);
 
 const va = (
 	variantId: string,
 	parentMoveId: string,
-	moves: ChessStudyMove[]
+	moves: ChessRepertoireMove[]
 ) => ({ variantId, parentMoveId, moves });
 
 const note = (text: string): JSONContent => ({
@@ -50,7 +50,7 @@ const note = (text: string): JSONContent => ({
  *   e5  ->  v1: Nc6 Bc4
  *           v2: d6
  */
-const tree = (): ChessStudyMove[] => [
+const tree = (): ChessRepertoireMove[] => [
 	mv('e4'),
 	mv('e5', {
 		variants: [
@@ -61,7 +61,7 @@ const tree = (): ChessStudyMove[] => [
 	mv('Nf3'),
 ];
 
-const san = (move: ChessStudyMove | null) => move?.san ?? null;
+const san = (move: ChessRepertoireMove | null) => move?.san ?? null;
 
 describe('getContinuation', () => {
 	it('starts a line at the first mainline move', () => {
@@ -83,7 +83,7 @@ describe('getContinuation', () => {
 		assert.equal(getContinuation(tree(), 'd6'), null);
 	});
 
-	it('offers nothing for a move that is not in the study', () => {
+	it('offers nothing for a move that is not in the repertoire', () => {
 		assert.equal(getContinuation(tree(), 'nonsense'), null);
 	});
 
@@ -93,7 +93,7 @@ describe('getContinuation', () => {
 		assert.equal(getContinuation(moves, 'e4'), null);
 	});
 
-	it('offers nothing at all for an empty study', () => {
+	it('offers nothing at all for an empty repertoire', () => {
 		assert.equal(getContinuation([], null), null);
 	});
 });
@@ -173,7 +173,7 @@ describe('moveNumberLabel', () => {
 	 *   mainline  1. e4 e5  2. Nf3
 	 *   e5  ->  v1: 2. Bc4 Nc6
 	 */
-	const line: ChessStudyMove[] = [
+	const line: ChessRepertoireMove[] = [
 		mv('e4'),
 		mv('e5', {
 			color: 'b',
@@ -195,9 +195,9 @@ describe('moveNumberLabel', () => {
 		assert.equal(moveNumberLabel(line, knight, 'w', 1), '2...');
 	});
 
-	it('counts from the first move number the study starts at', () => {
-		// A study opened from a FEN can start mid-game, and on Black's move.
-		const midGame: ChessStudyMove[] = [mv('Nf6', { color: 'b' }), mv('c4')];
+	it('counts from the first move number the repertoire starts at', () => {
+		// A repertoire opened from a FEN can start mid-game, and on Black's move.
+		const midGame: ChessRepertoireMove[] = [mv('Nf6', { color: 'b' }), mv('c4')];
 
 		assert.equal(moveNumberLabel(midGame, midGame[0], 'b', 12), '12...');
 		assert.equal(moveNumberLabel(midGame, midGame[1], 'b', 12), '13.');

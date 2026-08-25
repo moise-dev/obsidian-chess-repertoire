@@ -1,22 +1,22 @@
 import { parseYaml } from 'obsidian';
-import { ChessStudyPluginSettings } from 'src/components/obsidian/SettingsTab';
+import { ChessRepertoirePluginSettings } from 'src/components/obsidian/SettingsTab';
 
-type ChessStudyAppConfig = ChessStudyPluginSettings & {
-	chessStudyId: string;
+type ChessRepertoireAppConfig = ChessRepertoirePluginSettings & {
+	chessRepertoireId: string;
 };
 
 export const parseUserConfig = (
-	settings: ChessStudyPluginSettings,
+	settings: ChessRepertoirePluginSettings,
 	content: string
-): ChessStudyAppConfig => {
-	const chessStudyConfig: ChessStudyAppConfig = {
+): ChessRepertoireAppConfig => {
+	const chessRepertoireConfig: ChessRepertoireAppConfig = {
 		...settings,
-		chessStudyId: '',
+		chessRepertoireId: '',
 	};
 
 	try {
 		return {
-			...chessStudyConfig,
+			...chessRepertoireConfig,
 			...parseYaml(content),
 		};
 	} catch (e) {

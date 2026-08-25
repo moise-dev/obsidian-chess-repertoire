@@ -6,9 +6,9 @@ import {
 	flattenSegments,
 	layoutSegments,
 } from '../src/lib/move-map';
-import { ChessStudyMove } from '../src/lib/storage';
+import { ChessRepertoireMove } from '../src/lib/storage';
 
-const mv = (san: string, variants: unknown[] = []): ChessStudyMove =>
+const mv = (san: string, variants: unknown[] = []): ChessRepertoireMove =>
 	({
 		san,
 		moveId: san,
@@ -17,12 +17,12 @@ const mv = (san: string, variants: unknown[] = []): ChessStudyMove =>
 		variants,
 		shapes: [],
 		comment: null,
-	} as unknown as ChessStudyMove);
+	} as unknown as ChessRepertoireMove);
 
 const va = (
 	variantId: string,
 	parentMoveId: string,
-	moves: ChessStudyMove[]
+	moves: ChessRepertoireMove[]
 ) => ({
 	variantId,
 	parentMoveId,
@@ -126,7 +126,7 @@ describe('toCanvas', () => {
 		);
 	});
 
-	it('turns the boards round for a study written for Black', () => {
+	it('turns the boards round for a repertoire written for Black', () => {
 		const { root, layout: placed } = layout();
 		const canvas = toCanvas(
 			placed,

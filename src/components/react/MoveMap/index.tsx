@@ -23,7 +23,7 @@ import {
 	toScoresheet,
 } from 'src/lib/move-map';
 import { moveNumberAtPly } from 'src/lib/move-tree';
-import { ChessStudyMove, MoveDrillStats } from 'src/lib/storage';
+import { ChessRepertoireMove, MoveDrillStats } from 'src/lib/storage';
 
 const CARD_WIDTH = 248;
 const GAP_X = 64;
@@ -32,7 +32,7 @@ const DEFAULT_HEIGHT = 180;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 2;
 /**
- * Fitting may zoom in as well as out, but only so far: a study of two cards
+ * Fitting may zoom in as well as out, but only so far: a repertoire of two cards
  * should fill the space rather than sit marooned in the middle of it, and
  * blowing those two up to fill a 1400px modal is no better.
  */
@@ -43,7 +43,7 @@ const clamp = (value: number, low: number, high: number) =>
 	Math.min(Math.max(value, low), high);
 
 /** Which position a card's board is showing, for its tooltip. */
-const positionLabel = (move: ChessStudyMove | null, number: number) => {
+const positionLabel = (move: ChessRepertoireMove | null, number: number) => {
 	if (!move) return 'Starting position';
 
 	return `After ${number}${move.color === 'b' ? '...' : '.'} ${move.san}`;
@@ -94,7 +94,7 @@ const stateClass = ({ isExcluded, isHole, attempts, misses }: SegmentState) => {
  * A move and the label it carries, as one string. These glyphs are plain enough
  * to survive a canvas card, unlike the chess pieces.
  */
-const labelled = (move: ChessStudyMove | null): string | null => {
+const labelled = (move: ChessRepertoireMove | null): string | null => {
 	if (!move) return null;
 
 	const known = readClassification(move.classification);
@@ -106,7 +106,7 @@ const labelled = (move: ChessStudyMove | null): string | null => {
 const Classification = ({
 	classification,
 }: {
-	classification: ChessStudyMove['classification'];
+	classification: ChessRepertoireMove['classification'];
 }) => {
 	const known = readClassification(classification);
 
@@ -172,15 +172,15 @@ const TranspositionMark = ({
 };
 
 interface MoveMapProps {
-	moves: ChessStudyMove[];
+	moves: ChessRepertoireMove[];
 	rootFEN: string;
 	title: string | null;
 	currentMoveId: string | null;
 	firstPlayer: string;
 	initialMoveNumber: number;
-	/** The side the study is written for, taken from the board's orientation. */
+	/** The side the repertoire is written for, taken from the board's orientation. */
 	userColor: 'w' | 'b';
-	/** The study's own board theme, so the map does not show a different one. */
+	/** The repertoire's own board theme, so the map does not show a different one. */
 	boardColor: BoardColor;
 	loadStats: () => Promise<Record<string, MoveDrillStats>>;
 	onSelectMove: (moveId: string) => void;
@@ -189,7 +189,7 @@ interface MoveMapProps {
 }
 
 /**
- * The study as a diagram: one card per run of moves with no choice in it, and a
+ * The repertoire as a diagram: one card per run of moves with no choice in it, and a
  * fork wherever the line branches.
  *
  * Read left to right, a card is a stretch of play nobody had to decide anything
@@ -219,7 +219,7 @@ export const MoveMap = ({
 	const hasFitted = useRef(false);
 	const panned = useRef(false);
 
-	// The diagram draws without them and colours in when they arrive; a study
+	// The diagram draws without them and colours in when they arrive; a repertoire
 	// never drilled has none to wait for.
 	useEffect(() => {
 		let cancelled = false;
@@ -266,7 +266,7 @@ export const MoveMap = ({
 		if (changed || Object.keys(heights).length !== cardRefs.current.size)
 			setHeights(measured);
 		// Keyed on the layout, which changes whenever the cards do - through
-		// `root` when the study changes, through `heights` when a measurement
+		// `root` when the repertoire changes, through `heights` when a measurement
 		// lands. Measuring the same cards twice settles rather than loops.
 	}, [heights, layout]);
 
@@ -471,8 +471,8 @@ export const MoveMap = ({
 		return (
 			<div className="cs-map">
 				<p className="cs-empty-state">
-					This study has no moves to map yet. Play a move on the board to start the
-					line.
+					This repertoire has no moves to map yet. Play a move on the board to start
+					the line.
 				</p>
 			</div>
 		);
@@ -480,7 +480,7 @@ export const MoveMap = ({
 	return (
 		<div className="cs-map">
 			<div className="cs-map-toolbar">
-				<span className="cs-map-title">{title || 'Study map'}</span>
+				<span className="cs-map-title">{title || 'Repertoire map'}</span>
 				<span className="cs-map-legend">
 					<span className="cs-map-key is-known" /> drilled
 					<span className="cs-map-key is-shaky" /> shaky

@@ -1,7 +1,7 @@
 {
   "name": "chess-repertoire",
   "version": "1.0.0",
-  "description": "A chess study helper, PGN viewer/editor and opening trainer for Obsidian.",
+  "description": "A chess repertoire helper, PGN viewer/editor and opening trainer for Obsidian.",
   "keywords": [
     "chess",
     "obsidian"

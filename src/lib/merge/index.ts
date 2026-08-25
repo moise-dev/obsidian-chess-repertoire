@@ -1,18 +1,18 @@
 import { hasComment } from 'src/lib/comments';
 import { getReplies } from 'src/lib/move-tree';
 import {
-	ChessStudyDrillData,
-	ChessStudyFileData,
-	ChessStudyMove,
+	ChessRepertoireDrillData,
+	ChessRepertoireFileData,
+	ChessRepertoireMove,
 	MoveDrillStats,
 } from 'src/lib/storage';
 
 export interface MergeResult {
-	study: ChessStudyFileData;
-	/** Studies left out because they start from another position. */
+	repertoire: ChessRepertoireFileData;
+	/** Repertoires left out because they start from another position. */
 	skipped: number;
 	/**
-	 * Moves that had nowhere to go: an alternative to a study's very first move.
+	 * Moves that had nowhere to go: an alternative to a repertoire's very first move.
 	 * Nothing precedes it, so the tree has no move to hang it off - the same
 	 * limitation the PGN importer has.
 	 */
@@ -20,12 +20,15 @@ export interface MergeResult {
 }
 
 /**
- * Fills in what the first study did not say.
+ * Fills in what the first repertoire did not say.
  *
- * A merge should never overwrite: the earlier study is the one being added to,
+ * A merge should never overwrite: the earlier repertoire is the one being added to,
  * so it keeps whatever it has, and a later one can only supply what is missing.
  */
-const fillAnnotations = (into: ChessStudyMove, from: ChessStudyMove): void => {
+const fillAnnotations = (
+	into: ChessRepertoireMove,
+	from: ChessRepertoireMove
+): void => {
 	if (!hasComment(into.comment) && hasComment(from.comment))
 		into.comment = from.comment;
 
@@ -39,10 +42,10 @@ const fillAnnotations = (into: ChessStudyMove, from: ChessStudyMove): void => {
 };
 
 /**
- * Copies a move and everything under it, so the merged study never shares
- * objects with the studies it was built from.
+ * Copies a move and everything under it, so the merged repertoire never shares
+ * objects with the repertoires it was built from.
  */
-const cloneMove = (move: ChessStudyMove): ChessStudyMove => ({
+const cloneMove = (move: ChessRepertoireMove): ChessRepertoireMove => ({
 	...move,
 	shapes: [...(move.shapes ?? [])],
 	variants: (move.variants ?? []).map((variant) => ({
@@ -60,10 +63,10 @@ const cloneMove = (move: ChessStudyMove): ChessStudyMove => ({
  * which is where variations live, an alternative to the move that follows.
  */
 const graft = (
-	target: ChessStudyMove[],
-	source: ChessStudyMove[],
-	targetAfter: ChessStudyMove | null,
-	sourceAfter: ChessStudyMove | null,
+	target: ChessRepertoireMove[],
+	source: ChessRepertoireMove[],
+	targetAfter: ChessRepertoireMove | null,
+	sourceAfter: ChessRepertoireMove | null,
 	result: { dropped: number }
 ): void => {
 	const targetReplies = getReplies(target, targetAfter?.moveId ?? null);
@@ -96,10 +99,10 @@ const graft = (
 
 /** The moves after `move` in its own line, which travel with it when grafted. */
 const restOfLine = (
-	moves: ChessStudyMove[],
-	move: ChessStudyMove
-): ChessStudyMove[] => {
-	const line: ChessStudyMove[] = [];
+	moves: ChessRepertoireMove[],
+	move: ChessRepertoireMove
+): ChessRepertoireMove[] => {
+	const line: ChessRepertoireMove[] = [];
 
 	for (let cursor = move; ; ) {
 		const [next] = getReplies(moves, cursor.moveId);
@@ -111,12 +114,12 @@ const restOfLine = (
 	}
 };
 
-/** Titles of the studies that went in, as one line. */
-const mergeTitles = (studies: ChessStudyFileData[]): string | null => {
+/** Titles of the repertoires that went in, as one line. */
+const mergeTitles = (repertoires: ChessRepertoireFileData[]): string | null => {
 	const titles = [
 		...new Set(
-			studies
-				.map((study) => study.header?.title?.trim())
+			repertoires
+				.map((repertoire) => repertoire.header?.title?.trim())
 				.filter((title): title is string => !!title)
 		),
 	];
@@ -125,37 +128,41 @@ const mergeTitles = (studies: ChessStudyFileData[]): string | null => {
 };
 
 /**
- * One study holding every line of the studies given, in the order given.
+ * One repertoire holding every line of the repertoires given, in the order given.
  *
- * The first study is the trunk: its mainline stays the mainline, and everything
- * the others add arrives as variations off it. Only studies starting from the
- * same position take part - a study opening from another FEN is a different
- * study, not another view of this one.
+ * The first repertoire is the trunk: its mainline stays the mainline, and everything
+ * the others add arrives as variations off it. Only repertoires starting from the
+ * same position take part - a repertoire opening from another FEN is a different
+ * repertoire, not another view of this one.
  *
- * Move ids are carried across untouched. They are nanoids, so two studies
+ * Move ids are carried across untouched. They are nanoids, so two repertoires
  * cannot collide, and keeping them is what lets a drill history survive the
  * merge.
  */
-export const mergeStudies = (
-	studies: ChessStudyFileData[],
+export const mergeRepertoires = (
+	repertoires: ChessRepertoireFileData[],
 	version: string
 ): MergeResult => {
-	const [first, ...rest] = studies;
-	const mergeable = rest.filter((study) => study.rootFEN === first.rootFEN);
+	const [first, ...rest] = repertoires;
+	const mergeable = rest.filter(
+		(repertoire) => repertoire.rootFEN === first.rootFEN
+	);
 	const result = { dropped: 0 };
 
 	const moves = first.moves.map(cloneMove);
 
-	for (const study of mergeable) graft(moves, study.moves, null, null, result);
+	for (const repertoire of mergeable)
+		graft(moves, repertoire.moves, null, null, result);
 
 	return {
-		study: {
+		repertoire: {
 			version,
 			header: { title: mergeTitles([first, ...mergeable]) },
 			moves,
 			rootFEN: first.rootFEN,
-			playerColor: [first, ...mergeable].find((study) => study.playerColor)
-				?.playerColor,
+			playerColor: [first, ...mergeable].find(
+				(repertoire) => repertoire.playerColor
+			)?.playerColor,
 		},
 		skipped: rest.length - mergeable.length,
 		dropped: result.dropped,
@@ -163,14 +170,14 @@ export const mergeStudies = (
 };
 
 /**
- * The drill histories of the merged studies, as one.
+ * The drill histories of the merged repertoires, as one.
  *
  * Move ids survive a merge, so the records still name real moves. Attempts and
  * misses add up and the latest sighting wins - the same move drilled in two
- * studies was still drilled twice.
+ * repertoires was still drilled twice.
  */
 export const mergeDrillStats = (
-	datas: ChessStudyDrillData[]
+	datas: ChessRepertoireDrillData[]
 ): Record<string, MoveDrillStats> => {
 	const merged: Record<string, MoveDrillStats> = {};
 

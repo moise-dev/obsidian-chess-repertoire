@@ -2,7 +2,7 @@
  * The bodies of every fenced code block in `content` written for `language`.
  *
  * A scan rather than a regex, so a fence inside a longer fence - a markdown
- * example holding a chessStudy block, say - is read as content and not as a
+ * example holding a chessRepertoire block, say - is read as content and not as a
  * block of its own. A block left unterminated at the end of the note is not
  * returned: it is not a block yet.
  *

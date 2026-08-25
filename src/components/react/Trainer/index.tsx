@@ -15,7 +15,7 @@ const STATUS_TEXT: Record<TrainerStatus, string> = {
 
 /**
  * The drill's control strip. It takes the place of the notes panel while a
- * session runs, so the study cannot answer the question for you.
+ * session runs, so the repertoire cannot answer the question for you.
  */
 export const TrainerBar = React.memo((props: Trainer) => {
 	const {
@@ -87,7 +87,7 @@ interface TrainerReportPanelProps {
  * What the session found, once it is over.
  *
  * Only the mistakes are listed. A drill you got right needs no reading back;
- * what is worth keeping is the handful of positions where the study said one
+ * what is worth keeping is the handful of positions where the repertoire said one
  * thing and you played another.
  */
 export const TrainerReportPanel = React.memo(
@@ -122,7 +122,7 @@ export const TrainerReportPanel = React.memo(
 				{total === 0 ? (
 					<p className="cs-trainer-clean">
 						<Check size={14} />
-						Every move matched the study.
+						Every move matched the repertoire.
 					</p>
 				) : (
 					<ul className="cs-trainer-mistakes">

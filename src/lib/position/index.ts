@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js';
 import { PositionConfig } from 'src/components/PositionView';
-import { ChessStudyPluginSettings } from 'src/components/obsidian/SettingsTab';
+import { ChessRepertoirePluginSettings } from 'src/components/obsidian/SettingsTab';
 import { parseUserConfig } from 'src/lib/obsidian';
 
 /**
@@ -12,7 +12,7 @@ import { parseUserConfig } from 'src/lib/obsidian';
  * than a line saying so.
  */
 export const parsePositionConfig = (
-	settings: ChessStudyPluginSettings,
+	settings: ChessRepertoirePluginSettings,
 	source: string
 ): PositionConfig | null => {
 	let parsed;

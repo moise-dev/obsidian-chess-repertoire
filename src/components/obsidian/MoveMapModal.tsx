@@ -4,10 +4,10 @@ import * as ReactDOM from 'react-dom/client';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { MoveMap } from 'src/components/react/MoveMap';
 import { JsonCanvas } from 'src/lib/canvas';
-import { ChessStudyMove, MoveDrillStats } from 'src/lib/storage';
+import { ChessRepertoireMove, MoveDrillStats } from 'src/lib/storage';
 
 export interface MoveMapModalOptions {
-	moves: ChessStudyMove[];
+	moves: ChessRepertoireMove[];
 	rootFEN: string;
 	title: string | null;
 	currentMoveId: string | null;
@@ -24,7 +24,7 @@ export interface MoveMapModalOptions {
  * Hosts the map in a modal of its own.
  *
  * A modal rather than a workspace leaf because the map is only useful next to
- * the study it belongs to: choosing a move has to move that board, and a leaf
+ * the repertoire it belongs to: choosing a move has to move that board, and a leaf
  * would need a registry to find its way back to the right one. It also takes
  * the keyboard with it, which the widget itself cannot do inside CodeMirror.
  *

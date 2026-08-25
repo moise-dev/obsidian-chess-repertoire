@@ -19,8 +19,8 @@ export const ROLES: Record<string, string> = {
  * `piece` is chessground's own element and JSX has no type for it, hence
  * `createElement`. Reaching for the sprites rather than the Unicode chess
  * glyphs because font coverage of those is patchy - the pawns arrive and the
- * pieces come back as empty boxes - and because a diagram of a study should not
- * show a different set of pieces from the study.
+ * pieces come back as empty boxes - and because a diagram of a repertoire should not
+ * show a different set of pieces from the repertoire.
  */
 export const Piece = ({ role, color }: { role: string; color: string }) =>
 	React.createElement('piece', { className: `${role} ${color}` });

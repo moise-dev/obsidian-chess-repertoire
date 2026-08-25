@@ -1,7 +1,7 @@
 import { Chess } from 'chess.js';
 import { Api as ChessgroundApi } from 'chessground/api';
 import { Draft } from 'immer';
-import { GameState } from 'src/components/react/ChessStudy';
+import { GameState } from 'src/components/react/ChessRepertoire';
 import { toColor, toDests } from '../chess-logic';
 import {
 	MovePath,
@@ -12,10 +12,10 @@ import {
 	moveNumberAtPly,
 	plyAtPath,
 } from '../move-tree';
-import { ChessStudyMove } from '../storage';
+import { ChessRepertoireMove } from '../storage';
 
 export const findMovePathById = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string
 ): MovePath | null => findMovePath(moves, moveId);
 
@@ -59,9 +59,9 @@ export const displayMoveInHistory = (
 	}
 ): Draft<GameState> => {
 	const { offset, selectedMoveId } = options;
-	const moves = draft.study.moves;
+	const moves = draft.repertoire.moves;
 
-	let moveToDisplay: Draft<ChessStudyMove> | null = null;
+	let moveToDisplay: Draft<ChessRepertoireMove> | null = null;
 
 	const baseMoveId = selectedMoveId || draft.currentMove?.moveId;
 
@@ -74,14 +74,14 @@ export const displayMoveInHistory = (
 			const target = list?.[index + offset];
 
 			if (target) {
-				moveToDisplay = target as Draft<ChessStudyMove>;
+				moveToDisplay = target as Draft<ChessRepertoireMove>;
 			} else if (offset < 0) {
 				// Off the front of a variation: fall back to its parent move. On the
 				// mainline there is no parent, so this leaves the root position.
 				const parentPath = getParentMovePath(path);
 
 				moveToDisplay = parentPath
-					? (getMoveAtPath(moves, parentPath) as Draft<ChessStudyMove>)
+					? (getMoveAtPath(moves, parentPath) as Draft<ChessRepertoireMove>)
 					: null;
 			} else {
 				// Off the end of a line: stay put rather than jumping somewhere
@@ -90,7 +90,7 @@ export const displayMoveInHistory = (
 			}
 		}
 	} else if (offset > 0) {
-		moveToDisplay = (moves[0] as Draft<ChessStudyMove>) ?? null;
+		moveToDisplay = (moves[0] as Draft<ChessRepertoireMove>) ?? null;
 	} else if (offset < 0) {
 		return draft;
 	}
@@ -99,7 +99,7 @@ export const displayMoveInHistory = (
 		showPosition(chessView, setChessLogic, moveToDisplay.after);
 		draft.currentMove = moveToDisplay;
 	} else if (offset !== 0) {
-		showPosition(chessView, setChessLogic, draft.study.rootFEN);
+		showPosition(chessView, setChessLogic, draft.repertoire.rootFEN);
 		draft.currentMove = null;
 	} else {
 		return draft;
@@ -116,12 +116,12 @@ export const displayPosition = (
 	draft: Draft<GameState>,
 	chessView: ChessgroundApi,
 	setChessLogic: React.Dispatch<React.SetStateAction<Chess>>,
-	move: Draft<ChessStudyMove> | null
+	move: Draft<ChessRepertoireMove> | null
 ): Draft<GameState> => {
 	showPosition(
 		chessView,
 		setChessLogic,
-		move ? move.after : draft.study.rootFEN
+		move ? move.after : draft.repertoire.rootFEN
 	);
 
 	draft.currentMove = move;
@@ -131,15 +131,15 @@ export const displayPosition = (
 
 export const getCurrentMove = (
 	draft: Draft<GameState>
-): Draft<ChessStudyMove> | null => {
+): Draft<ChessRepertoireMove> | null => {
 	const currentMoveId = draft.currentMove?.moveId;
 
 	if (!currentMoveId) return null;
 
-	const path = findMovePath(draft.study.moves, currentMoveId);
+	const path = findMovePath(draft.repertoire.moves, currentMoveId);
 
 	return path
-		? (getMoveAtPath(draft.study.moves, path) as Draft<ChessStudyMove>)
+		? (getMoveAtPath(draft.repertoire.moves, path) as Draft<ChessRepertoireMove>)
 		: null;
 };
 
@@ -148,7 +148,7 @@ export const getCurrentMove = (
  * heading of the notes panel.
  */
 export const getMoveLabel = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string | null,
 	firstPlayer: string,
 	initialMoveNumber: number

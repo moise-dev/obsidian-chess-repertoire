@@ -3,7 +3,7 @@ import { App, Modal, Notice, Setting, TextAreaComponent } from 'obsidian';
 export type ExportFormat = 'pgn' | 'fen';
 
 /**
- * Shows the study as PGN or FEN and copies whichever is showing. The two are
+ * Shows the repertoire as PGN or FEN and copies whichever is showing. The two are
  * computed once up front rather than re-derived on toggle - a FEN is just the
  * current position, but a PGN walks the whole move tree, and neither is worth
  * doing twice.
@@ -20,7 +20,7 @@ export class ExportModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 
-		contentEl.createEl('h3', { text: 'Export study' });
+		contentEl.createEl('h3', { text: 'Export repertoire' });
 
 		let pgnButton: HTMLButtonElement;
 		let fenButton: HTMLButtonElement;

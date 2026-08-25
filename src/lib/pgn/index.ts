@@ -8,12 +8,12 @@ import {
 } from 'src/lib/classification';
 import { commentToPlainText, hasComment } from 'src/lib/comments';
 import { MAX_VARIATION_DEPTH, moveNumberAtPly } from 'src/lib/move-tree';
-import { ChessStudyMove, Variant } from 'src/lib/storage';
+import { ChessRepertoireMove, Variant } from 'src/lib/storage';
 
 /**
  * PGN import.
  *
- * chess.js keeps almost none of what a study is made of: it discards variations,
+ * chess.js keeps almost none of what a repertoire is made of: it discards variations,
  * has no notion of NAGs, and files comments by position rather than by move. So
  * the movetext is parsed here, and chess.js is used only to validate each move
  * and give it its from/to/before/after.
@@ -73,14 +73,14 @@ const splitSuffix = (
 	};
 };
 
-/** PGN comments are plain text; notes in a study are TipTap documents. */
+/** PGN comments are plain text; notes in a repertoire are TipTap documents. */
 const toComment = (text: string): JSONContent => ({
 	type: 'doc',
 	content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
 });
 
 /** A move can carry more than one comment; they read as one note. */
-const appendComment = (move: ChessStudyMove, text: string): void => {
+const appendComment = (move: ChessRepertoireMove, text: string): void => {
 	const existing = move.comment?.content?.[0]?.content?.[0]?.text;
 
 	move.comment = toComment(existing ? `${existing} ${text}` : text);
@@ -113,7 +113,7 @@ const skipVariation = (state: ParseState): void => {
 	}
 };
 
-type AttachVariation = (moves: ChessStudyMove[]) => void;
+type AttachVariation = (moves: ChessRepertoireMove[]) => void;
 
 /**
  * Reads one line of play, recursing into its variations.
@@ -121,7 +121,7 @@ type AttachVariation = (moves: ChessStudyMove[]) => void;
  * `attachSibling` is how a variation on this line's *first* move is stored:
  * such a move has nothing before it to hang off, so the alternative belongs
  * beside this line rather than inside it. On the mainline there is no such
- * place, which is the one thing a study cannot represent - alternatives to the
+ * place, which is the one thing a repertoire cannot represent - alternatives to the
  * game's first move are read and dropped.
  */
 const parseLine = (
@@ -129,9 +129,9 @@ const parseLine = (
 	startFen: string,
 	depth: number,
 	attachSibling: AttachVariation | null
-): ChessStudyMove[] => {
+): ChessRepertoireMove[] => {
 	const chess = new Chess(startFen);
-	const moves: ChessStudyMove[] = [];
+	const moves: ChessRepertoireMove[] = [];
 
 	while (state.index < state.tokens.length) {
 		const token = state.tokens[state.index];
@@ -214,7 +214,7 @@ const parseLine = (
 			shapes: [],
 			comment: null,
 			classification,
-		} as ChessStudyMove);
+		} as ChessRepertoireMove);
 	}
 
 	return moves;
@@ -224,7 +224,7 @@ export interface ParsedPgn {
 	headers: Record<string, string>;
 	/** The position the game starts from, `[FEN]` header included. */
 	rootFEN: string;
-	moves: ChessStudyMove[];
+	moves: ChessRepertoireMove[];
 	/** How many moves could not be played out; 0 for a clean import. */
 	skipped: number;
 }
@@ -262,7 +262,7 @@ export const parsePgn = (
 };
 
 /**
- * What to call the study. The `Opening` tag if the export wrote one, otherwise
+ * What to call the repertoire. The `Opening` tag if the export wrote one, otherwise
  * the players - `?` is what a PGN writes for a field it does not have, so it
  * counts as absent.
  */
@@ -295,7 +295,7 @@ export const titleFromHeaders = (
 /** `{}` cannot contain a literal `}`, so it is folded into a `)`. */
 const escapeComment = (text: string): string => text.replace(/\}/g, ')');
 
-const moveToken = (move: ChessStudyMove): string => {
+const moveToken = (move: ChessRepertoireMove): string => {
 	let token = move.san;
 
 	const classification = readClassification(move.classification);
@@ -312,12 +312,12 @@ const moveToken = (move: ChessStudyMove): string => {
 
 /**
  * One line of play, recursing into variations. `plyOffset` is the half-move
- * index of `moves[0]` counted from the study's own start, matching
+ * index of `moves[0]` counted from the repertoire's own start, matching
  * `plyAtPath` - a variation hangs off the move it replaces, so it starts at
  * the same ply as that move rather than one after it.
  */
 const serializeLine = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	plyOffset: number,
 	firstPlayer: string,
 	initialMoveNumber: number,
@@ -357,11 +357,11 @@ const serializeLine = (
 };
 
 /**
- * The whole study as a movetext, from its own start rather than the standard
+ * The whole repertoire as a movetext, from its own start rather than the standard
  * array where it began somewhere else.
  */
 export const exportPgn = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	rootFEN: string,
 	standardFEN: string,
 	title: string | null

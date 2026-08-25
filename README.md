@@ -1,7 +1,7 @@
 <!-- omit in toc -->
 # Chess Repertoire
 
-A chess study helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
+A chess repertoire helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
 
 Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes).
 
@@ -24,27 +24,27 @@ Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.
 
 ## Trainer
 
-The graduation-cap button starts a drill. Pick a colour, and the board rewinds to the study's starting position: you play your side, the study plays the other. A move the study doesn't know is refused and drawn as a red arrow.
+The graduation-cap button starts a drill. Pick a colour, and the board rewinds to the repertoire's starting position: you play your side, the repertoire plays the other. A move the repertoire doesn't know is refused and drawn as a red arrow.
 
-Your own moves must follow the line you wrote down. Your opponent's replies are drawn from everything the study records for that position, weighted toward lines you've gotten wrong before and lines you've never drilled. So if you have any variations, the opponent might play any variations or the mainline.
+Your own moves must follow the line you wrote down. Your opponent's replies are drawn from everything the repertoire records for that position, weighted toward lines you've gotten wrong before and lines you've never drilled. So if you have any variations, the opponent might play any variations or the mainline.
 
 A line you'd rather keep than rehearse can be excluded from drills without deleting it, from any move's right-click menu.
 
-![Training a line](imgs/study-mode-hint.png)
+![Training a line](imgs/repertoire-mode-hint.png)
 
-Stuck? Hints escalate one press at a time: your note on the move, then the piece to move, then the arrow to play. Nothing a hint shows, and nothing a session does, ever touches your study - it plays out on a side history that only tracks how you're doing.
+Stuck? Hints escalate one press at a time: your note on the move, then the piece to move, then the arrow to play. Nothing a hint shows, and nothing a session does, ever touches your repertoire - it plays out on a side history that only tracks how you're doing.
 
-You can do as many arrows as you like during a study, they will not be saved in the original board.
+You can do as many arrows as you like during a repertoire, they will not be saved in the original board.
 
 When the line runs out, you get a report: moves played, mistakes made, and where each mistake was.
 
-![Session report](imgs/study-mode-report.png)
+![Session report](imgs/repertoire-mode-report.png)
 
 ## The map
 
-The network button opens the study as a diagram - a trunk, and a card at every point your opponent gets to choose. It's the shape of a repertoire made visible, instead of a move list you have to scroll to make sense of.
+The network button opens the repertoire as a diagram - a trunk, and a card at every point your opponent gets to choose. It's the shape of a repertoire made visible, instead of a move list you have to scroll to make sense of.
 
-![The study map](imgs/position-map.png)
+![The repertoire map](imgs/position-map.png)
 
 Each card shows its moves, their labels, and a coloured edge for how well the line is holding up - drilled clean, shaky, never drilled, excluded, or missing a reply entirely. That last one is the useful one: it's a hole in the repertoire, sitting right next to lines that run fifteen moves deep.
 
@@ -58,11 +58,11 @@ The map can also be exported as an Obsidian **canvas**: the same cards, laid out
 
 ## Export
 
-The download button opens the study as text, in either of two formats, with a button to copy whichever is showing to the clipboard.
+The download button opens the repertoire as text, in either of two formats, with a button to copy whichever is showing to the clipboard.
 
-![Exporting a study as PGN or FEN](imgs/game-export.png)
+![Exporting a repertoire as PGN or FEN](imgs/game-export.png)
 
-**PGN** is the whole study, not just the line you are standing on: variations come out nested in brackets, your notes as `{}` comments, and your classifications as the standard glyphs - `$1`, `$3`, `$4` and so on. It is the exact counterpart of the importer, so a study exported and pasted back in comes out the same study. A study that starts from a position rather than the standard array carries a `[FEN]` header, so it opens where it should.
+**PGN** is the whole repertoire, not just the line you are standing on: variations come out nested in brackets, your notes as `{}` comments, and your classifications as the standard glyphs - `$1`, `$3`, `$4` and so on. It is the exact counterpart of the importer, so a repertoire exported and pasted back in comes out the same repertoire. A repertoire that starts from a position rather than the standard array carries a `[FEN]` header, so it opens where it should.
 
 **FEN** is the position on the board right now, for pasting into an engine or another board.
 
@@ -76,8 +76,8 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 - **Notes and drawings** on any move - Markdown notes plus arrows and circles on the board.
 - **Annotations visible from the move list** - a dot for notes, a dot for arrows, without stepping through the game to find them. The orange dot indicate the presence of a comment, a green dot represents the presence of an annotation.
 - **PGN import that keeps your annotations** - comments become notes, glyphs become classifications, and variations import nested, straight from a chess.com or Lichess game.
-- **Merge several studies in a note** into one combined tree.
-- **A board with no study behind it**, for showing a bare position in a note.
+- **Merge several repertoires in a note** into one combined tree.
+- **A board with no repertoire behind it**, for showing a bare position in a note.
 - **Autosave**, with a visible indicator whenever there's something unsaved.
 - **A resizable, theme-aware widget** that fills the note's width.
 
@@ -91,42 +91,42 @@ Chess Repertoire is **not in the community plugin store** yet, so install it by 
 4. Reload Obsidian and enable **Chess Repertoire** under Settings → Community plugins.
 
 > **Upgrading from the original Chess Study?** Copy your old plugin's `storage`
-> folder into the new one before enabling it, or your existing studies won't
+> folder into the new one before enabling it, or your existing repertoires won't
 > be found.
 
 ## Usage
 
 Put your cursor where you want the board and run **Chess Repertoire: Insert FEN/PGN-Editor at cursor position** (Use the Command palette (Ctrl+P)) A modal lets you paste a PGN, paste a FEN, or start a fresh game.
 
-To combine several studies in the same note into one, run **Chess Repertoire: Merge every chess study in this note into one** with your cursor where you want the result. The first study becomes the trunk; the others' lines are added as variations off it, and their notes fill in gaps rather than overwrite anything. This is done because I like to have the mainline first and the subvariations separated, but I also like to have a single board with all the variations together. 
+To combine several repertoires in the same note into one, run **Chess Repertoire: Merge every chess repertoire in this note into one** with your cursor where you want the result. The first repertoire becomes the trunk; the others' lines are added as variations off it, and their notes fill in gaps rather than overwrite anything. This is done because I like to have the mainline first and the subvariations separated, but I also like to have a single board with all the variations together. 
 
 ## Settings
 
-Every setting has a default in Settings → Community plugins → Chess Repertoire, and can be overridden per study by adding a line to the code block:
+Every setting has a default in Settings → Community plugins → Chess Repertoire, and can be overridden per repertoire by adding a line to the code block:
 
 ````markdown
-```chessStudy
-chessStudyId: V1StGXR8_Z5jdHi6B-myT
+```chessRepertoire
+chessRepertoireId: V1StGXR8_Z5jdHi6B-myT
 boardColor: green
 boardOrientation: black
 showCoordinates: false
 ```
 ````
 
-| Setting            | Values                                       | Description                                                  |
-| ------------------ | --------------------------------------------- | -------------------------------------------------------------|
-| `chessStudyId`     | valid nanoid                                  | Which stored study to render. Inserted by the command.       |
-| `boardOrientation` | `white` \| `black`                            | Which way round the board starts                              |
-| `boardColor`       | `blue` \| `blue-soft` \| `green` \| `brown`   | Board theme                                                   |
-| `showCoordinates`  | `true` \| `false`                             | Show the a-h / 1-8 labels                                     |
-| `coordinateColor`  | hex colour, e.g. `"#d08770"`                  | Colour of those labels. Leave unset to follow the theme.      |
-| `boardSize`        | number of pixels                              | Widget width. Written automatically when you drag to resize.  |
-| `viewComments`     | `true` \| `false`                             | Whether the notes panel starts open                           |
+| Setting             | Values                                      | Description                                                |
+| ------------------- | -------------------------------------------- | ----------------------------------------------------------- |
+| `chessRepertoireId` | valid nanoid                                 | Which stored repertoire to render. Inserted by the command. |
+| `boardOrientation`  | `white` \| `black`                           | Which way round the board starts                            |
+| `boardColor`        | `blue` \| `blue-soft` \| `green` \| `brown`  | Board theme                                                  |
+| `showCoordinates`   | `true` \| `false`                            | Show the a-h / 1-8 labels                                   |
+| `coordinateColor`   | hex colour, e.g. `"#d08770"`                 | Colour of those labels. Leave unset to follow the theme.    |
+| `boardSize`         | number of pixels                             | Widget width. Written automatically when you drag to resize. |
+| `viewComments`      | `true` \| `false`                            | Whether the notes panel starts open                          |
 
 
 ## Keyboard shortcuts
 
-Click a study to give it the keys; click away to give them back. Works in both Reading view and Live Preview, Vim mode included.
+Click a repertoire to give it the keys; click away to give them back. Works in both Reading view and Live Preview, Vim mode included.
 
 | Key       | Action                     |
 | --------- | -------------------------- |

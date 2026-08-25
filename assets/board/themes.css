@@ -3,7 +3,7 @@
  *
  * The map's cards draw their own boards outside the widget, so each theme is
  * listed for `.cs-map-board` as well - otherwise a map would show blue squares
- * under a study set to green.
+ * under a repertoire set to green.
  *
  * Each theme is just two colours. The checkerboard itself is drawn with a
  * conic-gradient (a 25% tile holds a 2x2 block of squares, so the 8x8 grid
@@ -11,7 +11,7 @@
  * a new theme costs two custom properties instead of an encoded asset.
  */
 
-.chess-study .cs-board,
+.chess-repertoire .cs-board,
 .cs-map-board {
 	--cs-sq-light: #e9edf6;
 	--cs-sq-dark: #4b7399;
@@ -19,31 +19,31 @@
 	--cs-dot: 0, 0, 0;
 }
 
-.chess-study .blue-board,
+.chess-repertoire .blue-board,
 .cs-map-board.blue-board {
 	--cs-sq-light: #e9edf6;
 	--cs-sq-dark: #4b7399;
 }
 
-.chess-study .blue-soft-board,
+.chess-repertoire .blue-soft-board,
 .cs-map-board.blue-soft-board {
 	--cs-sq-light: #dee3e6;
 	--cs-sq-dark: #8ca2ad;
 }
 
-.chess-study .green-board,
+.chess-repertoire .green-board,
 .cs-map-board.green-board {
 	--cs-sq-light: #ebecd0;
 	--cs-sq-dark: #779556;
 }
 
-.chess-study .brown-board,
+.chess-repertoire .brown-board,
 .cs-map-board.brown-board {
 	--cs-sq-light: #f0d9b5;
 	--cs-sq-dark: #b58863;
 }
 
-.chess-study .cs-board cg-board {
+.chess-repertoire .cs-board cg-board {
 	background-color: var(--cs-sq-light);
 	background-image: conic-gradient(
 		var(--cs-sq-dark) 0 25%,
@@ -56,27 +56,27 @@
 
 /* Square highlights */
 
-.chess-study .cs-board cg-board square.last-move {
+.chess-repertoire .cs-board cg-board square.last-move {
 	background-color: rgba(var(--cs-hl), 0.45);
 }
 
-.chess-study .cs-board cg-board square.selected {
+.chess-repertoire .cs-board cg-board square.selected {
 	background-color: rgba(var(--cs-hl), 0.6);
 }
 
-.chess-study .cs-board cg-board square.move-dest {
+.chess-repertoire .cs-board cg-board square.move-dest {
 	background: radial-gradient(
 		rgba(var(--cs-dot), 0.18) 19%,
 		rgba(var(--cs-dot), 0) 20%
 	);
 }
 
-.chess-study .cs-board cg-board square.move-dest:hover {
+.chess-repertoire .cs-board cg-board square.move-dest:hover {
 	background: rgba(var(--cs-dot), 0.14);
 }
 
 /* Occupied destination: a ring around the piece instead of a dot. */
-.chess-study .cs-board cg-board square.oc.move-dest {
+.chess-repertoire .cs-board cg-board square.oc.move-dest {
 	background: radial-gradient(
 		transparent 0%,
 		transparent 78%,
@@ -84,7 +84,7 @@
 	);
 }
 
-.chess-study .cs-board cg-board square.check {
+.chess-repertoire .cs-board cg-board square.check {
 	background: radial-gradient(
 		ellipse at center,
 		rgba(255, 0, 0, 1) 0%,
@@ -110,7 +110,7 @@
  * They are on the widget's own background out here, so they take the theme's
  * muted text colour instead of a square colour.
  */
-.chess-study .cs-board .cg-wrap coords {
+.chess-repertoire .cs-board .cg-wrap coords {
 	position: absolute;
 	display: flex;
 	pointer-events: none;
@@ -129,7 +129,7 @@
 	line-height: 1;
 }
 
-.chess-study .cs-board .cg-wrap coords coord {
+.chess-repertoire .cs-board .cg-wrap coords coord {
 	/*
 	 * The same arms race as the opacity above. That plugin also carries
 	 * lichess's parity tint - every other label coloured to match the square
@@ -147,8 +147,8 @@
 }
 
 /* Ranks down the left, whichever side chessground would have put them. */
-.chess-study .cs-board .cg-wrap coords.ranks,
-.chess-study .cs-board .cg-wrap coords.ranks.left {
+.chess-repertoire .cs-board .cg-wrap coords.ranks,
+.chess-repertoire .cs-board .cg-wrap coords.ranks.left {
 	left: calc(var(--cs-coord-offset) * -1);
 	top: 0;
 	width: var(--cs-coords);
@@ -156,11 +156,11 @@
 	flex-flow: column-reverse;
 }
 
-.chess-study .cs-board .cg-wrap coords.ranks.black {
+.chess-repertoire .cs-board .cg-wrap coords.ranks.black {
 	flex-flow: column;
 }
 
-.chess-study .cs-board .cg-wrap coords.files {
+.chess-repertoire .cs-board .cg-wrap coords.files {
 	left: 0;
 	bottom: calc(var(--cs-coord-offset) * -1);
 	width: 100%;
@@ -169,7 +169,7 @@
 	text-transform: lowercase;
 }
 
-.chess-study .cs-board .cg-wrap coords.files.black {
+.chess-repertoire .cs-board .cg-wrap coords.files.black {
 	flex-flow: row-reverse;
 }
 
@@ -178,7 +178,7 @@
  * moved here when the wrapper had to stop clipping, so the coordinates in its
  * padding are not cut off.
  */
-.chess-study .cs-board cg-board {
+.chess-repertoire .cs-board cg-board {
 	border-radius: 6px;
 	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }

@@ -1,4 +1,13 @@
-import { BISHOP, Chess, KNIGHT, PieceSymbol, QUEEN, ROOK, SQUARES, Square } from 'chess.js';
+import {
+	BISHOP,
+	Chess,
+	KNIGHT,
+	PieceSymbol,
+	QUEEN,
+	ROOK,
+	SQUARES,
+	Square,
+} from 'chess.js';
 import { Api } from 'chessground/api';
 import { Config } from 'chessground/config';
 

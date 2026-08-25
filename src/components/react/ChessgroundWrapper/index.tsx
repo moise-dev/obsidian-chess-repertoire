@@ -6,7 +6,12 @@ import { DrawShape } from 'chessground/draw';
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
-import { isPromotionMove, playOtherSide, toColor, toDests } from 'src/lib/chess-logic';
+import {
+	isPromotionMove,
+	playOtherSide,
+	toColor,
+	toDests,
+} from 'src/lib/chess-logic';
 import { PromotionPicker } from './PromotionPicker';
 
 export interface ChessgroundProps {
@@ -20,7 +25,7 @@ export interface ChessgroundProps {
 	/**
 	 * Decorations owned by the plugin rather than the user. These go to
 	 * setAutoShapes, a separate array that never fires drawable.onChange, so they
-	 * can never leak into the arrows saved with the study.
+	 * can never leak into the arrows saved with the repertoire.
 	 */
 	autoShapes?: DrawShape[];
 	config?: Config;
@@ -69,7 +74,7 @@ export const ChessgroundWrapper = React.memo(
 					},
 					drawable: {
 						// Chessground erases the drawn shapes on any left click and
-						// reports that through onChange, which for a study means
+						// reports that through onChange, which for a repertoire means
 						// clicking a piece to move it wipes the arrows saved against
 						// the move you are on - and autosave commits the loss. Off,
 						// the erase is left to clicks on an empty square or an enemy
@@ -148,7 +153,9 @@ export const ChessgroundWrapper = React.memo(
 
 			const handler = playOtherSide(api, chess);
 
-			addMoveToHistory(handler(pendingPromotion.orig, pendingPromotion.dest, piece));
+			addMoveToHistory(
+				handler(pendingPromotion.orig, pendingPromotion.dest, piece)
+			);
 			setPendingPromotion(null);
 		};
 

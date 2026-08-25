@@ -3,7 +3,7 @@ import { DrawShape } from 'chessground/draw';
 import { App, Notice } from 'obsidian';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ColorChoiceModal } from 'src/components/obsidian/ColorChoiceModal';
-import { GameActions } from 'src/components/react/ChessStudy';
+import { GameActions } from 'src/components/react/ChessRepertoire';
 import { toColor } from 'src/lib/chess-logic';
 import {
 	chooseReply,
@@ -19,8 +19,8 @@ import {
 } from 'src/lib/move-tree';
 import {
 	CURRENT_DRILL_VERSION,
-	ChessStudyDataAdapter,
-	ChessStudyMove,
+	ChessRepertoireDataAdapter,
+	ChessRepertoireMove,
 	MoveDrillStats,
 } from 'src/lib/storage';
 import {
@@ -80,12 +80,12 @@ export interface Trainer {
 
 interface UseTrainerOptions {
 	app: App;
-	/** Where the drill history for this study is read and written. */
-	dataAdapter: ChessStudyDataAdapter;
-	chessStudyId: string;
-	moves: ChessStudyMove[];
-	/** The colour the study is written for, if it has said. */
-	studyColor: 'w' | 'b' | undefined;
+	/** Where the drill history for this repertoire is read and written. */
+	dataAdapter: ChessRepertoireDataAdapter;
+	chessRepertoireId: string;
+	moves: ChessRepertoireMove[];
+	/** The colour the repertoire is written for, if it has said. */
+	repertoireColor: 'w' | 'b' | undefined;
 	currentMoveId: string | null;
 	/** The position on the board, i.e. whose turn it is. */
 	chess: Chess;
@@ -97,14 +97,14 @@ interface UseTrainerOptions {
 }
 
 /**
- * Plays the study back as a drill: you play one colour, the study plays the
- * other, and a move that is not in the study is refused rather than recorded.
- * A session starts from the study's first position and works down from there.
+ * Plays the repertoire back as a drill: you play one colour, the repertoire plays the
+ * other, and a move that is not in the repertoire is refused rather than recorded.
+ * A session starts from the repertoire's first position and works down from there.
  *
  * The two sides are asked different questions, because a repertoire is not
  * symmetric. Your own move is the one you wrote down, so only the continuation
  * of the line is accepted. The opponent's move is theirs to choose, so every
- * reply the study records is one you undertook to know, and the drill picks
+ * reply the repertoire records is one you undertook to know, and the drill picks
  * among them - favouring the ones you get wrong, and showing lines you have
  * never drilled before anything you have.
  *
@@ -114,9 +114,9 @@ interface UseTrainerOptions {
 export const useTrainer = ({
 	app,
 	dataAdapter,
-	chessStudyId,
+	chessRepertoireId,
 	moves,
-	studyColor,
+	repertoireColor,
 	currentMoveId,
 	chess,
 	firstPlayer,
@@ -126,7 +126,7 @@ export const useTrainer = ({
 }: UseTrainerOptions): Trainer => {
 	const [isActive, setIsActive] = useState(false);
 	const [playerColor, setPlayerColor] = useState<TrainerColor>(
-		studyColor === 'b' ? 'black' : 'white'
+		repertoireColor === 'b' ? 'black' : 'white'
 	);
 	const [attempt, setAttempt] = useState<Move | null>(null);
 	const [mistakes, setMistakes] = useState<TrainerMistake[]>([]);
@@ -138,7 +138,7 @@ export const useTrainer = ({
 	// from it inside a timeout where a stale closure would read the wrong
 	// counts, and it is written on every answer.
 	const statsRef = useRef<Record<string, MoveDrillStats>>({});
-	// Which reply the study settled on at each position, keyed by the move the
+	// Which reply the repertoire settled on at each position, keyed by the move the
 	// board was standing on. Within a session a position always gets the same
 	// answer, so stepping back with the arrow keys reviews the line you played
 	// instead of rerouting it; the next session draws afresh.
@@ -147,7 +147,7 @@ export const useTrainer = ({
 	/** The colour whose moves the history is about: the one being drilled. */
 	const userColor = playerColor === 'white' ? 'w' : 'b';
 
-	// The one move the study accepts from you here. Variations at this position
+	// The one move the repertoire accepts from you here. Variations at this position
 	// are alternatives you could have chosen and did not, so they are not other
 	// answers to the same question.
 	const expected = useMemo(() => {
@@ -156,7 +156,7 @@ export const useTrainer = ({
 		return next && isDrillable(next) ? next : null;
 	}, [currentMoveId, moves]);
 
-	// What the study may play against you here. Excluded branches are left out,
+	// What the repertoire may play against you here. Excluded branches are left out,
 	// so a line kept for reference is never played into.
 	const replies = useMemo(
 		() => getDrillableReplies(moves, currentMoveId),
@@ -177,8 +177,8 @@ export const useTrainer = ({
 	);
 
 	const isPlayerTurn = toColor(chess) === playerColor;
-	// A drill ends where the study stops answering: no continuation for you, or
-	// nothing left for the study to reply with.
+	// A drill ends where the repertoire stops answering: no continuation for you, or
+	// nothing left for the repertoire to reply with.
 	const isComplete = isActive && (isPlayerTurn ? !expected : !replies.length);
 
 	// Forget the hints and the refused move as soon as the position moves on.
@@ -187,7 +187,7 @@ export const useTrainer = ({
 		setHintIndex(-1);
 	}, [currentMoveId, isActive]);
 
-	// The study plays the other side. Driven by whose turn it is rather than by
+	// The repertoire plays the other side. Driven by whose turn it is rather than by
 	// the move just played, so stepping back through the line with the arrow
 	// keys resumes the drill instead of stalling.
 	useEffect(() => {
@@ -226,30 +226,34 @@ export const useTrainer = ({
 
 	const start = useCallback(() => {
 		if (!moves.length) {
-			new Notice('This study has no moves to train yet.');
+			new Notice('This repertoire has no moves to train yet.');
 			return;
 		}
 
-		// Excluding the study's first move takes the whole thing out of drills.
+		// Excluding the repertoire's first move takes the whole thing out of drills.
 		// Saying so beats starting a session that ends on its own move.
 		if (!getDrillableReplies(moves, null).length) {
-			new Notice('Every line in this study is excluded from drills.');
+			new Notice('Every line in this repertoire is excluded from drills.');
 			return;
 		}
 
 		new ColorChoiceModal(app, {
 			body:
-				'The drill runs the study from its first move. Your opponent picks from the replies you wrote down, so no two sessions need take the same line.',
+				'The drill runs the repertoire from its first move. Your opponent picks from the replies you wrote down, so no two sessions need take the same line.',
 			current:
-				studyColor === 'b' ? 'black' : studyColor === 'w' ? 'white' : undefined,
+				repertoireColor === 'b'
+					? 'black'
+					: repertoireColor === 'w'
+					? 'white'
+					: undefined,
 			onChoose: async (color) => {
 				setPlayerColor(color);
 
-				// A study that has not said which side it is written for learns it
+				// A repertoire that has not said which side it is written for learns it
 				// here, since answering this question is saying so.
 				const chosen = color === 'black' ? 'b' : 'w';
 
-				if (chosen !== studyColor)
+				if (chosen !== repertoireColor)
 					dispatch({ type: 'SET_PLAYER_COLOR', color: chosen });
 
 				setOrientation(color);
@@ -260,17 +264,17 @@ export const useTrainer = ({
 				setHintIndex(-1);
 
 				// Read per session rather than on mount: a note can hold several
-				// studies and most of them are never drilled. Pruned on the way in,
-				// so a study edited for years does not carry records for lines it no
+				// repertoires and most of them are never drilled. Pruned on the way in,
+				// so a repertoire edited for years does not carry records for lines it no
 				// longer has.
 				statsRef.current = pruneDrillData(
-					await dataAdapter.loadDrillData(chessStudyId),
+					await dataAdapter.loadDrillData(chessRepertoireId),
 					moves
 				).stats;
 				repliesRef.current = {};
 
-				// Rewind to the study's own starting position - the standard array
-				// for an ordinary game, or whatever FEN the study opens from - so a
+				// Rewind to the repertoire's own starting position - the standard array
+				// for an ordinary game, or whatever FEN the repertoire opens from - so a
 				// session always drills from the top, wherever the board happened to
 				// be sitting when the button was pressed.
 				dispatch({ type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' });
@@ -280,12 +284,12 @@ export const useTrainer = ({
 		}).open();
 	}, [
 		app,
-		chessStudyId,
+		chessRepertoireId,
 		dataAdapter,
 		dispatch,
 		moves,
 		setOrientation,
-		studyColor,
+		repertoireColor,
 	]);
 
 	/**
@@ -305,15 +309,15 @@ export const useTrainer = ({
 			// history is kept too. Failing to write it costs the history and
 			// nothing else, so it is logged rather than announced.
 			void dataAdapter
-				.saveDrillData(chessStudyId, {
+				.saveDrillData(chessRepertoireId, {
 					version: CURRENT_DRILL_VERSION,
 					stats: statsRef.current,
 				})
 				.catch((e) =>
-					console.error('chess-study: could not save the drill history', e)
+					console.error('chess-repertoire: could not save the drill history', e)
 				);
 		},
-		[chessStudyId, dataAdapter, mistakes, movesPlayed, playerColor]
+		[chessRepertoireId, dataAdapter, mistakes, movesPlayed, playerColor]
 	);
 
 	const stop = useCallback(() => endSession(false), [endSession]);
@@ -332,9 +336,9 @@ export const useTrainer = ({
 	);
 
 	/**
-	 * A move played on the board while a session is running. Anything the study
+	 * A move played on the board while a session is running. Anything the repertoire
 	 * does not know is bounced: the board goes back to the position before it,
-	 * and nothing is written to the study.
+	 * and nothing is written to the repertoire.
 	 */
 	const submitMove = useCallback(
 		(move: Move) => {

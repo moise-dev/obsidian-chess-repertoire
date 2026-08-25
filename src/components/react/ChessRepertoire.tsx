@@ -13,7 +13,7 @@ import {
 } from 'obsidian';
 import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChessStudyPluginSettings } from 'src/components/obsidian/SettingsTab';
+import { ChessRepertoirePluginSettings } from 'src/components/obsidian/SettingsTab';
 import { JsonCanvas } from 'src/lib/canvas';
 import {
 	MoveClassification,
@@ -21,8 +21,8 @@ import {
 	classificationForKey,
 	readClassification,
 } from 'src/lib/classification';
-import { collectExcludedMoveIds, resolveStudyColor } from 'src/lib/drill';
-import { registerStudyKeys, setActiveStudy } from 'src/lib/keyboard';
+import { collectExcludedMoveIds, resolveRepertoireColor } from 'src/lib/drill';
+import { registerRepertoireKeys, setActiveRepertoire } from 'src/lib/keyboard';
 import {
 	MAX_VARIATION_DEPTH,
 	countMoves,
@@ -41,9 +41,9 @@ import {
 import { parseUserConfig } from 'src/lib/obsidian';
 import { exportPgn } from 'src/lib/pgn';
 import {
-	ChessStudyDataAdapter,
-	ChessStudyFileData,
-	ChessStudyMove,
+	ChessRepertoireDataAdapter,
+	ChessRepertoireFileData,
+	ChessRepertoireMove,
 } from 'src/lib/storage';
 import {
 	displayMoveInHistory,
@@ -63,16 +63,16 @@ import { PgnViewer } from './PgnViewer';
 import { VariationAction } from './PgnViewer/MoveItems';
 import { TrainerBar, TrainerReportPanel, useTrainer } from './Trainer';
 
-export type ChessStudyConfig = ChessgroundProps;
+export type ChessRepertoireConfig = ChessgroundProps;
 
 interface AppProps {
 	source: string;
 	app: App;
 	ctx: MarkdownPostProcessorContext;
 	containerEl: HTMLElement;
-	pluginSettings: ChessStudyPluginSettings;
-	chessStudyData: ChessStudyFileData;
-	dataAdapter: ChessStudyDataAdapter;
+	pluginSettings: ChessRepertoirePluginSettings;
+	chessRepertoireData: ChessRepertoireFileData;
+	dataAdapter: ChessRepertoireDataAdapter;
 }
 
 /** Narrowest the widget may be dragged, in px. */
@@ -82,8 +82,8 @@ const MIN_WIDTH = 320;
 const NO_SHAPES: DrawShape[] = [];
 
 export interface GameState {
-	currentMove: ChessStudyMove | null;
-	study: ChessStudyFileData;
+	currentMove: ChessRepertoireMove | null;
+	repertoire: ChessRepertoireFileData;
 }
 
 /** Named rather than inlined below, where prettier's indentation of a wide
@@ -110,7 +110,7 @@ export type GameActions =
 	| { type: 'SYNC_COMMENT'; comment: JSONContent | null }
 	| ClassifyAction
 	| { type: 'SET_TITLE'; title: string | null }
-	/** Which side the study is written for, i.e. whose moves the mainline is. */
+	/** Which side the repertoire is written for, i.e. whose moves the mainline is. */
 	| { type: 'SET_PLAYER_COLOR'; color: 'w' | 'b' }
 	| { type: 'PROMOTE_VARIATION'; moveId: string; toMainline: boolean }
 	| { type: 'DELETE_VARIATION'; moveId: string }
@@ -120,13 +120,13 @@ export type GameActions =
 	| { type: 'SET_EXCLUDED'; moveId: string; excluded: boolean }
 	| { type: 'REORDER_VARIATION'; moveId: string; delta: number };
 
-export const ChessStudy = ({
+export const ChessRepertoire = ({
 	source,
 	app,
 	ctx,
 	containerEl,
 	pluginSettings,
-	chessStudyData,
+	chessRepertoireData,
 	dataAdapter,
 }: AppProps) => {
 	// Parse Obsidian / Code Block Settings
@@ -137,7 +137,7 @@ export const ChessStudy = ({
 		boardSize,
 		showCoordinates,
 		coordinateColor,
-		chessStudyId,
+		chessRepertoireId,
 	} = parseUserConfig(pluginSettings, source);
 
 	// Setup Chessground API
@@ -171,12 +171,12 @@ export const ChessStudy = ({
 
 	// Setup Chess.js API
 	const [initialChessLogic, firstPlayer, initialMoveNumber] = useMemo(() => {
-		const chess = new Chess(chessStudyData.rootFEN);
+		const chess = new Chess(chessRepertoireData.rootFEN);
 
 		const firstPlayer = chess.turn();
 		const initialMoveNumber = chess.moveNumber();
 
-		chessStudyData.moves.forEach((move) => {
+		chessRepertoireData.moves.forEach((move) => {
 			chess.move({
 				from: move.from,
 				to: move.to,
@@ -185,13 +185,13 @@ export const ChessStudy = ({
 		});
 
 		return [chess, firstPlayer, initialMoveNumber];
-	}, [chessStudyData.moves, chessStudyData.rootFEN]);
+	}, [chessRepertoireData.moves, chessRepertoireData.rootFEN]);
 
 	const [chessLogic, setChessLogic] = useState(initialChessLogic);
 
 	const [gameState, dispatch] = useImmerReducer<GameState, GameActions>(
 		(draft, action) => {
-			const hasNoMoves = draft.study.moves.length === 0;
+			const hasNoMoves = draft.repertoire.moves.length === 0;
 			switch (action.type) {
 				case 'DISPLAY_NEXT_MOVE_IN_HISTORY': {
 					if (!chessView || hasNoMoves) return draft;
@@ -216,7 +216,7 @@ export const ChessStudy = ({
 				case 'REMOVE_LAST_MOVE_FROM_HISTORY': {
 					if (!chessView || hasNoMoves) return draft;
 
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const currentMoveId = draft.currentMove?.moveId;
 
 					if (!currentMoveId) return draft;
@@ -262,7 +262,7 @@ export const ChessStudy = ({
 				case 'DISPLAY_LAST_MOVE_IN_HISTORY': {
 					if (!chessView || hasNoMoves) return draft;
 
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 
 					displayPosition(draft, chessView, setChessLogic, moves[moves.length - 1]);
 
@@ -305,7 +305,7 @@ export const ChessStudy = ({
 					// The keyboard shortcut labels the current move; the context menu
 					// names the one it was opened on.
 					const moveId = action.moveId ?? draft.currentMove?.moveId;
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const path = moveId ? findMovePathById(moves, moveId) : null;
 					const move = path && getMoveAtPath(moves, path);
 
@@ -318,18 +318,18 @@ export const ChessStudy = ({
 					return draft;
 				}
 				case 'SET_PLAYER_COLOR': {
-					draft.study.playerColor = action.color;
+					draft.repertoire.playerColor = action.color;
 
 					return draft;
 				}
 				case 'SET_EXCLUDED': {
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const path = findMovePathById(moves, action.moveId);
 					const move = path && getMoveAtPath(moves, path);
 
 					if (!move) return draft;
 
-					// Removed rather than set to false, so a study that has never
+					// Removed rather than set to false, so a repertoire that has never
 					// excluded anything carries no trace of the flag.
 					if (action.excluded) move.excluded = true;
 					else delete move.excluded;
@@ -339,7 +339,7 @@ export const ChessStudy = ({
 					return draft;
 				}
 				case 'PROMOTE_VARIATION': {
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 
 					if (action.toMainline) {
 						promoteToMainline(moves, action.moveId, nanoid);
@@ -356,7 +356,7 @@ export const ChessStudy = ({
 				case 'DELETE_VARIATION': {
 					if (!chessView) return draft;
 
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const path = findMovePathById(moves, action.moveId);
 
 					if (!path) return draft;
@@ -379,7 +379,7 @@ export const ChessStudy = ({
 				case 'DELETE_FROM_MOVE': {
 					if (!chessView) return draft;
 
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const path = findMovePathById(moves, action.moveId);
 					const list = path && getListAtPath(moves, path);
 
@@ -407,7 +407,7 @@ export const ChessStudy = ({
 					return draft;
 				}
 				case 'REORDER_VARIATION': {
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const path = findMovePathById(moves, action.moveId);
 
 					if (path) moveVariationAtPath(moves, path, action.delta);
@@ -415,8 +415,8 @@ export const ChessStudy = ({
 					return draft;
 				}
 				case 'SET_TITLE': {
-					draft.study.header = {
-						...draft.study.header,
+					draft.repertoire.header = {
+						...draft.repertoire.header,
 						title: action.title,
 					};
 
@@ -424,10 +424,10 @@ export const ChessStudy = ({
 				}
 				case 'ADD_MOVE_TO_HISTORY': {
 					const newMove = action.move;
-					const moves = draft.study.moves;
+					const moves = draft.repertoire.moves;
 					const currentMoveId = draft.currentMove?.moveId;
 
-					const makeMove = (): Draft<ChessStudyMove> =>
+					const makeMove = (): Draft<ChessRepertoireMove> =>
 						({
 							...newMove,
 							moveId: nanoid(),
@@ -435,7 +435,7 @@ export const ChessStudy = ({
 							shapes: [],
 							comment: null,
 							classification: null,
-						} as Draft<ChessStudyMove>);
+						} as Draft<ChessRepertoireMove>);
 
 					// Nothing selected: we are at the root position.
 					if (!currentMoveId) {
@@ -456,7 +456,7 @@ export const ChessStudy = ({
 
 						// Variations hang off the move before them, and the first move
 						// has none. Saying so beats the move quietly not appearing.
-						new Notice('The first move of a study cannot have variations.');
+						new Notice('The first move of a repertoire cannot have variations.');
 
 						return draft;
 					}
@@ -517,54 +517,55 @@ export const ChessStudy = ({
 			}
 		},
 		{
-			currentMove: chessStudyData.moves[chessStudyData.moves.length - 1] ?? null,
-			study: chessStudyData,
+			currentMove:
+				chessRepertoireData.moves[chessRepertoireData.moves.length - 1] ?? null,
+			repertoire: chessRepertoireData,
 		}
 	);
 
 	// Serialised form of what is currently on disk, so a save that would be a
-	// no-op is skipped. Navigation does not touch `study`, but this keeps the
+	// no-op is skipped. Navigation does not touch `repertoire`, but this keeps the
 	// autosave correct even if some future action touches it without changing it.
-	const savedSnapshot = useRef(JSON.stringify(chessStudyData));
+	const savedSnapshot = useRef(JSON.stringify(chessRepertoireData));
 	const [isDirty, setIsDirty] = useState(false);
 
-	const saveStudy = useCallback(async () => {
-		const snapshot = JSON.stringify(gameState.study);
+	const saveRepertoire = useCallback(async () => {
+		const snapshot = JSON.stringify(gameState.repertoire);
 
 		if (snapshot === savedSnapshot.current) {
 			setIsDirty(false);
 			return;
 		}
 
-		await dataAdapter.saveFile(gameState.study, chessStudyId);
+		await dataAdapter.saveFile(gameState.repertoire, chessRepertoireId);
 
 		savedSnapshot.current = snapshot;
 		setIsDirty(false);
-	}, [chessStudyId, dataAdapter, gameState.study]);
+	}, [chessRepertoireId, dataAdapter, gameState.repertoire]);
 
 	const onSaveButtonClick = useCallback(async () => {
 		try {
-			await saveStudy();
+			await saveRepertoire();
 			new Notice('Saved.');
 		} catch (e) {
-			new Notice(`Could not save the study: ${e}`);
+			new Notice(`Could not save the repertoire: ${e}`);
 		}
-	}, [saveStudy]);
+	}, [saveRepertoire]);
 
-	// Autosave. `saveStudy` is held in a ref so the debounce timer always calls
-	// the latest version without restarting every time the study changes.
-	const saveStudyRef = useRef(saveStudy);
-	saveStudyRef.current = saveStudy;
+	// Autosave. `saveRepertoire` is held in a ref so the debounce timer always calls
+	// the latest version without restarting every time the repertoire changes.
+	const saveRepertoireRef = useRef(saveRepertoire);
+	saveRepertoireRef.current = saveRepertoire;
 
 	// A failed autosave stays silent: the dirty dot is the signal, and a notice
 	// on every retry would be worse than the problem.
 	const autosave = () =>
-		saveStudyRef
+		saveRepertoireRef
 			.current()
-			.catch((e) => console.error('chess-study: autosave failed', e));
+			.catch((e) => console.error('chess-repertoire: autosave failed', e));
 
 	useEffect(() => {
-		if (JSON.stringify(gameState.study) === savedSnapshot.current) return;
+		if (JSON.stringify(gameState.repertoire) === savedSnapshot.current) return;
 
 		setIsDirty(true);
 
@@ -573,15 +574,15 @@ export const ChessStudy = ({
 		// Only cancels the pending save - this cleanup runs on every change, so
 		// flushing here would fire on each one and defeat the debounce.
 		return () => window.clearTimeout(timer);
-	}, [gameState.study]);
+	}, [gameState.repertoire]);
 
 	// Flush on unmount, so closing the note commits whatever is still pending.
 	useEffect(() => () => void autosave(), []);
 
 	/**
-	 * Write the dragged width back into the code block so the study keeps its
+	 * Write the dragged width back into the code block so the repertoire keeps its
 	 * size. Obsidian re-renders the block once its source changes, which drops
-	 * anything not yet on disk, so the study is flushed first.
+	 * anything not yet on disk, so the repertoire is flushed first.
 	 */
 	const persistWidth = useCallback(
 		async (size: number) => {
@@ -591,7 +592,7 @@ export const ChessStudy = ({
 			if (!info || !(file instanceof TFile)) return;
 
 			try {
-				await saveStudy();
+				await saveRepertoire();
 
 				await app.vault.process(file, (data) => {
 					const lines = data.split('\n');
@@ -617,10 +618,10 @@ export const ChessStudy = ({
 					return lines.join('\n');
 				});
 			} catch (e) {
-				console.error('chess-study: could not persist the board size', e);
+				console.error('chess-repertoire: could not persist the board size', e);
 			}
 		},
-		[app, containerEl, ctx, saveStudy]
+		[app, containerEl, ctx, saveRepertoire]
 	);
 
 	const onResizePointerDown = useCallback(
@@ -674,11 +675,11 @@ export const ChessStudy = ({
 		(event: React.PointerEvent<HTMLDivElement>) => {
 			const target = event.target as HTMLElement;
 
-			// Claiming the keys happens on any click in the study, the notes
+			// Claiming the keys happens on any click in the repertoire, the notes
 			// editor and the buttons included: in Live Preview CodeMirror keeps
 			// the focus for itself, so the click is the only record of where the
 			// reader actually is.
-			setActiveStudy(rootRef.current);
+			setActiveRepertoire(rootRef.current);
 
 			if (target.closest('.ProseMirror') || target.closest('button')) return;
 
@@ -705,8 +706,8 @@ export const ChessStudy = ({
 				case 'delete': {
 					// There is no undo and autosave commits moments later, so say how
 					// much is about to go and make the user agree to it.
-					const path = findMovePathById(gameState.study.moves, moveId);
-					const ref = path && getVariationRef(gameState.study.moves, path);
+					const path = findMovePathById(gameState.repertoire.moves, moveId);
+					const ref = path && getVariationRef(gameState.repertoire.moves, path);
 					const moveCount = ref
 						? countMoves(ref.parentMove.variants[ref.variantIndex].moves)
 						: 0;
@@ -725,12 +726,12 @@ export const ChessStudy = ({
 				}
 			}
 		},
-		[app, dispatch, gameState.study.moves]
+		[app, dispatch, gameState.repertoire.moves]
 	);
 
 	const onDeleteMove = useCallback(
 		(moveId: string) => {
-			const moves = gameState.study.moves;
+			const moves = gameState.repertoire.moves;
 			const path = findMovePathById(moves, moveId);
 			const list = path && getListAtPath(moves, path);
 
@@ -751,7 +752,7 @@ export const ChessStudy = ({
 				onConfirm: () => dispatch({ type: 'DELETE_FROM_MOVE', moveId }),
 			}).open();
 		},
-		[app, dispatch, gameState.study.moves]
+		[app, dispatch, gameState.repertoire.moves]
 	);
 
 	/**
@@ -759,15 +760,15 @@ export const ChessStudy = ({
 	 * whole line rather than only the move the flag sits on.
 	 */
 	const excludedMoveIds = useMemo(
-		() => collectExcludedMoveIds(gameState.study.moves),
-		[gameState.study.moves]
+		() => collectExcludedMoveIds(gameState.repertoire.moves),
+		[gameState.repertoire.moves]
 	);
 
 	/**
 	 * Writes the map out as a canvas beside the note.
 	 *
-	 * A snapshot rather than a second copy of the study: nothing reads it back,
-	 * and it goes stale the moment the study changes. That is the point - it is
+	 * A snapshot rather than a second copy of the repertoire: nothing reads it back,
+	 * and it goes stale the moment the repertoire changes. That is the point - it is
 	 * for spreading out and drawing on, which the map itself cannot be.
 	 *
 	 * An existing file is never overwritten; the name is suffixed instead, so a
@@ -776,10 +777,9 @@ export const ChessStudy = ({
 	const exportCanvas = useCallback(
 		async (canvas: JsonCanvas) => {
 			const folder = ctx.sourcePath.split('/').slice(0, -1).join('/');
-			const base = (gameState.study.header?.title || 'Study map').replace(
-				/[\\/:*?"<>|]/g,
-				'-'
-			);
+			const base = (
+				gameState.repertoire.header?.title || 'Repertoire map'
+			).replace(/[\\/:*?"<>|]/g, '-');
 
 			let path = normalizePath(`${folder ? `${folder}/` : ''}${base}.canvas`);
 
@@ -798,26 +798,30 @@ export const ChessStudy = ({
 
 			return path;
 		},
-		[app, ctx.sourcePath, gameState.study.header?.title]
+		[app, ctx.sourcePath, gameState.repertoire.header?.title]
 	);
 
 	/**
-	 * Opens the study as a diagram.
+	 * Opens the repertoire as a diagram.
 	 *
-	 * The side it reads for is the study's own when it has one, falling back to
-	 * the way the board is turned - see `resolveStudyColor`.
+	 * The side it reads for is the repertoire's own when it has one, falling back to
+	 * the way the board is turned - see `resolveRepertoireColor`.
 	 */
 	const onOpenMap = useCallback(() => {
 		new MoveMapModal(app, {
-			moves: gameState.study.moves,
-			rootFEN: gameState.study.rootFEN,
-			title: gameState.study.header?.title ?? null,
+			moves: gameState.repertoire.moves,
+			rootFEN: gameState.repertoire.rootFEN,
+			title: gameState.repertoire.header?.title ?? null,
 			currentMoveId: gameState.currentMove?.moveId ?? null,
 			firstPlayer,
 			initialMoveNumber,
-			userColor: resolveStudyColor(gameState.study.playerColor, orientation),
+			userColor: resolveRepertoireColor(
+				gameState.repertoire.playerColor,
+				orientation
+			),
 			boardColor,
-			loadStats: async () => (await dataAdapter.loadDrillData(chessStudyId)).stats,
+			loadStats: async () =>
+				(await dataAdapter.loadDrillData(chessRepertoireId)).stats,
 			onSelectMove: (moveId: string) =>
 				dispatch({ type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY', moveId }),
 			onExport: exportCanvas,
@@ -825,13 +829,13 @@ export const ChessStudy = ({
 	}, [
 		app,
 		boardColor,
-		chessStudyId,
+		chessRepertoireId,
 		dataAdapter,
 		exportCanvas,
 		dispatch,
 		firstPlayer,
 		gameState.currentMove?.moveId,
-		gameState.study,
+		gameState.repertoire,
 		initialMoveNumber,
 		orientation,
 	]);
@@ -841,9 +845,9 @@ export const ChessStudy = ({
 	const trainer = useTrainer({
 		app,
 		dataAdapter,
-		chessStudyId,
-		moves: gameState.study.moves,
-		studyColor: gameState.study.playerColor,
+		chessRepertoireId,
+		moves: gameState.repertoire.moves,
+		repertoireColor: gameState.repertoire.playerColor,
 		currentMoveId,
 		chess: chessLogic,
 		firstPlayer,
@@ -853,7 +857,7 @@ export const ChessStudy = ({
 	});
 
 	/**
-	 * A shortcut the study wants, or false to let it pass.
+	 * A shortcut the repertoire wants, or false to let it pass.
 	 *
 	 * Preventing and stopping is the caller's business, not this function's:
 	 * the same handler answers for a React event in Reading view and a native
@@ -866,7 +870,7 @@ export const ChessStudy = ({
 			if (trainer.isActive) return false;
 
 			// Never hijack keys while something is being typed into. Only fields
-			// inside this study count: in Live Preview the study itself sits
+			// inside this repertoire count: in Live Preview the repertoire itself sits
 			// inside the editor's own contenteditable, so asking for the nearest
 			// editable ancestor without that check answers yes to every key and
 			// the shortcuts go dead.
@@ -911,14 +915,14 @@ export const ChessStudy = ({
 		[dispatch, trainer.isActive]
 	);
 
-	// On the register for as long as the study is on screen. Module-level, so a
-	// Live Preview remount does not lose which study the reader is in.
+	// On the register for as long as the repertoire is on screen. Module-level, so a
+	// Live Preview remount does not lose which repertoire the reader is in.
 	useEffect(() => {
 		const root = rootRef.current;
 
 		if (!root) return;
 
-		return registerStudyKeys(root, handleKey);
+		return registerRepertoireKeys(root, handleKey);
 	}, [handleKey]);
 
 	// chess.com-style badge on the destination square of the current move. This
@@ -950,17 +954,17 @@ export const ChessStudy = ({
 	const moveLabel = useMemo(
 		() =>
 			getMoveLabel(
-				gameState.study.moves,
+				gameState.repertoire.moves,
 				currentMoveId,
 				firstPlayer,
 				initialMoveNumber
 			),
-		[currentMoveId, firstPlayer, gameState.study.moves, initialMoveNumber]
+		[currentMoveId, firstPlayer, gameState.repertoire.moves, initialMoveNumber]
 	);
 
 	return (
 		<div
-			className="chess-study"
+			className="chess-repertoire"
 			ref={rootRef}
 			style={rootStyle}
 			tabIndex={0}
@@ -989,7 +993,7 @@ export const ChessStudy = ({
 						// A session neither shows the arrows saved on a move nor
 						// records any drawn during it: they are usually the plan, which
 						// is the thing being asked, and writing them back would mean a
-						// drill could edit the study.
+						// drill could edit the repertoire.
 						syncShapes={(shapes: DrawShape[]) => {
 							if (trainer.isActive) return;
 
@@ -1003,11 +1007,11 @@ export const ChessStudy = ({
 				</div>
 
 				<PgnViewer
-					history={gameState.study.moves}
+					history={gameState.repertoire.moves}
 					currentMoveId={currentMoveId}
 					firstPlayer={firstPlayer}
 					initialMoveNumber={initialMoveNumber}
-					title={gameState.study.header?.title ?? null}
+					title={gameState.repertoire.header?.title ?? null}
 					isDirty={isDirty}
 					isTraining={trainer.isActive}
 					onTrainButtonClick={() =>
@@ -1017,7 +1021,7 @@ export const ChessStudy = ({
 					onTitleChange={(title: string | null) =>
 						dispatch({ type: 'SET_TITLE', title })
 					}
-					playerColor={gameState.study.playerColor}
+					playerColor={gameState.repertoire.playerColor}
 					onPlayerColorChange={(color: 'w' | 'b') =>
 						dispatch({ type: 'SET_PLAYER_COLOR', color })
 					}
@@ -1059,10 +1063,10 @@ export const ChessStudy = ({
 						new ExportModal(app, {
 							fen: chessLogic.fen(),
 							pgn: exportPgn(
-								gameState.study.moves,
-								gameState.study.rootFEN,
+								gameState.repertoire.moves,
+								gameState.repertoire.rootFEN,
 								ROOT_FEN,
-								gameState.study.header?.title ?? null
+								gameState.repertoire.header?.title ?? null
 							),
 						}).open();
 					}}

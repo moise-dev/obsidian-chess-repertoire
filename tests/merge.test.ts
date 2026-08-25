@@ -1,7 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { mergeDrillStats, mergeStudies } from '../src/lib/merge';
-import { ChessStudyFileData, ChessStudyMove } from '../src/lib/storage';
+import { mergeDrillStats, mergeRepertoires } from '../src/lib/merge';
+import {
+	ChessRepertoireFileData,
+	ChessRepertoireMove,
+} from '../src/lib/storage';
 
 let seq = 0;
 
@@ -22,10 +25,10 @@ const mv = (
 		excluded?: boolean;
 		variants?: unknown[];
 	} = {}
-): ChessStudyMove =>
+): ChessRepertoireMove =>
 	({
 		san,
-		// Real studies use nanoids, so the same move in two studies has two ids.
+		// Real repertoires use nanoids, so the same move in two repertoires has two ids.
 		moveId: `${san}-${seq++}`,
 		color: 'w',
 		variants: options.variants ?? [],
@@ -33,9 +36,9 @@ const mv = (
 		comment: note(options.comment),
 		classification: options.classification,
 		excluded: options.excluded,
-	} as unknown as ChessStudyMove);
+	} as unknown as ChessRepertoireMove);
 
-const va = (moves: ChessStudyMove[], parentMoveId = '') => ({
+const va = (moves: ChessRepertoireMove[], parentMoveId = '') => ({
 	variantId: `v${seq++}`,
 	parentMoveId,
 	moves,
@@ -43,10 +46,10 @@ const va = (moves: ChessStudyMove[], parentMoveId = '') => ({
 
 const ROOT = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-const study = (
-	moves: ChessStudyMove[],
-	overrides: Partial<ChessStudyFileData> = {}
-): ChessStudyFileData => ({
+const repertoire = (
+	moves: ChessRepertoireMove[],
+	overrides: Partial<ChessRepertoireFileData> = {}
+): ChessRepertoireFileData => ({
 	version: '0.0.6',
 	header: { title: null },
 	moves,
@@ -55,43 +58,43 @@ const study = (
 });
 
 /** The merged tree as `san` lines, mainline first, each variation indented. */
-const outline = (moves: ChessStudyMove[], depth = 0): string[] =>
+const outline = (moves: ChessRepertoireMove[], depth = 0): string[] =>
 	moves.flatMap((move) => [
 		`${'  '.repeat(depth)}${move.san}`,
 		...(move.variants ?? []).flatMap((variant) =>
-			outline(variant.moves as ChessStudyMove[], depth + 1)
+			outline(variant.moves as ChessRepertoireMove[], depth + 1)
 		),
 	]);
 
-describe('mergeStudies', () => {
-	it('leaves a single study as it found it', () => {
-		const merged = mergeStudies([study([mv('e4'), mv('e5')])], '0.0.6');
+describe('mergeRepertoires', () => {
+	it('leaves a single repertoire as it found it', () => {
+		const merged = mergeRepertoires([repertoire([mv('e4'), mv('e5')])], '0.0.6');
 
-		assert.deepEqual(outline(merged.study.moves), ['e4', 'e5']);
+		assert.deepEqual(outline(merged.repertoire.moves), ['e4', 'e5']);
 		assert.equal(merged.skipped, 0);
 		assert.equal(merged.dropped, 0);
 	});
 
-	it('adds nothing when the second study says the same thing', () => {
-		const merged = mergeStudies(
-			[study([mv('e4'), mv('e5')]), study([mv('e4'), mv('e5')])],
+	it('adds nothing when the second repertoire says the same thing', () => {
+		const merged = mergeRepertoires(
+			[repertoire([mv('e4'), mv('e5')]), repertoire([mv('e4'), mv('e5')])],
 			'0.0.6'
 		);
 
-		assert.deepEqual(outline(merged.study.moves), ['e4', 'e5']);
+		assert.deepEqual(outline(merged.repertoire.moves), ['e4', 'e5']);
 	});
 
 	it('hangs a diverging line off the move it branches from', () => {
-		const merged = mergeStudies(
+		const merged = mergeRepertoires(
 			[
-				study([mv('e4'), mv('e5'), mv('Nf3')]),
-				study([mv('e4'), mv('e5'), mv('Nc3'), mv('Nf6')]),
+				repertoire([mv('e4'), mv('e5'), mv('Nf3')]),
+				repertoire([mv('e4'), mv('e5'), mv('Nc3'), mv('Nf6')]),
 			],
 			'0.0.6'
 		);
 
 		// Nc3 is an alternative to Nf3, so it hangs off e5 - the move before it.
-		assert.deepEqual(outline(merged.study.moves), [
+		assert.deepEqual(outline(merged.repertoire.moves), [
 			'e4',
 			'e5',
 			'  Nc3',
@@ -100,20 +103,20 @@ describe('mergeStudies', () => {
 		]);
 	});
 
-	it('keeps the first study as the mainline', () => {
-		const merged = mergeStudies(
-			[study([mv('e4'), mv('c5')]), study([mv('e4'), mv('e5')])],
+	it('keeps the first repertoire as the mainline', () => {
+		const merged = mergeRepertoires(
+			[repertoire([mv('e4'), mv('c5')]), repertoire([mv('e4'), mv('e5')])],
 			'0.0.6'
 		);
 
-		assert.equal(merged.study.moves[1].san, 'c5');
+		assert.equal(merged.repertoire.moves[1].san, 'c5');
 	});
 
 	it("carries a grafted line's own variations with it", () => {
-		const merged = mergeStudies(
+		const merged = mergeRepertoires(
 			[
-				study([mv('e4'), mv('e5')]),
-				study([
+				repertoire([mv('e4'), mv('e5')]),
+				repertoire([
 					mv('e4'),
 					mv('c5', { variants: [va([mv('e6'), mv('d4')])] }),
 					mv('Nf3'),
@@ -122,7 +125,7 @@ describe('mergeStudies', () => {
 			'0.0.6'
 		);
 
-		assert.deepEqual(outline(merged.study.moves), [
+		assert.deepEqual(outline(merged.repertoire.moves), [
 			'e4',
 			'  c5',
 			'    e6',
@@ -132,16 +135,16 @@ describe('mergeStudies', () => {
 		]);
 	});
 
-	it('descends into a line both studies already share', () => {
-		const merged = mergeStudies(
+	it('descends into a line both repertoires already share', () => {
+		const merged = mergeRepertoires(
 			[
-				study([mv('e4'), mv('e5'), mv('Nf3'), mv('Nc6')]),
-				study([mv('e4'), mv('e5'), mv('Nf3'), mv('Nf6')]),
+				repertoire([mv('e4'), mv('e5'), mv('Nf3'), mv('Nc6')]),
+				repertoire([mv('e4'), mv('e5'), mv('Nf3'), mv('Nf6')]),
 			],
 			'0.0.6'
 		);
 
-		assert.deepEqual(outline(merged.study.moves), [
+		assert.deepEqual(outline(merged.repertoire.moves), [
 			'e4',
 			'e5',
 			'Nf3',
@@ -150,34 +153,34 @@ describe('mergeStudies', () => {
 		]);
 	});
 
-	it('leaves out a study that starts from another position', () => {
-		const merged = mergeStudies(
+	it('leaves out a repertoire that starts from another position', () => {
+		const merged = mergeRepertoires(
 			[
-				study([mv('e4')]),
-				study([mv('Nf3')], { rootFEN: '8/8/4k3/8/8/4K3/8/8 w - - 0 1' }),
+				repertoire([mv('e4')]),
+				repertoire([mv('Nf3')], { rootFEN: '8/8/4k3/8/8/4K3/8/8 w - - 0 1' }),
 			],
 			'0.0.6'
 		);
 
 		assert.equal(merged.skipped, 1);
-		assert.deepEqual(outline(merged.study.moves), ['e4']);
+		assert.deepEqual(outline(merged.repertoire.moves), ['e4']);
 	});
 
 	it('counts an alternative first move it cannot hang anywhere', () => {
-		const merged = mergeStudies(
-			[study([mv('e4'), mv('e5')]), study([mv('d4'), mv('d5')])],
+		const merged = mergeRepertoires(
+			[repertoire([mv('e4'), mv('e5')]), repertoire([mv('d4'), mv('d5')])],
 			'0.0.6'
 		);
 
 		assert.equal(merged.dropped, 1);
-		assert.deepEqual(outline(merged.study.moves), ['e4', 'e5']);
+		assert.deepEqual(outline(merged.repertoire.moves), ['e4', 'e5']);
 	});
 
-	it('fills in annotations the first study lacks without overwriting any', () => {
-		const merged = mergeStudies(
+	it('fills in annotations the first repertoire lacks without overwriting any', () => {
+		const merged = mergeRepertoires(
 			[
-				study([mv('e4', { comment: 'mine' }), mv('e5')]),
-				study([
+				repertoire([mv('e4', { comment: 'mine' }), mv('e5')]),
+				repertoire([
 					mv('e4', { comment: 'theirs', classification: 'Great' }),
 					mv('e5', { comment: 'theirs', excluded: true }),
 				]),
@@ -185,7 +188,7 @@ describe('mergeStudies', () => {
 			'0.0.6'
 		);
 
-		const [e4, e5] = merged.study.moves;
+		const [e4, e5] = merged.repertoire.moves;
 
 		assert.equal(e4.comment?.content?.[0].content?.[0].text, 'mine');
 		assert.equal(e4.classification, 'Great');
@@ -193,28 +196,28 @@ describe('mergeStudies', () => {
 		assert.equal(e5.excluded, true);
 	});
 
-	it('never shares a move with the studies it was built from', () => {
-		const source = study([mv('e4'), mv('e5')]);
-		const merged = mergeStudies([source], '0.0.6');
+	it('never shares a move with the repertoires it was built from', () => {
+		const source = repertoire([mv('e4'), mv('e5')]);
+		const merged = mergeRepertoires([source], '0.0.6');
 
-		merged.study.moves[0].comment = null;
-		merged.study.moves[0].variants.push(va([mv('c5')]));
+		merged.repertoire.moves[0].comment = null;
+		merged.repertoire.moves[0].variants.push(va([mv('c5')]));
 
 		assert.equal(source.moves[0].variants.length, 0);
 	});
 
 	it('joins the titles and takes the first colour anyone recorded', () => {
-		const merged = mergeStudies(
+		const merged = mergeRepertoires(
 			[
-				study([mv('e4')], { header: { title: 'Italian' } }),
-				study([mv('e4')], { header: { title: 'Ruy' }, playerColor: 'b' }),
-				study([mv('e4')], { header: { title: 'Italian' } }),
+				repertoire([mv('e4')], { header: { title: 'Italian' } }),
+				repertoire([mv('e4')], { header: { title: 'Ruy' }, playerColor: 'b' }),
+				repertoire([mv('e4')], { header: { title: 'Italian' } }),
 			],
 			'0.0.6'
 		);
 
-		assert.equal(merged.study.header.title, 'Italian + Ruy');
-		assert.equal(merged.study.playerColor, 'b');
+		assert.equal(merged.repertoire.header.title, 'Italian + Ruy');
+		assert.equal(merged.repertoire.playerColor, 'b');
 	});
 });
 
@@ -229,7 +232,7 @@ describe('mergeDrillStats', () => {
 		),
 	});
 
-	it('adds up what the same move was asked in two studies', () => {
+	it('adds up what the same move was asked in two repertoires', () => {
 		const merged = mergeDrillStats([
 			data({ a: [3, 1, 100] }),
 			data({ a: [2, 2, 250] }),

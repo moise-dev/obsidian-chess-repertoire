@@ -1,7 +1,7 @@
 import { collectSubtree, flattenMoves, getReplies } from 'src/lib/move-tree';
 import {
-	ChessStudyDrillData,
-	ChessStudyMove,
+	ChessRepertoireDrillData,
+	ChessRepertoireMove,
 	MoveDrillStats,
 } from 'src/lib/storage';
 
@@ -14,31 +14,32 @@ import {
 const FAMILIAR_WEIGHT = 0.15;
 
 /**
- * The side a study is drilled for.
+ * The side a repertoire is drilled for.
  *
- * The study's own answer when it has one; otherwise the way the board is
+ * The repertoire's own answer when it has one; otherwise the way the board is
  * turned, since a repertoire is kept the way round it is played. One helper
  * rather than two, so the map and the drill can never disagree about it.
  */
-export const resolveStudyColor = (
+export const resolveRepertoireColor = (
 	playerColor: 'w' | 'b' | undefined,
 	orientation: 'white' | 'black'
 ): 'w' | 'b' => playerColor ?? (orientation === 'black' ? 'b' : 'w');
 
 /** Whether a move takes part in drills at all. */
-export const isDrillable = (move: ChessStudyMove): boolean => !move.excluded;
+export const isDrillable = (move: ChessRepertoireMove): boolean =>
+	!move.excluded;
 
 /**
- * The replies the study is willing to play at a position.
+ * The replies the repertoire is willing to play at a position.
  *
- * Excluding a move keeps it in the study but out of rehearsal, and since a
+ * Excluding a move keeps it in the repertoire but out of rehearsal, and since a
  * drill can only reach the rest of a line by playing into its first move,
  * dropping it here is enough to leave the whole branch alone.
  */
 export const getDrillableReplies = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string | null
-): ChessStudyMove[] => getReplies(moves, moveId).filter(isDrillable);
+): ChessRepertoireMove[] => getReplies(moves, moveId).filter(isDrillable);
 
 /**
  * Every move a drill can never reach, by id: the ones carrying the flag and
@@ -53,7 +54,7 @@ export const getDrillableReplies = (
  * the move that has to be played to be offered it.
  */
 export const collectExcludedMoveIds = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	inherited = false,
 	found: Set<string> = new Set()
 ): Set<string> => {
@@ -80,14 +81,14 @@ export interface DrillRecord {
 /**
  * What the drills know about the line starting at `move`.
  *
- * Only the user's own moves count: the study's replies are never answered, so
+ * Only the user's own moves count: the repertoire's replies are never answered, so
  * they carry no record of their own. A branch is judged by how well the user
  * plays *underneath* it, which is what makes it possible to weigh a reply the
  * user never has to find.
  */
 export const subtreeRecord = (
-	moves: ChessStudyMove[],
-	move: ChessStudyMove,
+	moves: ChessRepertoireMove[],
+	move: ChessRepertoireMove,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b'
 ): DrillRecord =>
@@ -108,7 +109,7 @@ export const subtreeRecord = (
 		);
 
 export interface WeightedReply {
-	move: ChessStudyMove;
+	move: ChessRepertoireMove;
 	/** Never drilled, so nothing is yet known about it. */
 	unseen: boolean;
 	weight: number;
@@ -123,7 +124,7 @@ export interface WeightedReply {
  * do recency properly later.
  */
 export const weighReplies = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string | null,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b'
@@ -139,7 +140,7 @@ export const weighReplies = (
 	});
 
 /**
- * Which reply the study plays at a position, or null where the line ends.
+ * Which reply the repertoire plays at a position, or null where the line ends.
  *
  * Anything never drilled goes first, uniformly: a repertoire is only prepared
  * once every line has been seen at least once, so covering the tree comes ahead
@@ -149,12 +150,12 @@ export const weighReplies = (
  * `random` is injected so a session can be made repeatable in tests.
  */
 export const chooseReply = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string | null,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b',
 	random: () => number = Math.random
-): ChessStudyMove | null => {
+): ChessRepertoireMove | null => {
 	const replies = weighReplies(moves, moveId, stats, userColor);
 
 	if (!replies.length) return null;
@@ -199,16 +200,16 @@ export const recordAttempt = (
 };
 
 /**
- * Drops records for moves the study no longer has.
+ * Drops records for moves the repertoire no longer has.
  *
  * Deleting a move leaves its history behind, and a `moveId` is never reused, so
- * the orphan is harmless - but a study edited for years would carry every line
- * it ever had. Pruning on load keeps the file the size of the study.
+ * the orphan is harmless - but a repertoire edited for years would carry every line
+ * it ever had. Pruning on load keeps the file the size of the repertoire.
  */
 export const pruneDrillData = (
-	data: ChessStudyDrillData,
-	moves: ChessStudyMove[]
-): ChessStudyDrillData => {
+	data: ChessRepertoireDrillData,
+	moves: ChessRepertoireMove[]
+): ChessRepertoireDrillData => {
 	const live = new Set(flattenMoves(moves).map((move) => move.moveId));
 
 	const stats = Object.fromEntries(

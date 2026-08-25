@@ -101,7 +101,7 @@ export const classificationForKey = (
 const isClassification = (value: unknown): value is MoveClassification =>
 	typeof value === 'string' && value in CLASSIFICATIONS;
 
-/** Guards against a hand-edited or future-version study file. */
+/** Guards against a hand-edited or future-version repertoire file. */
 export const readClassification = (value: unknown): MoveClassification | null =>
 	isClassification(value) ? value : null;
 

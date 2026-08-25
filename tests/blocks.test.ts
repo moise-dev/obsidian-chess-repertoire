@@ -6,67 +6,67 @@ const note = (...lines: string[]) => lines.join('\n');
 
 describe('findCodeBlocks', () => {
 	it('finds nothing in a note without any', () => {
-		assert.deepEqual(findCodeBlocks('Just some prose.', 'chessStudy'), []);
+		assert.deepEqual(findCodeBlocks('Just some prose.', 'chessRepertoire'), []);
 	});
 
 	it('returns the body of each matching block', () => {
 		const content = note(
 			'# Italian',
-			'```chessStudy',
-			'chessStudyId: one',
+			'```chessRepertoire',
+			'chessRepertoireId: one',
 			'```',
 			'Some prose.',
-			'```chessStudy',
-			'chessStudyId: two',
+			'```chessRepertoire',
+			'chessRepertoireId: two',
 			'boardSize: 400',
 			'```'
 		);
 
-		assert.deepEqual(findCodeBlocks(content, 'chessStudy'), [
-			'chessStudyId: one',
-			'chessStudyId: two\nboardSize: 400',
+		assert.deepEqual(findCodeBlocks(content, 'chessRepertoire'), [
+			'chessRepertoireId: one',
+			'chessRepertoireId: two\nboardSize: 400',
 		]);
 	});
 
 	it('leaves other languages alone', () => {
-		const content = note('```js', 'const chessStudyId = 1;', '```');
+		const content = note('```js', 'const chessRepertoireId = 1;', '```');
 
-		assert.deepEqual(findCodeBlocks(content, 'chessStudy'), []);
+		assert.deepEqual(findCodeBlocks(content, 'chessRepertoire'), []);
 	});
 
 	it('reads a nested fence as content rather than as a block', () => {
 		const content = note(
 			'````markdown',
-			'```chessStudy',
-			'chessStudyId: example',
+			'```chessRepertoire',
+			'chessRepertoireId: example',
 			'```',
 			'````',
-			'```chessStudy',
-			'chessStudyId: real',
+			'```chessRepertoire',
+			'chessRepertoireId: real',
 			'```'
 		);
 
-		assert.deepEqual(findCodeBlocks(content, 'chessStudy'), [
-			'chessStudyId: real',
+		assert.deepEqual(findCodeBlocks(content, 'chessRepertoire'), [
+			'chessRepertoireId: real',
 		]);
 	});
 
 	it('ignores a block never closed', () => {
-		const content = note('```chessStudy', 'chessStudyId: unfinished');
+		const content = note('```chessRepertoire', 'chessRepertoireId: unfinished');
 
-		assert.deepEqual(findCodeBlocks(content, 'chessStudy'), []);
+		assert.deepEqual(findCodeBlocks(content, 'chessRepertoire'), []);
 	});
 
 	it('reads an indented block', () => {
 		const content = note(
 			'- item',
-			'  ```chessStudy',
-			'  chessStudyId: one',
+			'  ```chessRepertoire',
+			'  chessRepertoireId: one',
 			'  ```'
 		);
 
-		assert.deepEqual(findCodeBlocks(content, 'chessStudy'), [
-			'  chessStudyId: one',
+		assert.deepEqual(findCodeBlocks(content, 'chessRepertoire'), [
+			'  chessRepertoireId: one',
 		]);
 	});
 });

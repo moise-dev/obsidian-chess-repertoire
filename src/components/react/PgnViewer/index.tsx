@@ -2,10 +2,10 @@ import * as React from 'react';
 import { useMemo } from 'react';
 import { MoveClassification } from 'src/lib/classification';
 import { moveNumberAtPly } from 'src/lib/move-tree';
-import { ChessStudyMove, Variant } from 'src/lib/storage';
+import { ChessRepertoireMove, Variant } from 'src/lib/storage';
 import { ControlActions, Controls } from './Controls';
 import { MoveItem, VariantMoveItem, VariationAction } from './MoveItems';
-import { StudyTitle } from './StudyTitle';
+import { RepertoireTitle } from './RepertoireTitle';
 
 const chunkArray = <T,>(array: T[], chunkSize: number, offsetByOne = false) => {
 	return array.reduce((resultArray, item, index) => {
@@ -46,7 +46,7 @@ interface VariationsProps extends MoveListContext {
 }
 
 interface VariationMovesProps extends Omit<VariationsProps, 'variants'> {
-	moves: ChessStudyMove[];
+	moves: ChessRepertoireMove[];
 	/** Position of this variation among its siblings, for the context menu. */
 	index: number;
 	siblingCount: number;
@@ -169,18 +169,18 @@ const Variations = ({ variants, depth, ...rest }: VariationsProps) => {
 };
 
 interface PgnViewerProps extends ControlActions, MoveListContext {
-	history: ChessStudyMove[];
+	history: ChessRepertoireMove[];
 	title: string | null;
 	onTitleChange: (title: string | null) => void;
-	/** The side the study is written for, or undefined until it has said. */
+	/** The side the repertoire is written for, or undefined until it has said. */
 	playerColor: 'w' | 'b' | undefined;
 	onPlayerColorChange: (color: 'w' | 'b') => void;
 }
 
 /**
- * Which side the study is written for: the one whose moves are the mainline.
+ * Which side the repertoire is written for: the one whose moves are the mainline.
  *
- * A study that has never said shows the side it is about to assume rather than
+ * A repertoire that has never said shows the side it is about to assume rather than
  * a blank, so the first click confirms it instead of changing it. That guess is
  * the board's orientation, which is also what the map falls back to.
  */
@@ -192,8 +192,8 @@ const PlayerColorChip = ({
 		className={`cs-color-chip${playerColor ? '' : ' is-assumed'}`}
 		title={
 			playerColor
-				? 'The side this study is written for. Click to switch.'
-				: 'This study has not said which side it is written for. Click to set it.'
+				? 'The side this repertoire is written for. Click to switch.'
+				: 'This repertoire has not said which side it is written for. Click to set it.'
 		}
 		onClick={() => onPlayerColorChange(playerColor === 'b' ? 'w' : 'b')}
 	>
@@ -256,7 +256,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		<div className="cs-side">
 			<div className="cs-side-header">
 				<span className="cs-side-title">Moves</span>
-				<StudyTitle title={title} onTitleChange={onTitleChange} />
+				<RepertoireTitle title={title} onTitleChange={onTitleChange} />
 				<PlayerColorChip
 					playerColor={playerColor}
 					onPlayerColorChange={onPlayerColorChange}

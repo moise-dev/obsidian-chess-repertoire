@@ -6,12 +6,12 @@ import {
 	getDrillableReplies,
 	pruneDrillData,
 	recordAttempt,
-	resolveStudyColor,
+	resolveRepertoireColor,
 	subtreeRecord,
 	weighReplies,
 } from '../src/lib/drill';
 import { collectSubtree, flattenMoves, getReplies } from '../src/lib/move-tree';
-import { ChessStudyMove, MoveDrillStats } from '../src/lib/storage';
+import { ChessRepertoireMove, MoveDrillStats } from '../src/lib/storage';
 
 // Only the fields the drill model reads. The chess.js Move parts that take no
 // part are left off rather than faked.
@@ -22,7 +22,7 @@ const mv = (
 		excluded?: boolean;
 		variants?: unknown[];
 	} = {}
-): ChessStudyMove =>
+): ChessRepertoireMove =>
 	({
 		san,
 		moveId: san,
@@ -31,12 +31,12 @@ const mv = (
 		variants: options.variants ?? [],
 		shapes: [],
 		comment: null,
-	} as unknown as ChessStudyMove);
+	} as unknown as ChessRepertoireMove);
 
 const va = (
 	variantId: string,
 	parentMoveId: string,
-	moves: ChessStudyMove[]
+	moves: ChessRepertoireMove[]
 ) => ({ variantId, parentMoveId, moves });
 
 /**
@@ -50,7 +50,7 @@ const va = (
  * Every san is distinct because `mv` keys `moveId` off it, and two moves
  * sharing an id would share a drill record.
  */
-const tree = (): ChessStudyMove[] => [
+const tree = (): ChessRepertoireMove[] => [
 	mv('e4', {
 		variants: [
 			va('v1', 'e4', [mv('c5', { color: 'b' }), mv('Nc3')]),
@@ -61,7 +61,8 @@ const tree = (): ChessStudyMove[] => [
 	mv('Nf3'),
 ];
 
-const sans = (moves: ChessStudyMove[]) => moves.map((m) => m.san).join(' ');
+const sans = (moves: ChessRepertoireMove[]) =>
+	moves.map((m) => m.san).join(' ');
 
 const stats = (
 	entries: Record<string, [attempts: number, misses: number]>
@@ -73,15 +74,15 @@ const stats = (
 		])
 	);
 
-describe('resolveStudyColor', () => {
-	it('takes the study at its word', () => {
-		assert.equal(resolveStudyColor('b', 'white'), 'b');
-		assert.equal(resolveStudyColor('w', 'black'), 'w');
+describe('resolveRepertoireColor', () => {
+	it('takes the repertoire at its word', () => {
+		assert.equal(resolveRepertoireColor('b', 'white'), 'b');
+		assert.equal(resolveRepertoireColor('w', 'black'), 'w');
 	});
 
 	it('falls back to the way the board is turned', () => {
-		assert.equal(resolveStudyColor(undefined, 'black'), 'b');
-		assert.equal(resolveStudyColor(undefined, 'white'), 'w');
+		assert.equal(resolveRepertoireColor(undefined, 'black'), 'b');
+		assert.equal(resolveRepertoireColor(undefined, 'white'), 'w');
 	});
 });
 
@@ -108,7 +109,7 @@ describe('replies', () => {
 });
 
 describe('collectExcludedMoveIds', () => {
-	it('finds nothing in a study with no exclusions', () => {
+	it('finds nothing in a repertoire with no exclusions', () => {
 		assert.equal(collectExcludedMoveIds(tree()).size, 0);
 	});
 
@@ -160,10 +161,10 @@ describe('subtrees', () => {
 });
 
 describe('subtreeRecord', () => {
-	it("sums the user's moves under a reply and ignores the study's own", () => {
+	it("sums the user's moves under a reply and ignores the repertoire's own", () => {
 		const moves = tree();
 
-		// c5 is the study's own move, so its record must not count towards the
+		// c5 is the repertoire's own move, so its record must not count towards the
 		// branch it opens.
 		const record = subtreeRecord(
 			moves,
@@ -294,7 +295,7 @@ describe('recordAttempt', () => {
 });
 
 describe('pruneDrillData', () => {
-	it('drops records for moves the study no longer has', () => {
+	it('drops records for moves the repertoire no longer has', () => {
 		const data = {
 			version: '0.0.1',
 			stats: stats({ Nf3: [1, 0], gone: [3, 2] }),

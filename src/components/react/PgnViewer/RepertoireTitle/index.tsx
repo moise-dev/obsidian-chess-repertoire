@@ -1,13 +1,16 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-interface StudyTitleProps {
+interface RepertoireTitleProps {
 	title: string | null;
 	onTitleChange: (title: string | null) => void;
 }
 
-/** The study title, editable in place. */
-export const StudyTitle = ({ title, onTitleChange }: StudyTitleProps) => {
+/** The repertoire title, editable in place. */
+export const RepertoireTitle = ({
+	title,
+	onTitleChange,
+}: RepertoireTitleProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draft, setDraft] = useState(title ?? '');
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +34,7 @@ export const StudyTitle = ({ title, onTitleChange }: StudyTitleProps) => {
 		return (
 			<button
 				className={`cs-side-subtitle${title ? '' : ' is-empty'}`}
-				title="Rename this study"
+				title="Rename this repertoire"
 				onClick={() => setIsEditing(true)}
 			>
 				{title || 'Add a title'}
@@ -44,7 +47,7 @@ export const StudyTitle = ({ title, onTitleChange }: StudyTitleProps) => {
 			ref={inputRef}
 			className="cs-side-subtitle-input"
 			value={draft}
-			placeholder="Study title"
+			placeholder="Repertoire title"
 			onChange={(e) => setDraft(e.target.value)}
 			onBlur={commit}
 			onKeyDown={(e) => {

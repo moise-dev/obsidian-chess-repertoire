@@ -1,4 +1,4 @@
-import { ChessStudyMove } from 'src/lib/storage';
+import { ChessRepertoireMove } from 'src/lib/storage';
 
 /** How deep variations may nest. The mainline is depth 0. */
 export const MAX_VARIATION_DEPTH = 4;
@@ -29,7 +29,7 @@ export const plyAtPath = (path: MovePath): number => {
 };
 
 /** The array of moves that directly contains the move at `path`. */
-export const getListAtPath = <T extends ChessStudyMove>(
+export const getListAtPath = <T extends ChessRepertoireMove>(
 	moves: T[],
 	path: MovePath
 ): T[] | null => {
@@ -46,7 +46,7 @@ export const getListAtPath = <T extends ChessStudyMove>(
 	return list;
 };
 
-export const getMoveAtPath = <T extends ChessStudyMove>(
+export const getMoveAtPath = <T extends ChessRepertoireMove>(
 	moves: T[],
 	path: MovePath
 ): T | null => {
@@ -62,7 +62,7 @@ export const getParentMovePath = (path: MovePath): MovePath | null =>
 	path.length > 1 ? path.slice(0, -2) : null;
 
 export const findMovePath = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string,
 	prefix: MovePath = []
 ): MovePath | null => {
@@ -86,7 +86,7 @@ export const findMovePath = (
  * emptying a nested variation can empty its parent too.
  */
 const pruneEmptyVariations = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath
 ): void => {
 	for (let p = path; p.length > 1 && !getListAtPath(moves, p)?.length; ) {
@@ -102,7 +102,7 @@ const pruneEmptyVariations = (
 
 /** Drops the single move at `path` from its list. */
 export const removeMoveAtPath = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath
 ): void => {
 	const list = getListAtPath(moves, path);
@@ -123,7 +123,7 @@ export const removeMoveAtPath = (
  * therefore removes the variation.
  */
 export const removeMovesFromPath = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath
 ): number => {
 	const list = getListAtPath(moves, path);
@@ -148,7 +148,7 @@ export const moveNumberAtPly = (
 interface VariationRef {
 	/** Path of the move the variation hangs off. */
 	parentPath: MovePath;
-	parentMove: ChessStudyMove;
+	parentMove: ChessRepertoireMove;
 	variantIndex: number;
 }
 
@@ -157,7 +157,7 @@ interface VariationRef {
  * move is on the mainline.
  */
 export const getVariationRef = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath
 ): VariationRef | null => {
 	const parentPath = getParentMovePath(path);
@@ -173,7 +173,7 @@ export const getVariationRef = (
 };
 
 /** Total moves in a line, nested variations included. */
-export const countMoves = (moves: ChessStudyMove[]): number =>
+export const countMoves = (moves: ChessRepertoireMove[]): number =>
 	moves.reduce(
 		(total, move) =>
 			total +
@@ -193,7 +193,7 @@ export const countMoves = (moves: ChessStudyMove[]): number =>
  * lost. If the parent move had no continuation, the variation simply becomes it.
  */
 export const promoteVariationAtPath = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath,
 	makeId: () => string
 ): boolean => {
@@ -231,7 +231,7 @@ export const promoteVariationAtPath = (
  * otherwise hang the renderer.
  */
 export const promoteToMainline = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string,
 	makeId: () => string
 ): boolean => {
@@ -251,7 +251,7 @@ export const promoteToMainline = (
 
 /** Removes the whole variation containing the move at `path`. */
 export const removeVariationAtPath = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath
 ): boolean => {
 	const ref = getVariationRef(moves, path);
@@ -265,7 +265,7 @@ export const removeVariationAtPath = (
 
 /** Reorders a variation among its siblings. `delta` is -1 (up) or 1 (down). */
 export const moveVariationAtPath = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	path: MovePath,
 	delta: number
 ): boolean => {
@@ -293,9 +293,9 @@ export const moveVariationAtPath = (
  * this continuation rather than continuations themselves.
  */
 export const getContinuation = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string | null
-): ChessStudyMove | null => {
+): ChessRepertoireMove | null => {
 	if (!moveId) return moves[0] ?? null;
 
 	const path = findMovePath(moves, moveId);
@@ -322,9 +322,9 @@ export const getContinuation = (
  * is the order they are listed in the move list.
  */
 export const getReplies = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string | null
-): ChessStudyMove[] => {
+): ChessRepertoireMove[] => {
 	if (!moveId) return moves[0] ? [moves[0]] : [];
 
 	const path = findMovePath(moves, moveId);
@@ -338,12 +338,14 @@ export const getReplies = (
 		...(continuation ? [continuation] : []),
 		...(move.variants ?? [])
 			.map((variant) => variant.moves[0])
-			.filter((first): first is ChessStudyMove => Boolean(first)),
+			.filter((first): first is ChessRepertoireMove => Boolean(first)),
 	];
 };
 
 /** Every move in a line, nested variations included, flattened. */
-export const flattenMoves = (moves: ChessStudyMove[]): ChessStudyMove[] =>
+export const flattenMoves = (
+	moves: ChessRepertoireMove[]
+): ChessRepertoireMove[] =>
 	moves.flatMap((move) => [
 		move,
 		...(move.variants ?? []).flatMap((variant) => flattenMoves(variant.moves)),
@@ -357,9 +359,9 @@ export const flattenMoves = (moves: ChessStudyMove[]): ChessStudyMove[] =>
  * unit for both excluding a branch and judging how well one is known.
  */
 export const collectSubtree = (
-	moves: ChessStudyMove[],
+	moves: ChessRepertoireMove[],
 	moveId: string
-): ChessStudyMove[] => {
+): ChessRepertoireMove[] => {
 	const path = findMovePath(moves, moveId);
 	const list = path && getListAtPath(moves, path);
 

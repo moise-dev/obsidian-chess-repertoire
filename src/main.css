@@ -2,7 +2,7 @@
  * Shell
  * ------------------------------------------------------------------ */
 
-.chess-study {
+.chess-repertoire {
 	--cs-radius: 10px;
 	--cs-gap: 10px;
 	--cs-border: var(--background-modifier-border);
@@ -37,64 +37,64 @@
 	--cs-coord-offset: calc(var(--cs-coords) + var(--cs-coord-gap));
 }
 
-.chess-study:focus {
+.chess-repertoire:focus {
 	outline: none;
 }
 
-.chess-study:focus-visible {
+.chess-repertoire:focus-visible {
 	box-shadow: 0 0 0 2px var(--interactive-accent);
 }
 
-.chess-study *,
-.chess-study *::before,
-.chess-study *::after {
+.chess-repertoire *,
+.chess-repertoire *::before,
+.chess-repertoire *::after {
 	box-sizing: border-box;
 }
 
-.chess-study * {
+.chess-repertoire * {
 	margin: 0;
 }
 
-.chess-study input,
-.chess-study button,
-.chess-study textarea,
-.chess-study select {
+.chess-repertoire input,
+.chess-repertoire button,
+.chess-repertoire textarea,
+.chess-repertoire select {
 	font: inherit;
 }
 
-.chess-study p,
-.chess-study h1,
-.chess-study h2,
-.chess-study h3,
-.chess-study h4,
-.chess-study h5,
-.chess-study h6 {
+.chess-repertoire p,
+.chess-repertoire h1,
+.chess-repertoire h2,
+.chess-repertoire h3,
+.chess-repertoire h4,
+.chess-repertoire h5,
+.chess-repertoire h6 {
 	overflow-wrap: break-word;
 }
 
-.chess-study button:active {
+.chess-repertoire button:active {
 	transform: translateY(1px);
 }
 
 /* Helpers */
 
-.chess-study .vertical-align {
+.chess-repertoire .vertical-align {
 	display: flex;
 	align-items: center;
 }
 
-.chess-study .center {
+.chess-repertoire .center {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
 
-.chess-study .height-width-100 {
+.chess-repertoire .height-width-100 {
 	width: 100%;
 	height: 100%;
 }
 
-.chess-study .cs-empty-state {
+.chess-repertoire .cs-empty-state {
 	padding: 10px 4px;
 	color: var(--text-faint);
 	font-size: 14px;
@@ -104,13 +104,13 @@
  * Layout: board next to the move list, notes underneath
  * ------------------------------------------------------------------ */
 
-.chess-study .cs-main {
+.chess-repertoire .cs-main {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(150px, 0.52fr);
 	gap: var(--cs-gap);
 }
 
-.chess-study .cs-board-wrap {
+.chess-repertoire .cs-board-wrap {
 	width: 100%;
 	/* Room down the left and along the bottom for the coordinates. Nothing is
 	   clipped here any more, or they would be cut off in their own gutter. */
@@ -123,7 +123,7 @@
 /* The square the board actually occupies, now that the wrapper is padded.
    Positioned so the promotion picker below can place itself in percentages
    of this box instead of measuring pixels. */
-.chess-study .cs-board {
+.chess-repertoire .cs-board {
 	position: relative;
 	display: block;
 	width: 100%;
@@ -136,14 +136,14 @@
  * pawn landed on, running from the edge it promoted at toward the middle so
  * every choice lands on a square that exists.
  */
-.chess-study .cs-promotion-backdrop {
+.chess-repertoire .cs-promotion-backdrop {
 	position: absolute;
 	inset: 0;
 	z-index: 3;
 	background-color: rgba(0, 0, 0, 0.2);
 }
 
-.chess-study .cs-promotion-picker {
+.chess-repertoire .cs-promotion-picker {
 	position: absolute;
 	display: flex;
 	flex-direction: column;
@@ -155,7 +155,7 @@
 	overflow: hidden;
 }
 
-.chess-study .cs-promotion-choice {
+.chess-repertoire .cs-promotion-choice {
 	position: relative;
 	flex: 1 0 0;
 	border: none;
@@ -164,11 +164,11 @@
 	padding: 0;
 }
 
-.chess-study .cs-promotion-choice:hover {
+.chess-repertoire .cs-promotion-choice:hover {
 	background-color: #e8e8e8;
 }
 
-.chess-study .cs-promotion-picker.cg-wrap piece {
+.chess-repertoire .cs-promotion-picker.cg-wrap piece {
 	position: absolute;
 	inset: 8%;
 	width: auto;
@@ -181,11 +181,11 @@
 
 /* Stack once the widget itself gets narrow, not once the note does. */
 @container (max-width: 470px) {
-	.chess-study .cs-main {
+	.chess-repertoire .cs-main {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.chess-study .cs-side {
+	.chess-repertoire .cs-side {
 		max-height: 240px;
 	}
 }
@@ -194,14 +194,14 @@
  * Move list
  * ------------------------------------------------------------------ */
 
-.chess-study .cs-side {
+.chess-repertoire .cs-side {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
 	overflow: hidden;
 }
 
-.chess-study .cs-side-header {
+.chess-repertoire .cs-side-header {
 	display: flex;
 	align-items: baseline;
 	gap: 6px;
@@ -209,7 +209,7 @@
 	border-bottom: 1px solid var(--cs-border);
 }
 
-.chess-study .cs-side-title {
+.chess-repertoire .cs-side-title {
 	font-size: 14px;
 	font-weight: 600;
 	letter-spacing: 0.06em;
@@ -217,7 +217,7 @@
 	color: var(--text-muted);
 }
 
-.chess-study .cs-side-subtitle {
+.chess-repertoire .cs-side-subtitle {
 	flex: 1;
 	min-width: 0;
 	font-size: 15px;
@@ -228,11 +228,11 @@
 }
 
 /*
- * Which side the study is written for. Small and quiet: it is a fact about the
- * study rather than a control you reach for, but it decides what the drill asks
+ * Which side the repertoire is written for. Small and quiet: it is a fact about the
+ * repertoire rather than a control you reach for, but it decides what the drill asks
  * and what the map calls a hole, so it is never hidden either.
  */
-.chess-study .cs-color-chip {
+.chess-repertoire .cs-color-chip {
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
@@ -249,18 +249,18 @@
 	cursor: pointer;
 }
 
-.chess-study .cs-color-chip:hover {
+.chess-repertoire .cs-color-chip:hover {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
 /* Nothing recorded yet: what is shown is a guess, so it is drawn as one. */
-.chess-study .cs-color-chip.is-assumed {
+.chess-repertoire .cs-color-chip.is-assumed {
 	border-style: dashed;
 	color: var(--text-faint);
 }
 
-.chess-study .cs-color-dot {
+.chess-repertoire .cs-color-dot {
 	flex: 0 0 auto;
 	width: 16px;
 	height: 16px;
@@ -268,26 +268,26 @@
 	border-radius: 50%;
 }
 
-.chess-study .cs-color-dot.is-white {
+.chess-repertoire .cs-color-dot.is-white {
 	background-color: #f2f2f2;
 }
 
-.chess-study .cs-color-dot.is-black {
+.chess-repertoire .cs-color-dot.is-black {
 	background-color: #1a1a1a;
 }
 
-.chess-study .move-item-section {
+.chess-repertoire .move-item-section {
 	flex: 1 1 auto;
 	min-height: 0;
 	overflow-y: auto;
 	padding: 4px 0;
 }
 
-.chess-study .move-item-container > * {
+.chess-repertoire .move-item-container > * {
 	margin: 0;
 }
 
-.chess-study .move-item-container {
+.chess-repertoire .move-item-container {
 	display: grid;
 	grid-template-columns: 2.2em 1fr 1fr;
 	/* Tall enough for a classification badge and its row padding, or a row
@@ -299,7 +299,7 @@
 	font-size: 16px;
 }
 
-.chess-study .move-indicator {
+.chess-repertoire .move-indicator {
 	justify-content: flex-end;
 	padding-right: 6px;
 	color: var(--text-faint);
@@ -308,7 +308,7 @@
 	cursor: default;
 }
 
-.chess-study .move-item {
+.chess-repertoire .move-item {
 	display: flex;
 	align-items: center;
 	padding: 2px 6px;
@@ -318,33 +318,33 @@
 	cursor: pointer;
 }
 
-.chess-study .move-item:hover {
+.chess-repertoire .move-item:hover {
 	background-color: var(--background-modifier-hover);
 }
 
 /*
  * Out of drills - the flagged move and everything under it. Dimmed rather than
- * struck through: the line is still part of the study and still reads normally,
+ * struck through: the line is still part of the repertoire and still reads normally,
  * it is only left out of rehearsal.
  */
-.chess-study .move-item.is-undrilled,
-.chess-study .variant-move-item.is-undrilled {
+.chess-repertoire .move-item.is-undrilled,
+.chess-repertoire .variant-move-item.is-undrilled {
 	color: var(--text-faint);
 }
 
-.chess-study .move-item.is-undrilled:hover,
-.chess-study .variant-move-item.is-undrilled:hover {
+.chess-repertoire .move-item.is-undrilled:hover,
+.chess-repertoire .variant-move-item.is-undrilled:hover {
 	color: var(--text-muted);
 }
 
 /* The current move stays legible wherever it sits. */
-.chess-study .move-item.is-undrilled.active,
-.chess-study .variant-move-item.is-undrilled.active {
+.chess-repertoire .move-item.is-undrilled.active,
+.chess-repertoire .variant-move-item.is-undrilled.active {
 	color: var(--text-accent);
 	opacity: 0.65;
 }
 
-.chess-study .move-item.active {
+.chess-repertoire .move-item.active {
 	background-color: var(
 		--background-modifier-active-hover,
 		var(--background-modifier-hover)
@@ -356,7 +356,7 @@
 
 /* Variations, nested as indented sublists */
 
-.chess-study .cs-variations {
+.chess-repertoire .cs-variations {
 	grid-column: 1 / -1;
 	display: flex;
 	flex-direction: column;
@@ -368,46 +368,46 @@
 /* The first level clears the mainline's move-number column, so a variation
    starts under the moves rather than lining up with the numbers and reading as
    another mainline row. */
-.chess-study .cs-variations[data-depth='1'] {
+.chess-repertoire .cs-variations[data-depth='1'] {
 	margin-left: 2.2em;
 }
 
 /* Each level steps in and takes its own rail, so depth is readable at a glance
    rather than having to be counted from brackets. */
-.chess-study .cs-variation {
+.chess-repertoire .cs-variation {
 	display: flex;
 	flex-direction: column;
 	padding-left: 11px;
 	border-left: 2px solid var(--cs-variation-rail, var(--cs-border));
 }
 
-.chess-study .cs-variations[data-depth='1'] .cs-variation {
+.chess-repertoire .cs-variations[data-depth='1'] .cs-variation {
 	--cs-variation-rail: var(--color-base-40, #6b7280);
 }
-.chess-study .cs-variations[data-depth='2'] .cs-variation {
+.chess-repertoire .cs-variations[data-depth='2'] .cs-variation {
 	--cs-variation-rail: var(--color-blue, #5c8bb0);
 }
-.chess-study .cs-variations[data-depth='3'] .cs-variation {
+.chess-repertoire .cs-variations[data-depth='3'] .cs-variation {
 	--cs-variation-rail: var(--color-purple, #9d7cd8);
 }
-.chess-study .cs-variations[data-depth='4'] .cs-variation {
+.chess-repertoire .cs-variations[data-depth='4'] .cs-variation {
 	--cs-variation-rail: var(--color-cyan, #4aa8a1);
 }
 
 /* Deeper lines are set slightly smaller, which keeps a depth-4 line from
    crowding the panel while staying readable. */
-.chess-study .cs-variations[data-depth='1'] {
+.chess-repertoire .cs-variations[data-depth='1'] {
 	font-size: 15px;
 }
-.chess-study .cs-variations[data-depth='2'] {
+.chess-repertoire .cs-variations[data-depth='2'] {
 	font-size: 14.5px;
 }
-.chess-study .cs-variations[data-depth='3'],
-.chess-study .cs-variations[data-depth='4'] {
+.chess-repertoire .cs-variations[data-depth='3'],
+.chess-repertoire .cs-variations[data-depth='4'] {
 	font-size: 14px;
 }
 
-.chess-study .variant-move-item-container {
+.chess-repertoire .variant-move-item-container {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -416,7 +416,7 @@
 	font-size: inherit;
 }
 
-.chess-study .variant-move-item {
+.chess-repertoire .variant-move-item {
 	display: inline-flex;
 	align-items: center;
 	padding: 1px 3px;
@@ -427,18 +427,18 @@
 	cursor: pointer;
 }
 
-.chess-study .variant-move-item:hover {
+.chess-repertoire .variant-move-item:hover {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.chess-study .variant-move-item.active {
+.chess-repertoire .variant-move-item.active {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-accent);
 	font-weight: 700;
 }
 
-.chess-study .variant-move-indicator {
+.chess-repertoire .variant-move-indicator {
 	color: var(--text-faint);
 	font-weight: 600;
 }
@@ -447,7 +447,7 @@
  * Controls
  * ------------------------------------------------------------------ */
 
-.chess-study .cs-controls {
+.chess-repertoire .cs-controls {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -458,7 +458,7 @@
 	border-top: 1px solid var(--cs-border);
 }
 
-.chess-study .cs-controls-divider {
+.chess-repertoire .cs-controls-divider {
 	flex: 0 0 1px;
 	width: 1px;
 	height: 16px;
@@ -466,7 +466,7 @@
 	background-color: var(--cs-border);
 }
 
-.chess-study .cs-icon-button {
+.chess-repertoire .cs-icon-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -485,36 +485,36 @@
 	cursor: pointer;
 }
 
-.chess-study .cs-icon-button:hover {
+.chess-repertoire .cs-icon-button:hover {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.chess-study .cs-icon-button:disabled {
+.chess-repertoire .cs-icon-button:disabled {
 	opacity: 0.4;
 	cursor: default;
 }
 
-.chess-study .cs-icon-button:disabled:hover {
+.chess-repertoire .cs-icon-button:disabled:hover {
 	background-color: transparent;
 	color: var(--text-muted);
 }
 
-.chess-study .cs-icon-button.is-active {
+.chess-repertoire .cs-icon-button.is-active {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
 
-.chess-study .cs-icon-button.is-active:hover {
+.chess-repertoire .cs-icon-button.is-active:hover {
 	background-color: var(--interactive-accent-hover, var(--interactive-accent));
 	color: var(--text-on-accent);
 }
 
-.chess-study .cs-icon-button--primary {
+.chess-repertoire .cs-icon-button--primary {
 	color: var(--text-accent);
 }
 
-.chess-study .cs-icon-button--primary:hover {
+.chess-repertoire .cs-icon-button--primary:hover {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
@@ -523,14 +523,14 @@
  * Notes
  * ------------------------------------------------------------------ */
 
-.chess-study .cs-notes {
+.chess-repertoire .cs-notes {
 	border: 1px solid var(--cs-border);
 	border-radius: 8px;
 	background-color: var(--background-primary);
 	overflow: hidden;
 }
 
-.chess-study .cs-notes-header {
+.chess-repertoire .cs-notes-header {
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -546,18 +546,18 @@
 	cursor: pointer;
 }
 
-.chess-study .cs-notes-header:hover {
+.chess-repertoire .cs-notes-header:hover {
 	background-color: var(--background-modifier-hover);
 }
 
-.chess-study .cs-notes-title {
+.chess-repertoire .cs-notes-title {
 	font-size: 13px;
 	font-weight: 600;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 }
 
-.chess-study .cs-notes-chip {
+.chess-repertoire .cs-notes-chip {
 	padding: 1px 7px;
 	border-radius: 999px;
 	background-color: var(--background-modifier-hover);
@@ -566,14 +566,14 @@
 	font-size: 13px;
 }
 
-.chess-study .cs-notes-dot {
+.chess-repertoire .cs-notes-dot {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
 	background-color: var(--text-accent);
 }
 
-.chess-study .cs-notes-body {
+.chess-repertoire .cs-notes-body {
 	min-height: 76px;
 	max-height: 40vh;
 	padding: 8px 10px;
@@ -581,14 +581,14 @@
 	overflow-y: auto;
 }
 
-.chess-study .ProseMirror {
+.chess-repertoire .ProseMirror {
 	outline: none;
 	min-height: 56px;
 	caret-color: var(--text-normal);
 	color: var(--text-normal);
 }
 
-.chess-study .ProseMirror p {
+.chess-repertoire .ProseMirror p {
 	margin: 0 0 0.4em;
 }
 
@@ -596,8 +596,8 @@
  * Placeholder. An "empty" ProseMirror paragraph still holds a trailing <br>,
  * so :empty alone does not catch it.
  */
-.chess-study .ProseMirror > p:only-child:empty::before,
-.chess-study
+.chess-repertoire .ProseMirror > p:only-child:empty::before,
+.chess-repertoire
 	.ProseMirror
 	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
 	content: 'Add a note for this move…';
@@ -611,7 +611,7 @@
  * Resize handle
  * ------------------------------------------------------------------ */
 
-.chess-study .cs-resize-handle {
+.chess-repertoire .cs-resize-handle {
 	position: absolute;
 	right: 2px;
 	bottom: 2px;
@@ -631,21 +631,21 @@
 	);
 }
 
-.chess-study:hover .cs-resize-handle,
-.chess-study .cs-resize-handle:hover {
+.chess-repertoire:hover .cs-resize-handle,
+.chess-repertoire .cs-resize-handle:hover {
 	opacity: 0.75;
 }
 
 /* No move selected: the note has nothing to attach to. */
-.chess-study .cs-notes-body.is-disabled {
+.chess-repertoire .cs-notes-body.is-disabled {
 	opacity: 0.7;
 }
 
-.chess-study
+.chess-repertoire
 	.cs-notes-body.is-disabled
 	.ProseMirror
 	> p:only-child:empty::before,
-.chess-study
+.chess-repertoire
 	.cs-notes-body.is-disabled
 	.ProseMirror
 	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
@@ -653,7 +653,7 @@
 }
 
 /* Marks moves carrying a note or board arrows. */
-.chess-study .cs-move-marker {
+.chess-repertoire .cs-move-marker {
 	flex: 0 0 auto;
 	display: inline-block;
 	width: 5px;
@@ -663,11 +663,11 @@
 	vertical-align: middle;
 }
 
-.chess-study .cs-move-marker--note {
+.chess-repertoire .cs-move-marker--note {
 	background-color: var(--text-accent);
 }
 
-.chess-study .cs-move-marker--shape {
+.chess-repertoire .cs-move-marker--shape {
 	background-color: var(--color-green, #47a065);
 }
 
@@ -676,7 +676,7 @@
  * than something the move carries, and the moves it silences are dimmed
  * instead of marked.
  */
-.chess-study .cs-move-marker--excluded {
+.chess-repertoire .cs-move-marker--excluded {
 	background-color: transparent;
 	border: 1px solid var(--text-faint);
 }
@@ -690,7 +690,7 @@
  * variables, so the badge carries its own tinted background and never relies on
  * contrast against whatever the theme happens to be.
  */
-.chess-study .cs-move-classification {
+.chess-repertoire .cs-move-classification {
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
@@ -715,7 +715,7 @@
 	vertical-align: middle;
 }
 
-.chess-study .cs-classification-picker {
+.chess-repertoire .cs-classification-picker {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -723,7 +723,7 @@
 	padding: 0 10px 7px;
 }
 
-.chess-study .cs-classification-button {
+.chess-repertoire .cs-classification-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -748,7 +748,7 @@
 	cursor: pointer;
 }
 
-.chess-study .cs-classification-button:hover:not(:disabled) {
+.chess-repertoire .cs-classification-button:hover:not(:disabled) {
 	background-color: color-mix(
 		in srgb,
 		var(--cs-classification) 32%,
@@ -756,33 +756,33 @@
 	);
 }
 
-.chess-study .cs-classification-button.is-active {
+.chess-repertoire .cs-classification-button.is-active {
 	border-color: var(--cs-classification);
 	background-color: var(--cs-classification);
 	color: #ffffff;
 }
 
-.chess-study .cs-classification-button:disabled {
+.chess-repertoire .cs-classification-button:disabled {
 	opacity: 0.4;
 	cursor: default;
 }
 
-.chess-study .cs-classification-button--clear {
+.chess-repertoire .cs-classification-button--clear {
 	--cs-classification: var(--text-faint);
 	margin-left: auto;
 	background-color: transparent;
 	color: var(--text-muted);
 }
 
-.chess-study .cs-classification-button--clear:hover:not(:disabled) {
+.chess-repertoire .cs-classification-button--clear:hover:not(:disabled) {
 	background-color: var(--background-modifier-hover);
 }
 
 /* ------------------------------------------------------------------ *
- * Study title and unsaved state
+ * Repertoire title and unsaved state
  * ------------------------------------------------------------------ */
 
-.chess-study .cs-side-subtitle {
+.chess-repertoire .cs-side-subtitle {
 	height: auto;
 	padding: 0;
 	border: none;
@@ -793,17 +793,17 @@
 	cursor: text;
 }
 
-.chess-study .cs-side-subtitle:hover {
+.chess-repertoire .cs-side-subtitle:hover {
 	color: var(--text-normal);
 	text-decoration: underline dotted;
 }
 
-.chess-study .cs-side-subtitle.is-empty {
+.chess-repertoire .cs-side-subtitle.is-empty {
 	font-style: italic;
 	opacity: 0.7;
 }
 
-.chess-study .cs-side-subtitle-input {
+.chess-repertoire .cs-side-subtitle-input {
 	flex: 1;
 	min-width: 0;
 	height: auto;
@@ -815,11 +815,11 @@
 	font-size: 15px;
 }
 
-.chess-study .cs-icon-button--primary.is-dirty {
+.chess-repertoire .cs-icon-button--primary.is-dirty {
 	position: relative;
 }
 
-.chess-study .cs-icon-button--primary.is-dirty::after {
+.chess-repertoire .cs-icon-button--primary.is-dirty::after {
 	content: '';
 	position: absolute;
 	top: 3px;
@@ -836,8 +836,8 @@
  * ------------------------------------------------------------------ */
 
 /* Takes the place of the notes panel for the length of a session, so the
-   study's own explanation cannot answer the question being asked. */
-.chess-study .cs-trainer {
+   repertoire's own explanation cannot answer the question being asked. */
+.chess-repertoire .cs-trainer {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
@@ -848,22 +848,22 @@
 	background-color: var(--background-primary);
 }
 
-.chess-study .cs-trainer.is-wrong {
+.chess-repertoire .cs-trainer.is-wrong {
 	border-left-color: var(--text-error);
 }
 
-.chess-study .cs-trainer.is-complete {
+.chess-repertoire .cs-trainer.is-complete {
 	border-left-color: var(--text-success);
 }
 
-.chess-study .cs-trainer-row {
+.chess-repertoire .cs-trainer-row {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
 }
 
-.chess-study .cs-trainer-chip {
+.chess-repertoire .cs-trainer-chip {
 	padding: 1px 6px;
 	border-radius: 4px;
 	background-color: var(--background-modifier-hover);
@@ -874,19 +874,19 @@
 	letter-spacing: 0.04em;
 }
 
-.chess-study .cs-trainer-status {
+.chess-repertoire .cs-trainer-status {
 	flex: 1;
 	min-width: 0;
 	color: var(--text-normal);
 	font-size: 14px;
 }
 
-.chess-study .cs-trainer.is-wrong .cs-trainer-status {
+.chess-repertoire .cs-trainer.is-wrong .cs-trainer-status {
 	color: var(--text-error);
 }
 
 /* Wrong moves so far, kept quiet: it is a tally, not a verdict. */
-.chess-study .cs-trainer-errors {
+.chess-repertoire .cs-trainer-errors {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -900,7 +900,7 @@
 	font-weight: 700;
 }
 
-.chess-study .cs-trainer-button {
+.chess-repertoire .cs-trainer-button {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
@@ -915,24 +915,24 @@
 	cursor: pointer;
 }
 
-.chess-study .cs-trainer-button:hover:not(:disabled) {
+.chess-repertoire .cs-trainer-button:hover:not(:disabled) {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.chess-study .cs-trainer-button:disabled {
+.chess-repertoire .cs-trainer-button:disabled {
 	opacity: 0.4;
 	cursor: default;
 }
 
-.chess-study .cs-trainer-hint-count {
+.chess-repertoire .cs-trainer-hint-count {
 	color: var(--text-faint);
 	font-size: 13px;
 	font-variant-numeric: tabular-nums;
 }
 
-/* The first hint: whatever the study already says about this move. */
-.chess-study .cs-trainer-hint {
+/* The first hint: whatever the repertoire already says about this move. */
+.chess-repertoire .cs-trainer-hint {
 	padding: 6px 8px;
 	border-radius: 6px;
 	background-color: var(--background-secondary);
@@ -941,11 +941,11 @@
 }
 
 /* The report left behind by a finished session. */
-.chess-study .cs-trainer.is-clean {
+.chess-repertoire .cs-trainer.is-clean {
 	border-left-color: var(--text-success);
 }
 
-.chess-study .cs-trainer-clean {
+.chess-repertoire .cs-trainer-clean {
 	display: flex;
 	align-items: center;
 	gap: 5px;
@@ -953,7 +953,7 @@
 	font-size: 14px;
 }
 
-.chess-study .cs-trainer-mistakes {
+.chess-repertoire .cs-trainer-mistakes {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
@@ -962,7 +962,7 @@
 	list-style: none;
 }
 
-.chess-study .cs-trainer-mistake {
+.chess-repertoire .cs-trainer-mistake {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
@@ -973,35 +973,35 @@
 	font-size: 14px;
 }
 
-.chess-study .cs-trainer-mistake-label {
+.chess-repertoire .cs-trainer-mistake-label {
 	min-width: 30px;
 	color: var(--text-faint);
 	font-weight: 600;
 	font-variant-numeric: tabular-nums;
 }
 
-.chess-study .cs-trainer-mistake-played {
+.chess-repertoire .cs-trainer-mistake-played {
 	color: var(--text-error);
 	font-weight: 600;
 	text-decoration: line-through;
 }
 
-.chess-study .cs-trainer-mistake-count {
+.chess-repertoire .cs-trainer-mistake-count {
 	color: var(--text-faint);
 	font-size: 13px;
 }
 
-.chess-study .cs-trainer-mistake-arrow {
+.chess-repertoire .cs-trainer-mistake-arrow {
 	color: var(--text-faint);
 }
 
-.chess-study .cs-trainer-mistake-expected {
+.chess-repertoire .cs-trainer-mistake-expected {
 	color: var(--text-success);
 	font-weight: 600;
 }
 
 /* ------------------------------------------------------------------ *
- * Study map
+ * Repertoire map
  * ------------------------------------------------------------------ */
 
 /*
@@ -1238,7 +1238,7 @@
 
 /*
  * The label on a move, carrying its own colour the way the move list's does.
- * Its own rule rather than the widget's, which is scoped to `.chess-study` and
+ * Its own rule rather than the widget's, which is scoped to `.chess-repertoire` and
  * so never reaches the map's modal.
  */
 .cs-map-classification {
@@ -1294,7 +1294,7 @@
  * A board drawn from the FEN the segment ends on: a grid of squares with the
  * real piece sprites dropped into them. Not a live board - a map can hold a
  * hundred of these, and a hundred board instances is a different feature - but
- * the same pieces and the same theme as the study it came from.
+ * the same pieces and the same theme as the repertoire it came from.
  */
 /*
  * A `chessPosition` block: a board and nothing else. Sized to the width it is

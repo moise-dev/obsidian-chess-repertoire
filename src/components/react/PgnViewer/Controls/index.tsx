@@ -16,7 +16,7 @@ export interface ControlActions {
 	/** Unsaved changes exist. Nothing is lost - autosave is debounced - but the
 	 *  save button shows it so the state is never invisible. */
 	isDirty: boolean;
-	/** A training session is running; the study is read-only while it is. */
+	/** A training session is running; the repertoire is read-only while it is. */
 	isTraining: boolean;
 	onTrainButtonClick: () => void;
 	onMapButtonClick: () => void;
@@ -82,8 +82,8 @@ export const Controls = (props: ControlActions) => {
 			</button>
 			<button
 				className={`cs-icon-button${props.isTraining ? ' is-active' : ''}`}
-				title={props.isTraining ? 'Stop training' : 'Train this study'}
-				aria-label="Train this study from its first move"
+				title={props.isTraining ? 'Stop training' : 'Train this repertoire'}
+				aria-label="Train this repertoire from its first move"
 				aria-pressed={props.isTraining}
 				onClick={() => props.onTrainButtonClick()}
 			>
@@ -91,8 +91,8 @@ export const Controls = (props: ControlActions) => {
 			</button>
 			<button
 				className="cs-icon-button"
-				title="Open the study map"
-				aria-label="Open the study map"
+				title="Open the repertoire map"
+				aria-label="Open the repertoire map"
 				onClick={() => props.onMapButtonClick()}
 			>
 				<Network size={22} />
@@ -108,8 +108,8 @@ export const Controls = (props: ControlActions) => {
 			</button>
 			<button
 				className="cs-icon-button"
-				title="Export study"
-				aria-label="Export the study as PGN or FEN"
+				title="Export repertoire"
+				aria-label="Export the repertoire as PGN or FEN"
 				onClick={() => props.onExportButtonClick()}
 			>
 				<Download size={22} />
@@ -118,8 +118,10 @@ export const Controls = (props: ControlActions) => {
 				className={`cs-icon-button cs-icon-button--primary${
 					props.isDirty ? ' is-dirty' : ''
 				}`}
-				title={props.isDirty ? 'Save study (unsaved changes)' : 'Save study'}
-				aria-label="Save the study"
+				title={
+					props.isDirty ? 'Save repertoire (unsaved changes)' : 'Save repertoire'
+				}
+				aria-label="Save the repertoire"
 				onClick={() => props.onSaveButtonClick()}
 			>
 				<Save size={22} />

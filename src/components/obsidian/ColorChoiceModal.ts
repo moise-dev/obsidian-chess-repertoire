@@ -10,7 +10,7 @@ export class ColorChoiceModal extends Modal {
 		app: App,
 		private options: {
 			body: string;
-			/** The study's own colour, if it has said. Offered as the default. */
+			/** The repertoire's own colour, if it has said. Offered as the default. */
 			current?: TrainerColor;
 			onChoose: (color: TrainerColor) => void;
 		}
@@ -29,8 +29,8 @@ export class ColorChoiceModal extends Modal {
 			this.options.onChoose(color);
 		};
 
-		// The study's own colour is the call to action; with nothing recorded the
-		// emphasis falls on White, as it did before studies had a colour.
+		// The repertoire's own colour is the call to action; with nothing recorded the
+		// emphasis falls on White, as it did before repertoires had a colour.
 		const preferred = this.options.current ?? 'white';
 
 		new Setting(contentEl)
