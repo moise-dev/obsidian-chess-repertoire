@@ -340,9 +340,10 @@ const moveToken = (move: ChessRepertoireMove): string => {
  * the same ply as that move rather than one after it.
  *
  * `beforeFirst` holds the variations that belong to the first move, which has no
- * move before it to carry them. Only the mainline has any: they are the tree's
- * `rootVariants`, and PGN writes them in the same place it writes every other
- * alternative - straight after the move they replace.
+ * move before it to carry them. At the top level they are the tree's
+ * `rootVariants`; further down they are the alternatives handed on by the tail
+ * below. Either way PGN writes them where it writes every other alternative -
+ * straight after the move they replace.
  */
 const serializeLine = (
 	moves: ChessRepertoireMove[],
@@ -381,6 +382,30 @@ const serializeLine = (
 			needsNumber = true;
 		}
 	});
+
+	// Variations on the *last* move are alternatives to a move that is not there:
+	// nothing follows it in this line, so they are what follows it. A merge makes
+	// these whenever one repertoire carries on from where another stopped.
+	//
+	// PGN has room for one continuation, so the first carries the line on and the
+	// rest become alternatives to its opening move. That is the same tree read
+	// back - a variation on a move is an alternative to the move after it, which
+	// is exactly what they now are.
+	const last = moves[moves.length - 1];
+	const [continuation, ...alternatives] = last?.variants ?? [];
+
+	if (continuation) {
+		tokens.push(
+			serializeLine(
+				continuation.moves,
+				plyOffset + moves.length,
+				firstPlayer,
+				initialMoveNumber,
+				needsNumber,
+				alternatives
+			)
+		);
+	}
 
 	return tokens.join(' ');
 };

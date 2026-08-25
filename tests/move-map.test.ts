@@ -9,10 +9,9 @@ import {
 	findTranspositions,
 	flattenSegments,
 	layoutSegments,
-	positionKey,
 	toScoresheet,
 } from '../src/lib/move-map';
-import { MoveTree } from '../src/lib/move-tree';
+import { MoveTree, positionKey } from '../src/lib/move-tree';
 import { ChessRepertoireMove } from '../src/lib/storage';
 
 const mv = (

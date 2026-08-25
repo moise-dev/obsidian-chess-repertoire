@@ -1,4 +1,4 @@
-import { MoveTree, getReplies } from 'src/lib/move-tree';
+import { MoveTree, getReplies, positionKey } from 'src/lib/move-tree';
 import { ChessRepertoireMove } from 'src/lib/storage';
 
 /**
@@ -188,17 +188,6 @@ export const layoutSegments = (
 		height: Math.max(...nodes.map((node) => node.y + node.height)),
 	};
 };
-
-/**
- * A position, stripped of the parts that do not change what is on the board.
- *
- * The first four FEN fields: placement, side to move, castling rights and the
- * en passant square. The clocks are left off, since two lines reaching the same
- * position by different move orders will disagree about them and still be the
- * same position.
- */
-export const positionKey = (fen: string): string =>
-	fen.split(' ').slice(0, 4).join(' ');
 
 /** The other place a position turns up. */
 export interface Transposition {

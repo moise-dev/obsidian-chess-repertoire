@@ -1,5 +1,11 @@
 import { hasComment } from 'src/lib/comments';
-import { MoveTree, ROOT_MOVE_ID, getReplies } from 'src/lib/move-tree';
+import {
+	MoveTree,
+	ROOT_MOVE_ID,
+	flattenTree,
+	getReplies,
+	positionKey,
+} from 'src/lib/move-tree';
 import {
 	ChessRepertoireDrillData,
 	ChessRepertoireFileData,
@@ -10,7 +16,10 @@ import {
 
 export interface MergeResult {
 	repertoire: ChessRepertoireFileData;
-	/** Repertoires left out because they start from another position. */
+	/**
+	 * Repertoires left out because the position they open from is nowhere in the
+	 * merged tree, so there is no place to join them on.
+	 */
 	skipped: number;
 }
 
@@ -120,12 +129,44 @@ const mergeTitles = (repertoires: ChessRepertoireFileData[]): string | null => {
 };
 
 /**
- * One repertoire holding every line of the repertoires given, in the order given.
+ * Where in `tree` a repertoire opening from `fen` joins on: the move that reaches
+ * that position, `null` for the tree's own starting position, or `undefined` if
+ * the tree never gets there.
+ *
+ * By `positionKey` rather than the whole FEN, so a line that arrives by another
+ * move order still counts - the clocks would disagree and the position would not.
+ * The first move reaching it wins; a position the tree reaches twice is a
+ * transposition, and either arrival is the same position to continue from.
+ */
+const findJoin = (
+	tree: MoveTree,
+	rootFEN: string,
+	fen: string
+): ChessRepertoireMove | null | undefined => {
+	const key = positionKey(fen);
+
+	if (key === positionKey(rootFEN)) return null;
+
+	return flattenTree(tree).find(
+		(move) => move.after && positionKey(move.after) === key
+	);
+};
+
+/**
+ * One repertoire holding every line of the repertoires given.
  *
  * The first repertoire is the trunk: its mainline stays the mainline, and everything
- * the others add arrives as variations off it. Only repertoires starting from the
- * same position take part - a repertoire opening from another FEN is a different
- * repertoire, not another view of this one.
+ * the others add arrives as variations off it. A repertoire joins wherever the
+ * position it opens from turns up in the trunk - at the start when they share a
+ * root, and otherwise at the move that reaches it. That is what lets a note hold
+ * an opening in instalments, each one carrying on from where the last left off,
+ * and still merge into a single tree.
+ *
+ * Joining is repeated while anything attaches, so the instalments may be given in
+ * any order: one that continues from a position another has not contributed yet
+ * simply waits for the pass after it arrives. What is left when nothing more
+ * attaches opens from a position the tree never reaches, and is counted as
+ * skipped.
  *
  * Move ids are carried across untouched. They are nanoids, so two repertoires
  * cannot collide, and keeping them is what lets a drill history survive the
@@ -136,9 +177,6 @@ export const mergeRepertoires = (
 	version: string
 ): MergeResult => {
 	const [first, ...rest] = repertoires;
-	const mergeable = rest.filter(
-		(repertoire) => repertoire.rootFEN === first.rootFEN
-	);
 	const trunk: MoveTree = {
 		moves: first.moves.map(cloneMove),
 		rootVariants: first.rootVariants.map((variant) => ({
@@ -147,20 +185,41 @@ export const mergeRepertoires = (
 		})),
 	};
 
-	for (const repertoire of mergeable) graft(trunk, repertoire, null, null);
+	const merged = [first];
+	let pending = rest;
+
+	for (let joinedAny = true; joinedAny && pending.length; ) {
+		const waiting: ChessRepertoireFileData[] = [];
+
+		joinedAny = false;
+
+		for (const repertoire of pending) {
+			const join = findJoin(trunk, first.rootFEN, repertoire.rootFEN);
+
+			if (join === undefined) {
+				waiting.push(repertoire);
+				continue;
+			}
+
+			graft(trunk, repertoire, join, null);
+			merged.push(repertoire);
+			joinedAny = true;
+		}
+
+		pending = waiting;
+	}
 
 	return {
 		repertoire: {
 			version,
-			header: { title: mergeTitles([first, ...mergeable]) },
+			header: { title: mergeTitles(merged) },
 			moves: trunk.moves,
 			rootVariants: trunk.rootVariants,
 			rootFEN: first.rootFEN,
-			playerColor: [first, ...mergeable].find(
-				(repertoire) => repertoire.playerColor
-			)?.playerColor,
+			playerColor: merged.find((repertoire) => repertoire.playerColor)
+				?.playerColor,
 		},
-		skipped: rest.length - mergeable.length,
+		skipped: pending.length,
 	};
 };
 

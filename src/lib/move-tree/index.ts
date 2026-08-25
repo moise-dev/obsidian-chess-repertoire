@@ -282,6 +282,17 @@ export const removeMovesFromPath = (tree: MoveTree, path: MovePath): number => {
 	return countMoves(removed);
 };
 
+/**
+ * A position, stripped of the parts that do not change what is on the board.
+ *
+ * The first four FEN fields: placement, side to move, castling rights and the
+ * en passant square. The clocks are left off, since two lines reaching the same
+ * position by different move orders will disagree about them and still be the
+ * same position.
+ */
+export const positionKey = (fen: string): string =>
+	fen.split(' ').slice(0, 4).join(' ');
+
 /** Move number of a move at `ply`, e.g. `4` for the 7th half-move of a game. */
 export const moveNumberAtPly = (
 	ply: number,

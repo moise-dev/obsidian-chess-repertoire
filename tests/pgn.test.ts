@@ -10,6 +10,9 @@ import { ChessRepertoireMove } from '../src/lib/storage';
 
 const ROOT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+/** The position 1. e4 e5 reaches, for building what a merge grafts onto it. */
+const AFTER_E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
+
 const ids = () => {
 	let n = 0;
 	return () => `id-${n++}`;
@@ -365,6 +368,59 @@ describe('exportPgn', () => {
 		assert.deepEqual(
 			reparsed.rootVariants.map((variant) => sans(variant.moves)),
 			original.rootVariants.map((variant) => sans(variant.moves))
+		);
+	});
+
+	/**
+	 * A variation on the last move of a line is an alternative to a move that is
+	 * not there, so it is what follows the line rather than a branch off it. A
+	 * merge makes these whenever one repertoire carries on from where another
+	 * stopped - and they used to vanish on export, taking the whole continuation
+	 * with them.
+	 */
+	it('writes the line on into a variation hanging off its last move', () => {
+		const parsed = parse('1. e4 e5');
+		// What a merge grafting "2. Nf3 Nc6" onto e5 produces: a second repertoire
+		// opening from the position e5 reaches.
+		const tail = parse('2. Nf3 Nc6', AFTER_E5).moves;
+
+		parsed.moves[1].variants.push({
+			variantId: 'v',
+			parentMoveId: parsed.moves[1].moveId,
+			moves: tail,
+		});
+
+		assert.equal(
+			exportPgn(parsed, ROOT_FEN, ROOT_FEN, null),
+			'\n1. e4 e5 2. Nf3 Nc6 *'
+		);
+	});
+
+	it('makes the rest of them alternatives to the move that carries on', () => {
+		const parsed = parse('1. e4 e5');
+		const push = (san: string) =>
+			parsed.moves[1].variants.push({
+				variantId: `v-${san}`,
+				parentMoveId: parsed.moves[1].moveId,
+				moves: parse(`2. ${san}`, AFTER_E5).moves,
+			});
+
+		push('Nf3');
+		push('Bc4');
+		push('d4');
+
+		// PGN has room for one continuation, so the first takes the line on and
+		// the others become alternatives to it - the same tree when read back.
+		const pgn = exportPgn(parsed, ROOT_FEN, ROOT_FEN, null);
+
+		assert.equal(pgn, '\n1. e4 e5 2. Nf3 (2. Bc4) (2. d4) *');
+
+		const back = parse(pgn);
+
+		assert.equal(sans(back.moves), 'e4 e5 Nf3');
+		assert.deepEqual(
+			back.moves[1].variants.map((variant) => sans(variant.moves)),
+			['Bc4', 'd4']
 		);
 	});
 

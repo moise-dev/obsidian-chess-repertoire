@@ -24,6 +24,8 @@ const mv = (
 		classification?: string;
 		excluded?: boolean;
 		variants?: unknown[];
+		/** The position it reaches, which is where a continuation joins on. */
+		after?: string;
 	} = {}
 ): ChessRepertoireMove =>
 	({
@@ -31,6 +33,7 @@ const mv = (
 		// Real repertoires use nanoids, so the same move in two repertoires has two ids.
 		moveId: `${san}-${seq++}`,
 		color: 'w',
+		after: options.after ?? `after-${san}`,
 		variants: options.variants ?? [],
 		shapes: [],
 		comment: note(options.comment),
@@ -230,6 +233,107 @@ describe('mergeRepertoires', () => {
 		merged.repertoire.moves[0].variants.push(va([mv('c5')]));
 
 		assert.equal(source.moves[0].variants.length, 0);
+	});
+
+	/**
+	 * A note often holds an opening in instalments: a base line, then a repertoire
+	 * opening from the position it ends in, and so on. Each one starts from a FEN
+	 * the one before it reaches, so the merge has to join them end to end rather
+	 * than demand they all share a root.
+	 */
+	describe('a repertoire that continues from another', () => {
+		const AFTER_H6 = 'after-h6-position w KQkq - 0 5';
+		const AFTER_NXE5 = 'after-Nxe5-position b KQ - 0 8';
+
+		const base = () => repertoire([mv('c3'), mv('h6', { after: AFTER_H6 })]);
+
+		const middle = () =>
+			repertoire([mv('b4'), mv('Nxe5', { after: AFTER_NXE5 })], {
+				rootFEN: AFTER_H6,
+			});
+
+		const tail = () =>
+			repertoire([mv('Kf8'), mv('Ng6')], { rootFEN: AFTER_NXE5 });
+
+		it('joins it onto the move that reaches the position it opens from', () => {
+			const merged = mergeRepertoires([base(), middle()], '0.0.7');
+
+			assert.equal(merged.skipped, 0);
+			// b4 follows h6, so it hangs off h6 - the move that reaches its position.
+			assert.deepEqual(outline(merged.repertoire.moves), [
+				'c3',
+				'h6',
+				'  b4',
+				'  Nxe5',
+			]);
+		});
+
+		it('chains three of them end to end', () => {
+			const merged = mergeRepertoires([base(), middle(), tail()], '0.0.7');
+
+			assert.equal(merged.skipped, 0);
+			assert.deepEqual(outline(merged.repertoire.moves), [
+				'c3',
+				'h6',
+				'  b4',
+				'  Nxe5',
+				'    Kf8',
+				'    Ng6',
+			]);
+		});
+
+		it('joins them whatever order they are given in', () => {
+			// The tail opens from a position only the middle brings into the tree,
+			// so it has to wait for the pass after that one attaches.
+			const merged = mergeRepertoires([base(), tail(), middle()], '0.0.7');
+
+			assert.equal(merged.skipped, 0);
+			assert.deepEqual(outline(merged.repertoire.moves), [
+				'c3',
+				'h6',
+				'  b4',
+				'  Nxe5',
+				'    Kf8',
+				'    Ng6',
+			]);
+		});
+
+		it('ignores the clocks when matching the position', () => {
+			// The same position reached by another move order disagrees about the
+			// halfmove and fullmove counters, and is still the same position.
+			const merged = mergeRepertoires(
+				[base(), repertoire([mv('b4')], { rootFEN: `${AFTER_H6} 41 99` })],
+				'0.0.7'
+			);
+
+			assert.equal(merged.skipped, 0);
+			assert.deepEqual(outline(merged.repertoire.moves), ['c3', 'h6', '  b4']);
+		});
+
+		it('still counts one going nowhere in the tree as skipped', () => {
+			const merged = mergeRepertoires(
+				[base(), repertoire([mv('Nf3')], { rootFEN: 'nowhere w - - 0 1' })],
+				'0.0.7'
+			);
+
+			assert.equal(merged.skipped, 1);
+			assert.deepEqual(outline(merged.repertoire.moves), ['c3', 'h6']);
+		});
+
+		it('names every repertoire that joined in the title', () => {
+			const merged = mergeRepertoires(
+				[
+					repertoire(base().moves, { header: { title: 'Base' } }),
+					repertoire(middle().moves, {
+						rootFEN: AFTER_H6,
+						header: { title: 'Response' },
+					}),
+				],
+				'0.0.7'
+			);
+
+			assert.equal(merged.repertoire.header.title, 'Base + Response');
+		});
 	});
 
 	it('joins the titles and takes the first colour anyone recorded', () => {
