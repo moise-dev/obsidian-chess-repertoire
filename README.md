@@ -29,7 +29,7 @@ Your own moves must follow the line you wrote down. Your opponent's replies are 
 
 A line you'd rather keep than rehearse can be excluded from drills without deleting it, from any move's right-click menu.
 
-![Training a line](imgs/v2-trainer.png)
+![Training a line](imgs/study-mode-hint.png)
 
 Stuck? Hints escalate one press at a time: your note on the move, then the piece to move, then the arrow to play. Nothing a hint shows, and nothing a session does, ever touches your study - it plays out on a side history that only tracks how you're doing.
 
@@ -37,13 +37,13 @@ You can do as many arrows as you like during a study, they will not be saved in 
 
 When the line runs out, you get a report: moves played, mistakes made, and where each mistake was.
 
-![Session report](imgs/v2-trainer-report.png)
+![Session report](imgs/study-mode-report.png)
 
 ## The map
 
 The network button opens the study as a diagram - a trunk, and a card at every point your opponent gets to choose. It's the shape of a repertoire made visible, instead of a move list you have to scroll to make sense of.
 
-![The study map](imgs/v2-map.png)
+![The study map](imgs/position-map.png)
 
 Each card shows its moves, their labels, and a coloured edge for how well the line is holding up - drilled clean, shaky, never drilled, excluded, or missing a reply entirely. That last one is the useful one: it's a hole in the repertoire, sitting right next to lines that run fifteen moves deep.
 
@@ -53,9 +53,11 @@ Drag to pan, scroll to zoom, click a move to jump the board there and close the 
 
 The map can also be exported as an Obsidian **canvas**: the same cards, laid out the same way, that you can rearrange and scribble over freely.
 
-![A map exported as a canvas](imgs/v2-map-canvas.png)
+![A map exported as a canvas](imgs/map-to-canvas.png)
 
 ## Minor features
+
+![The widget, board and move list together](imgs/general-view.png)
 
 - **Variations at any depth**, promoted, reordered, or deleted from a right-click menu.
 - **Move classifications** - seven chess.com-style labels, set with `1`-`7`, shown as a badge on the move and the board.
@@ -67,6 +69,8 @@ The map can also be exported as an Obsidian **canvas**: the same cards, laid out
 - **A board with no study behind it**, for showing a bare position in a note.
 - **Autosave**, with a visible indicator whenever there's something unsaved.
 - **A resizable, theme-aware widget** that fills the note's width.
+
+![Exporting a study as PGN or FEN](imgs/game-export.png)
 
 ## Installation
 
@@ -83,11 +87,7 @@ Chess Study v2 is **not in the community plugin store** yet, so install it by ha
 
 ## Usage
 
-Put your cursor where you want the board and run **Chess Study v2: Insert FEN/PGN-Editor at cursor position**. A modal lets you paste a PGN, paste a FEN, or start a fresh game.
-
-![Insert modal](imgs/chess-study-modal.png)
-
-![Code block](imgs/chess-study-codeblock.png)
+Put your cursor where you want the board and run **Chess Study v2: Insert FEN/PGN-Editor at cursor position** (Use the Command palette (Ctrl+P)) A modal lets you paste a PGN, paste a FEN, or start a fresh game.
 
 To combine several studies in the same note into one, run **Chess Study v2: Merge every chess study in this note into one** with your cursor where you want the result. The first study becomes the trunk; the others' lines are added as variations off it, and their notes fill in gaps rather than overwrite anything. This is done because I like to have the mainline first and the subvariations separated, but I also like to have a single board with all the variations together. 
 
