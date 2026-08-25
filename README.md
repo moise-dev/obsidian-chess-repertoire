@@ -72,6 +72,7 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 
 - **Variations at any depth**, promoted, reordered, or deleted from a right-click menu - including alternatives to the repertoire's very first move, which matters most for a repertoire opened from a mid-game position, where that move is a real choice rather than an opening.
 - **Move classifications** - seven chess.com-style labels, set with `1`-`7`, shown as a badge on the move and the board.
+- **Drawn positions marked with a ½** - stalemate, insufficient material, the fifty-move rule and repetition, worked out from the board rather than set by hand, so nothing has to be remembered and nothing goes stale.
 - **Board flip** from the control strip.
 - **Notes and drawings** on any move - Markdown notes plus arrows and circles on the board.
 - **Annotations visible from the move list** - a dot for notes, a dot for arrows, without stepping through the game to find them. The orange dot indicate the presence of a comment, a green dot represents the presence of an annotation.

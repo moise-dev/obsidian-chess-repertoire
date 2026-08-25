@@ -176,12 +176,26 @@ describe('anchorMove', () => {
 		assert.equal(anchorMove(root)?.san, 'b');
 	});
 
-	it('shows a branch the move that opened it', () => {
+	it('shows every card where its own run of moves arrives', () => {
 		const root = buildSegments(tree())!;
 
+		// The last move, not the first: a card that forks shows the position its
+		// children branch from, and a card that ends a line shows how it ends.
 		assert.deepEqual(
 			root.children.map((child) => anchorMove(child)?.san),
-			['c', 'x1', 'z1']
+			['d', 'x1', 'z1']
+		);
+	});
+
+	it('shows a fork the position its children branch from', () => {
+		const root = buildSegments(tree())!;
+		const x1 = root.children[1];
+
+		// x1's children are x2 and y1 y2, both of which follow x1.
+		assert.equal(anchorMove(x1)?.san, 'x1');
+		assert.deepEqual(
+			x1.children.map((child) => anchorMove(child)?.san),
+			['x2', 'y2']
 		);
 	});
 

@@ -36,6 +36,8 @@ interface MoveListContext {
 	/** Moves no drill can reach: the flagged ones and the lines under them. */
 	excludedMoveIds: Set<string>;
 	onSetExcluded: (moveId: string, excluded: boolean) => void;
+	/** Moves whose position is drawn, worked out from the board rather than set. */
+	drawnMoveIds: Set<string>;
 }
 
 interface VariationsProps extends MoveListContext {
@@ -100,6 +102,7 @@ const VariationMoves = ({
 				shapes={move.shapes}
 				classification={move.classification}
 				excluded={move.excluded}
+				isDraw={context.drawnMoveIds.has(move.moveId)}
 				isUndrilled={context.excludedMoveIds.has(move.moveId)}
 				onSetExcluded={(excluded) => context.onSetExcluded(move.moveId, excluded)}
 				moveIndicator={moveIndicator}
@@ -227,6 +230,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onDeleteMove,
 		excludedMoveIds,
 		onSetExcluded,
+		drawnMoveIds,
 		...controlActions
 	} = props;
 
@@ -242,6 +246,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		onDeleteMove,
 		excludedMoveIds,
 		onSetExcluded,
+		drawnMoveIds,
 	};
 
 	// Pair the moves up by move number, carrying each one's index along so the
@@ -307,6 +312,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 												shapes={entry.move.shapes}
 												classification={entry.move.classification}
 												excluded={entry.move.excluded}
+												isDraw={drawnMoveIds.has(entry.move.moveId)}
 												isUndrilled={excludedMoveIds.has(entry.move.moveId)}
 												onSetExcluded={(excluded) =>
 													onSetExcluded(entry.move.moveId, excluded)

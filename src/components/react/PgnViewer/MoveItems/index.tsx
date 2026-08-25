@@ -5,6 +5,7 @@ import * as React from 'react';
 import {
 	CLASSIFICATION_ORDER,
 	CLASSIFICATIONS,
+	DRAW_MARK,
 	MoveClassification,
 	readClassification,
 } from 'src/lib/classification';
@@ -46,6 +47,8 @@ interface MoveAnnotations {
 	classification?: MoveClassification | null;
 	/** The flag sits on this move, rather than on one earlier in the line. */
 	excluded?: boolean;
+	/** The position it reaches is drawn. Read from the board, never set. */
+	isDraw?: boolean;
 }
 
 /**
@@ -57,6 +60,7 @@ const Markers = ({
 	shapes,
 	classification,
 	excluded,
+	isDraw,
 }: MoveAnnotations) => {
 	// Guarded: a hand-edited file could name a label this build does not have.
 	const known = readClassification(classification);
@@ -74,6 +78,17 @@ const Markers = ({
 					title={CLASSIFICATIONS[known].label}
 				>
 					{CLASSIFICATIONS[known].glyph}
+				</span>
+			)}
+			{/* After the label rather than instead of it: a move can be a blunder
+			    and still be the one that draws. */}
+			{isDraw && (
+				<span
+					className="cs-move-classification"
+					style={{ '--cs-classification': DRAW_MARK.color } as React.CSSProperties}
+					title={DRAW_MARK.label}
+				>
+					{DRAW_MARK.glyph}
 				</span>
 			)}
 			{hasComment(comment) && (
@@ -262,6 +277,7 @@ export const MoveItem = ({
 	shapes,
 	classification,
 	excluded,
+	isDraw,
 	isUndrilled,
 	onMoveItemClick,
 	onClassify,
@@ -297,6 +313,7 @@ export const MoveItem = ({
 				shapes={shapes}
 				classification={classification}
 				excluded={excluded}
+				isDraw={isDraw}
 			/>
 		</p>
 	);
@@ -315,6 +332,7 @@ export const VariantMoveItem = ({
 	shapes,
 	classification,
 	excluded,
+	isDraw,
 	isUndrilled,
 	onMoveItemClick,
 	onClassify,
@@ -355,6 +373,7 @@ export const VariantMoveItem = ({
 				shapes={shapes}
 				classification={classification}
 				excluded={excluded}
+				isDraw={isDraw}
 			/>
 		</div>
 	);

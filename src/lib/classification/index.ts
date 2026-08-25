@@ -83,6 +83,21 @@ export const CLASSIFICATION_ORDER = Object.keys(
 	CLASSIFICATIONS
 ) as MoveClassification[];
 
+/**
+ * The mark on a move that leaves the game drawn.
+ *
+ * Not a classification, so it is not in the table above: nobody sets it and
+ * nobody can clear it - the position says so - which is why it has no shortcut
+ * and no NAG. It only borrows the same visual parts, so it reads as a sibling of
+ * the labels it sits beside. The colour is deliberately neutral: a draw is the
+ * one verdict that favours neither side.
+ */
+export const DRAW_MARK = {
+	label: 'This position is a draw',
+	glyph: '½',
+	color: '#8f9bb3',
+};
+
 const BY_SHORTCUT = new Map(
 	CLASSIFICATION_ORDER.map((key) => [CLASSIFICATIONS[key].shortcut, key])
 );
@@ -106,7 +121,7 @@ export const readClassification = (value: unknown): MoveClassification | null =>
 	isClassification(value) ? value : null;
 
 /**
- * Badge drawn on the destination square of a classified move.
+ * Badge drawn on the destination square of the move it belongs to.
  *
  * Chessground hands custom SVGs a 100x100 coordinate system anchored at the
  * top-left of the square. The badge is kept fully inside that box rather than
@@ -114,11 +129,7 @@ export const readClassification = (value: unknown): MoveClassification | null =>
  * overflow to keep its rounded corners, so an overhanging badge is sliced in
  * half on the h-file and the 8th rank.
  */
-export const classificationBadgeSvg = (
-	classification: MoveClassification
-): string => {
-	const { glyph, color } = CLASSIFICATIONS[classification];
-
+export const badgeSvg = (glyph: string, color: string): string => {
 	// Two-character glyphs need to be set smaller to stay inside the circle.
 	const fontSize = glyph.length > 1 ? 26 : 32;
 

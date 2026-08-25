@@ -240,17 +240,21 @@ export const findTranspositions = (
 };
 
 /**
- * The move whose position a card shows.
+ * The move whose position a card shows: the last one on it, so every card shows
+ * where its run of moves arrives.
  *
- * The trunk shows where it hands over: the position the first choice is made
- * in. Every other card shows the move that brought it into being, because a
- * branch card answers "what if they play this?" and that position is the
- * answer - where the line ends up is what the moves underneath are for.
+ * A card that forks therefore shows the position its children branch from, and
+ * a card that ends a line shows how the line ends - the mate, the drawn
+ * position, the endgame reached. Showing the *first* move instead left the
+ * branches off one position looking like one another, since they differ from it
+ * and from each other by a single move, while the card they hang off sat a move
+ * behind the fork it was illustrating.
+ *
+ * Null only for the starting position's own card, which has no moves; the map
+ * falls back to the repertoire's root FEN there.
  */
 export const anchorMove = (segment: MapSegment): ChessRepertoireMove | null =>
-	(segment.depth === 0
-		? segment.moves[segment.moves.length - 1]
-		: segment.moves[0]) ?? null;
+	segment.moves[segment.moves.length - 1] ?? null;
 
 /** One line of a scoresheet: a move number and the two moves under it. */
 export interface ScoresheetRow {

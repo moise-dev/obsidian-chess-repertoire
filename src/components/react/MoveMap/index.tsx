@@ -11,7 +11,12 @@ import {
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { MiniBoard } from 'src/components/react/MiniBoard';
 import { CanvasCard, JsonCanvas, toCanvas } from 'src/lib/canvas';
-import { CLASSIFICATIONS, readClassification } from 'src/lib/classification';
+import { collectDrawnMoveIds } from 'src/lib/chess-logic';
+import {
+	CLASSIFICATIONS,
+	DRAW_MARK,
+	readClassification,
+} from 'src/lib/classification';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MapSegment,
@@ -104,36 +109,55 @@ const stateClass = ({ isExcluded, isHole, attempts, misses }: SegmentState) => {
  * A move and the label it carries, as one string. These glyphs are plain enough
  * to survive a canvas card, unlike the chess pieces.
  */
-const labelled = (move: ChessRepertoireMove | null): string | null => {
+const labelled = (
+	move: ChessRepertoireMove | null,
+	drawn: Set<string>
+): string | null => {
 	if (!move) return null;
 
 	const known = readClassification(move.classification);
+	const marks = [
+		known ? CLASSIFICATIONS[known].glyph : null,
+		drawn.has(move.moveId) ? DRAW_MARK.glyph : null,
+	].filter(Boolean);
 
-	return known ? `${move.san} ${CLASSIFICATIONS[known].glyph}` : move.san;
+	return marks.length ? `${move.san} ${marks.join(' ')}` : move.san;
 };
 
-/** The label on a move, in the colour it is drawn in everywhere else. */
-const Classification = ({
-	classification,
+/** One mark on a move, in the colour it is drawn in everywhere else. */
+const Mark = ({
+	glyph,
+	color,
+	label,
 }: {
-	classification: ChessRepertoireMove['classification'];
-}) => {
-	const known = readClassification(classification);
+	glyph: string;
+	color: string;
+	label: string;
+}) => (
+	<span
+		className="cs-map-classification"
+		style={{ '--cs-classification': color } as React.CSSProperties}
+		title={label}
+	>
+		{glyph}
+	</span>
+);
 
-	if (!known) return null;
+/** What a move carries: the label it was given, and whether it draws. */
+const MoveMarks = ({
+	move,
+	isDraw,
+}: {
+	move: ChessRepertoireMove;
+	isDraw: boolean;
+}) => {
+	const known = readClassification(move.classification);
 
 	return (
-		<span
-			className="cs-map-classification"
-			style={
-				{
-					'--cs-classification': CLASSIFICATIONS[known].color,
-				} as React.CSSProperties
-			}
-			title={CLASSIFICATIONS[known].label}
-		>
-			{CLASSIFICATIONS[known].glyph}
-		</span>
+		<>
+			{known && <Mark {...CLASSIFICATIONS[known]} />}
+			{isDraw && <Mark {...DRAW_MARK} />}
+		</>
 	);
 };
 
@@ -245,6 +269,10 @@ export const MoveMap = ({
 
 	const root = useMemo(() => buildSegments(tree), [tree]);
 	const excluded = useMemo(() => collectExcludedMoveIds(tree), [tree]);
+	const drawn = useMemo(
+		() => collectDrawnMoveIds(tree, rootFEN),
+		[rootFEN, tree]
+	);
 	const transpositions = useMemo(
 		() => (root ? findTranspositions(root) : new Map()),
 		[root]
@@ -445,14 +473,15 @@ export const MoveMap = ({
 					: `${rows[0].number}\u2013${rows[rows.length - 1].number}`,
 				rows: rows.map((row) => ({
 					number: row.number,
-					white: labelled(row.white),
-					black: labelled(row.black),
+					white: labelled(row.white, drawn),
+					black: labelled(row.black, drawn),
 				})),
 				state: stateTitle(state),
 				color: STATE_COLORS[stateClass(state)],
 			};
 		});
 	}, [
+		drawn,
 		excluded,
 		firstPlayer,
 		initialMoveNumber,
@@ -561,13 +590,9 @@ export const MoveMap = ({
 					{layout.nodes.map((node) => {
 						const { segment } = node;
 						const state = segmentState(segment, excluded, stats, userColor);
-						// The trunk's board is its last position; every branch shows the
-						// move that opened it.
+						// Every card's board is the position its last move reaches.
 						const anchor = anchorMove(segment);
-						const anchorPly =
-							segment.depth === 0
-								? segment.startPly + segment.moves.length - 1
-								: segment.startPly;
+						const anchorPly = segment.startPly + segment.moves.length - 1;
 						const anchorLabel = positionLabel(
 							anchor,
 							moveNumberAtPly(anchorPly, firstPlayer, initialMoveNumber)
@@ -629,7 +654,7 @@ export const MoveMap = ({
 															onClick={() => onMoveClick(move.moveId)}
 														>
 															{move.san}
-															<Classification classification={move.classification} />
+															<MoveMarks move={move} isDraw={drawn.has(move.moveId)} />
 														</button>
 														<TranspositionMark
 															elsewhere={transpositions.get(move.moveId)}

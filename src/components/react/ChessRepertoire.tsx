@@ -15,9 +15,12 @@ import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChessRepertoirePluginSettings } from 'src/components/obsidian/SettingsTab';
 import { JsonCanvas } from 'src/lib/canvas';
+import { collectDrawnMoveIds } from 'src/lib/chess-logic';
 import {
+	CLASSIFICATIONS,
+	DRAW_MARK,
 	MoveClassification,
-	classificationBadgeSvg,
+	badgeSvg,
 	classificationForKey,
 	readClassification,
 } from 'src/lib/classification';
@@ -777,6 +780,18 @@ export const ChessRepertoire = ({
 	);
 
 	/**
+	 * Every move that leaves the game drawn, so the list and the board can say so.
+	 *
+	 * Worked out here and handed down, the way the excluded ids are: the tree is
+	 * replayed to find them, which is far too much to redo for every move the
+	 * list draws.
+	 */
+	const drawnMoveIds = useMemo(
+		() => collectDrawnMoveIds(gameState.repertoire, gameState.repertoire.rootFEN),
+		[gameState.repertoire]
+	);
+
+	/**
 	 * Writes the map out as a canvas beside the note.
 	 *
 	 * A snapshot rather than a second copy of the repertoire: nothing reads it back,
@@ -940,20 +955,32 @@ export const ChessRepertoire = ({
 	// chess.com-style badge on the destination square of the current move. This
 	// goes to setAutoShapes, never setShapes, so it can never end up in the
 	// user's saved arrows.
+	//
+	// One badge per square: two would be drawn on top of one another. A drawn
+	// position wins, since it is what became of the game rather than an opinion
+	// about the move - and the move list has room to show both.
 	const classificationShapes: DrawShape[] = useMemo(() => {
 		const move = gameState.currentMove;
-		const classification = readClassification(move?.classification);
 
-		if (!move || !classification) return [];
+		if (!move) return [];
+
+		const classification = readClassification(move.classification);
+		const mark = drawnMoveIds.has(move.moveId)
+			? DRAW_MARK
+			: classification
+			? CLASSIFICATIONS[classification]
+			: null;
+
+		if (!mark) return [];
 
 		return [
 			{
 				orig: move.to,
 				brush: 'green',
-				customSvg: classificationBadgeSvg(classification),
+				customSvg: badgeSvg(mark.glyph, mark.color),
 			},
 		];
-	}, [gameState.currentMove]);
+	}, [drawnMoveIds, gameState.currentMove]);
 
 	// Hint marks sit alongside the classification badge rather than replacing
 	// it: the badge belongs to the move already played, never to the one the
@@ -1047,6 +1074,7 @@ export const ChessRepertoire = ({
 					onSetExcluded={(moveId: string, excluded: boolean) =>
 						dispatch({ type: 'SET_EXCLUDED', moveId, excluded })
 					}
+					drawnMoveIds={drawnMoveIds}
 					onUndoButtonClick={() =>
 						dispatch({ type: 'REMOVE_LAST_MOVE_FROM_HISTORY' })
 					}
