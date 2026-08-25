@@ -46,13 +46,15 @@ Hints escalate, one per press, and a stage with nothing to offer is skipped so t
 2. **The piece to move**, marked on the board.
 3. **An arrow** to where it goes.
 
-Hints are drawn as board decorations that are never saved, and they reset as soon as the position moves on. The move list empties for the length of a session, the notes panel gives way to the trainer's own strip, and the arrows saved on a move stay hidden until you ask for them, since any of the three would hand over the answer. Nothing drawn during a session is written back either.
+Hints are drawn as board decorations that are never saved, and they reset as soon as the position moves on. The move list empties for the length of a session, the notes panel gives way to the trainer's own strip, and the arrows saved on a move stay hidden until you ask for them, since any of the three would hand over the answer.
 
 When the line runs out, the drill ends and leaves a report: moves played, mistakes made, and a row per mistake giving the move number, what you played, and what the study wanted. The same wrong move in the same position counts once, with a multiplier.
 
 ![Session report](imgs/v2-trainer-report.png)
 
-Nothing a session does is written to your study. Correct moves navigate and refused ones put the board back, so a drill can never leave stray variations behind.
+Nothing a session does is written to your study. Correct moves navigate, refused ones put the board back so a drill can never leave stray variations behind, and anything drawn on the board while one is running is dropped when the position moves on.
+
+That last part is not only tidiness. The board library reports the whole set of shapes on every change rather than a delta, so with a move's saved arrows hidden, a single stroke drawn mid-drill would stand in for all of them and the rest would be silently gone. Hiding the saved arrows and declining to record new ones are the same rule: a drill cannot edit the study.
 
 ### PGN import that keeps your annotations
 
