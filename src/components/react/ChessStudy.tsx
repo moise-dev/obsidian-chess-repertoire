@@ -65,6 +65,9 @@ interface AppProps {
 /** Narrowest the widget may be dragged, in px. */
 const MIN_WIDTH = 320;
 
+/** Stable empty array, so an unannotated move does not redraw the board. */
+const NO_SHAPES: DrawShape[] = [];
+
 export interface GameState {
 	currentMove: ChessStudyMove | null;
 	study: ChessStudyFileData;
@@ -816,10 +819,18 @@ export const ChessStudy = ({
 								: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
 						}
 						isViewOnly={trainer.isBoardLocked}
-						syncShapes={(shapes: DrawShape[]) =>
-							dispatch({ type: 'SYNC_SHAPES', shapes })
+						// A session neither shows the arrows saved on a move nor
+						// records any drawn during it: they are usually the plan, which
+						// is the thing being asked, and writing them back would mean a
+						// drill could edit the study.
+						syncShapes={(shapes: DrawShape[]) => {
+							if (trainer.isActive) return;
+
+							dispatch({ type: 'SYNC_SHAPES', shapes });
+						}}
+						shapes={
+							trainer.isActive ? NO_SHAPES : gameState.currentMove?.shapes ?? NO_SHAPES
 						}
-						shapes={gameState.currentMove?.shapes || []}
 						autoShapes={autoShapes}
 					/>
 				</div>

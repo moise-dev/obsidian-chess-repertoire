@@ -46,7 +46,7 @@ Hints escalate, one per press, and a stage with nothing to offer is skipped so t
 2. **The piece to move**, marked on the board.
 3. **An arrow** to where it goes.
 
-Hints are drawn as board decorations that are never saved, and they reset as soon as the position moves on. The move list empties for the length of a session and the notes panel gives way to the trainer's own strip, since either one would hand over the answer.
+Hints are drawn as board decorations that are never saved, and they reset as soon as the position moves on. The move list empties for the length of a session, the notes panel gives way to the trainer's own strip, and the arrows saved on a move stay hidden until you ask for them, since any of the three would hand over the answer. Nothing drawn during a session is written back either.
 
 When the line runs out, the drill ends and leaves a report: moves played, mistakes made, and a row per mistake giving the move number, what you played, and what the study wanted. The same wrong move in the same position counts once, with a multiplier.
 
