@@ -1129,6 +1129,41 @@
 	text-align: right;
 }
 
+/* Holds the move and its transposition mark in one grid cell. */
+.cs-map-cell {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 1px;
+	min-width: 0;
+}
+
+/*
+ * A line that meets another line. Quiet by default and only loud on hover: on a
+ * repertoire built out of move orders these can be everywhere, and a map full
+ * of shouting arrows says less than one where they wait to be looked for.
+ */
+.cs-map-transposition {
+	all: unset;
+	padding: 0 2px;
+	border-radius: 3px;
+	color: var(--text-faint);
+	font-size: 0.9em;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.cs-map-transposition:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-accent);
+}
+
+.cs-map-key.is-transposition {
+	width: auto;
+	height: auto;
+	background: none;
+	color: var(--text-faint);
+}
+
 .cs-map-sheet-gap {
 	color: var(--text-faint);
 	text-align: center;

@@ -73,6 +73,8 @@ Each card carries a position, the moves around it, and a coloured edge saying ho
 
 Which position depends on where the card sits. The trunk shows where it hands over - the one your opponent makes their first choice in - and every branch shows the move that opened it, since a branch card answers "what if they play this?" and that position is the answer. Where a line ends up is what the moves underneath are for.
 
+A move that reaches a position some other line also reaches carries a small ⇄, and clicking it takes you to the card that line sits in - the view moves, the map stays open. The mark is quiet until you hover it: on a repertoire built out of move orders these turn up everywhere, and a diagram full of shouting arrows says less than one where they wait to be looked for. The lines are still drawn as a tree, so a transposition is two cards that point at each other rather than one card two lines run into.
+
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
 Which side the map reads for is the study's own, shown as a chip beside the move list and switched by clicking it. A study that has never said assumes the side the board is turned to and draws the chip dashed to admit as much; starting a drill and choosing a colour settles it too, since that is the same question.

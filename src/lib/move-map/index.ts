@@ -159,6 +159,67 @@ export const layoutSegments = (
 };
 
 /**
+ * A position, stripped of the parts that do not change what is on the board.
+ *
+ * The first four FEN fields: placement, side to move, castling rights and the
+ * en passant square. The clocks are left off, since two lines reaching the same
+ * position by different move orders will disagree about them and still be the
+ * same position.
+ */
+export const positionKey = (fen: string): string =>
+	fen.split(' ').slice(0, 4).join(' ');
+
+/** The other place a position turns up. */
+export interface Transposition {
+	moveId: string;
+	/** The segment holding that move, so the map can go to its card. */
+	segmentId: string;
+	san: string;
+}
+
+/**
+ * Moves that reach a position some other line also reaches, keyed by move id.
+ *
+ * Only across segments. The same position appearing twice inside one run of
+ * moves would be a repetition rather than a transposition, and saying so on
+ * both would be noise.
+ *
+ * Per move rather than per card, because a position is reached by a move: a
+ * card can hold a dozen of them, and flagging the whole card would not say
+ * which.
+ */
+export const findTranspositions = (
+	root: MapSegment
+): Map<string, Transposition[]> => {
+	const byPosition = new Map<string, Transposition[]>();
+
+	for (const segment of flattenSegments(root))
+		for (const move of segment.moves) {
+			const key = positionKey(move.after);
+			const found = byPosition.get(key) ?? [];
+
+			found.push({ moveId: move.moveId, segmentId: segment.id, san: move.san });
+			byPosition.set(key, found);
+		}
+
+	const transpositions = new Map<string, Transposition[]>();
+
+	for (const group of byPosition.values()) {
+		if (group.length < 2) continue;
+
+		for (const entry of group) {
+			const elsewhere = group.filter(
+				(other) => other.segmentId !== entry.segmentId
+			);
+
+			if (elsewhere.length) transpositions.set(entry.moveId, elsewhere);
+		}
+	}
+
+	return transpositions;
+};
+
+/**
  * The move whose position a card shows.
  *
  * The trunk shows where it hands over: the position the first choice is made

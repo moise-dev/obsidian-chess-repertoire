@@ -12,9 +12,11 @@ import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MapSegment,
+	Transposition,
 	anchorMove,
 	buildSegments,
 	fenToBoard,
+	findTranspositions,
 	layoutSegments,
 	toScoresheet,
 } from 'src/lib/move-map';
@@ -161,6 +163,35 @@ const stateTitle = (state: SegmentState) => {
 	return `${state.misses} missed of ${state.attempts} drilled`;
 };
 
+/**
+ * Says that this move reaches a position another line reaches too, and takes
+ * you there. Drawn on the move rather than on the card because a card holds a
+ * dozen positions and only one of them transposes.
+ */
+const TranspositionMark = ({
+	elsewhere,
+	onFollow,
+}: {
+	elsewhere: Transposition[] | undefined;
+	onFollow: (segmentId: string) => void;
+}) => {
+	if (!elsewhere?.length) return null;
+
+	const [first] = elsewhere;
+
+	return (
+		<button
+			className="cs-map-transposition"
+			title={`Also reached after ${first.san}${
+				elsewhere.length > 1 ? `, and ${elsewhere.length - 1} more` : ''
+			} - click to go there`}
+			onClick={() => onFollow(first.segmentId)}
+		>
+			{'\u21c4'}
+		</button>
+	);
+};
+
 interface MoveMapProps {
 	moves: ChessStudyMove[];
 	rootFEN: string;
@@ -222,6 +253,10 @@ export const MoveMap = ({
 
 	const root = useMemo(() => buildSegments(moves), [moves]);
 	const excluded = useMemo(() => collectExcludedMoveIds(moves), [moves]);
+	const transpositions = useMemo(
+		() => (root ? findTranspositions(root) : new Map()),
+		[root]
+	);
 
 	const layout = useMemo(() => {
 		if (!root) return null;
@@ -349,6 +384,29 @@ export const MoveMap = ({
 		window.addEventListener('pointerup', onPointerUp);
 	}, []);
 
+	/**
+	 * Brings a card to the middle of the viewport at the current zoom. Following
+	 * a transposition is navigation inside the diagram, so the map neither
+	 * closes nor rescales - only the view moves.
+	 */
+	const focusSegment = useCallback(
+		(segmentId: string) => {
+			const viewport = viewportRef.current;
+			const node = layout?.nodes.find(
+				(candidate) => candidate.segment.id === segmentId
+			);
+
+			if (!viewport || !node) return;
+
+			setView((current) => ({
+				...current,
+				x: viewport.clientWidth / 2 - (node.x + CARD_WIDTH / 2) * current.z,
+				y: viewport.clientHeight / 2 - (node.y + node.height / 2) * current.z,
+			}));
+		},
+		[layout]
+	);
+
 	const zoomBy = useCallback((factor: number) => {
 		const viewport = viewportRef.current;
 
@@ -399,6 +457,7 @@ export const MoveMap = ({
 					<span className="cs-map-key is-untested" /> new
 					<span className="cs-map-key is-hole" /> no reply
 					<span className="cs-map-key is-excluded" /> excluded
+					<span className="cs-map-key is-transposition">{'\u21c4'}</span> transposes
 				</span>
 				<span className="cs-map-spacer" />
 				<button
@@ -513,16 +572,21 @@ export const MoveMap = ({
 											<span className="cs-map-sheet-number">{row.number}.</span>
 											{[row.white, row.black].map((move, column) =>
 												move ? (
-													<button
-														key={move.moveId}
-														className={`cs-map-move${
-															move.moveId === currentMoveId ? ' is-current' : ''
-														}${excluded.has(move.moveId) ? ' is-undrilled' : ''}`}
-														title="Show this move on the board"
-														onClick={() => onMoveClick(move.moveId)}
-													>
-														{move.san}
-													</button>
+													<span className="cs-map-cell" key={move.moveId}>
+														<button
+															className={`cs-map-move${
+																move.moveId === currentMoveId ? ' is-current' : ''
+															}${excluded.has(move.moveId) ? ' is-undrilled' : ''}`}
+															title="Show this move on the board"
+															onClick={() => onMoveClick(move.moveId)}
+														>
+															{move.san}
+														</button>
+														<TranspositionMark
+															elsewhere={transpositions.get(move.moveId)}
+															onFollow={focusSegment}
+														/>
+													</span>
 												) : (
 													<span key={column} className="cs-map-sheet-gap" aria-hidden="true">
 														{'\u2026'}

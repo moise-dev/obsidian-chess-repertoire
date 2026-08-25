@@ -5,8 +5,10 @@ import {
 	anchorMove,
 	buildSegments,
 	fenToBoard,
+	findTranspositions,
 	flattenSegments,
 	layoutSegments,
+	positionKey,
 	toScoresheet,
 } from '../src/lib/move-map';
 import { ChessStudyMove } from '../src/lib/storage';
@@ -14,12 +16,14 @@ import { ChessStudyMove } from '../src/lib/storage';
 const mv = (
 	san: string,
 	variants: unknown[] = [],
-	color: 'w' | 'b' = 'w'
+	color: 'w' | 'b' = 'w',
+	after = `position-${san}`
 ): ChessStudyMove =>
 	({
 		san,
 		moveId: san,
 		color,
+		after,
 		variants,
 		shapes: [],
 		comment: null,
@@ -263,6 +267,91 @@ describe('toScoresheet', () => {
 		assert.equal(rows.length, 2);
 		assert.equal(rows[1].white?.san, 'Nf3');
 		assert.equal(rows[1].black, null);
+	});
+});
+
+describe('positionKey', () => {
+	it('keeps what is on the board and drops the clocks', () => {
+		const board = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
+
+		assert.equal(positionKey(`${board} 0 1`), board);
+		// The same position by another move order disagrees about the clocks.
+		assert.equal(positionKey(`${board} 3 9`), positionKey(`${board} 0 1`));
+	});
+});
+
+describe('findTranspositions', () => {
+	// A transposition needs the same san twice, so these moves are built with
+	// explicit ids rather than through `mv`, which keys the id off the san.
+	const tmv = (
+		moveId: string,
+		san: string,
+		color: 'w' | 'b',
+		after: string,
+		variants: unknown[] = []
+	): ChessStudyMove =>
+		({
+			moveId,
+			san,
+			color,
+			after,
+			variants,
+			shapes: [],
+			comment: null,
+		} as unknown as ChessStudyMove);
+
+	/**
+	 *   mainline  d4 Nf6 c4 e6
+	 *   d4  ->  v1: c4 e6 d4 Nf6
+	 *
+	 * Both lines stand in the same place after four moves.
+	 */
+	const transposing = () => [
+		tmv('1', 'd4', 'w', 'A', [
+			va('v1', '1', [
+				tmv('5', 'c4', 'w', 'E'),
+				tmv('6', 'e6', 'b', 'F'),
+				tmv('7', 'd4', 'w', 'G'),
+				tmv('8', 'Nf6', 'b', 'SAME'),
+			]),
+		]),
+		tmv('2', 'Nf6', 'b', 'B'),
+		tmv('3', 'c4', 'w', 'C'),
+		tmv('4', 'e6', 'b', 'SAME'),
+	];
+
+	it('pairs up the moves that land in the same place', () => {
+		const found = findTranspositions(buildSegments(transposing())!);
+
+		assert.deepEqual([...found.keys()].sort(), ['4', '8']);
+		assert.equal(found.get('4')?.[0].san, 'Nf6');
+		assert.equal(found.get('8')?.[0].san, 'e6');
+	});
+
+	it('names the card the other line sits in', () => {
+		const moves = transposing();
+		const root = buildSegments(moves)!;
+		const found = findTranspositions(root);
+
+		const otherSegment = found.get('4')?.[0].segmentId;
+
+		assert.ok(otherSegment);
+		assert.notEqual(otherSegment, root.id);
+	});
+
+	it('ignores a position repeated inside one run of moves', () => {
+		// A repetition, not a transposition: same card, so nothing to point at.
+		const root = buildSegments([
+			mv('Nf3', [], 'w', 'P'),
+			mv('Nf6', [], 'b', 'Q'),
+			mv('Ng1', [], 'w', 'P'),
+		])!;
+
+		assert.equal(findTranspositions(root).size, 0);
+	});
+
+	it('finds nothing in a study whose lines never meet', () => {
+		assert.equal(findTranspositions(buildSegments(tree())!).size, 0);
 	});
 });
 
