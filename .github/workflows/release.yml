@@ -8,6 +8,11 @@ on:
 jobs:
  build:
   runs-on: ubuntu-latest
+  # Needed to create the release below - the default GITHUB_TOKEN is
+  # read-only unless a workflow asks for more, whatever the repo's own
+  # "Workflow permissions" setting happens to default to.
+  permissions:
+   contents: write
 
   steps:
    - uses: actions/checkout@v4
