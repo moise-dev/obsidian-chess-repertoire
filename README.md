@@ -1,11 +1,11 @@
 <!-- omit in toc -->
-# Chess Study v2
+# Chess Repertoire
 
 A chess study helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
 
-Chess Study v2 is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes).
+Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.md/plugins/chess-study) by [@chrislicodes](https://github.com/chrislicodes).
 
-![Chess Study v2 in use](imgs/general-view.png)
+![Chess Repertoire in use](imgs/general-view.png)
 
 <!-- omit in toc -->
 ## Table of contents
@@ -83,26 +83,26 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 
 ## Installation
 
-Chess Study v2 is **not in the community plugin store** yet, so install it by hand:
+Chess Repertoire is **not in the community plugin store** yet, so install it by hand:
 
 1. Download `main.js`, `styles.css` and `manifest.json` from the [latest release](../../releases/latest).
-2. Create a folder named `chess-study-v2` in `<vault>/.obsidian/plugins/`.
+2. Create a folder named `chess-repertoire` in `<vault>/.obsidian/plugins/`.
 3. Drop the three files into it.
-4. Reload Obsidian and enable **Chess Study v2** under Settings → Community plugins.
+4. Reload Obsidian and enable **Chess Repertoire** under Settings → Community plugins.
 
 > **Upgrading from the original Chess Study?** Copy your old plugin's `storage`
-> folder into the new one before enabling v2, or your existing studies won't
+> folder into the new one before enabling it, or your existing studies won't
 > be found.
 
 ## Usage
 
-Put your cursor where you want the board and run **Chess Study v2: Insert FEN/PGN-Editor at cursor position** (Use the Command palette (Ctrl+P)) A modal lets you paste a PGN, paste a FEN, or start a fresh game.
+Put your cursor where you want the board and run **Chess Repertoire: Insert FEN/PGN-Editor at cursor position** (Use the Command palette (Ctrl+P)) A modal lets you paste a PGN, paste a FEN, or start a fresh game.
 
-To combine several studies in the same note into one, run **Chess Study v2: Merge every chess study in this note into one** with your cursor where you want the result. The first study becomes the trunk; the others' lines are added as variations off it, and their notes fill in gaps rather than overwrite anything. This is done because I like to have the mainline first and the subvariations separated, but I also like to have a single board with all the variations together. 
+To combine several studies in the same note into one, run **Chess Repertoire: Merge every chess study in this note into one** with your cursor where you want the result. The first study becomes the trunk; the others' lines are added as variations off it, and their notes fill in gaps rather than overwrite anything. This is done because I like to have the mainline first and the subvariations separated, but I also like to have a single board with all the variations together. 
 
 ## Settings
 
-Every setting has a default in Settings → Community plugins → Chess Study v2, and can be overridden per study by adding a line to the code block:
+Every setting has a default in Settings → Community plugins → Chess Repertoire, and can be overridden per study by adding a line to the code block:
 
 ````markdown
 ```chessStudy
@@ -144,7 +144,7 @@ Click a study to give it the keys; click away to give them back. Works in both R
 
 ## Credits
 
-Chess Study v2 is a fork of [chrislicodes/obsidian-chess-study](https://github.com/chrislicodes/obsidian-chess-study), with thanks to [@chrislicodes](https://github.com/chrislicodes) for the original and to [@latenitecoding](https://github.com/latenitecoding) for the FEN support it inherited.
+Chess Repertoire is a fork of [chrislicodes/obsidian-chess-study](https://github.com/chrislicodes/obsidian-chess-study), with thanks to [@chrislicodes](https://github.com/chrislicodes) for the original and to [@latenitecoding](https://github.com/latenitecoding) for the FEN support it inherited.
 
 - Chess visuals are powered by [Chessground](https://github.com/lichess-org/chessground)
 - Chess logic is powered by [Chess.js](https://github.com/jhlywa/chess.js)
@@ -154,4 +154,4 @@ Chess Study v2 is a fork of [chrislicodes/obsidian-chess-study](https://github.c
 
 ## License
 
-Chess Study v2 is licensed under GPL-3.0-or-later, the same licence as the original. See [LICENSE](LICENSE).
+Chess Repertoire is licensed under GPL-3.0-or-later, the same licence as the original. See [LICENSE](LICENSE).

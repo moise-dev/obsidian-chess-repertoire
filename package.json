@@ -1,6 +1,6 @@
 {
-  "name": "chess-study-v2",
-  "version": "2.0.0",
+  "name": "chess-repertoire",
+  "version": "1.0.0",
   "description": "A chess study helper, PGN viewer/editor and opening trainer for Obsidian.",
   "keywords": [
     "chess",
