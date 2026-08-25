@@ -255,16 +255,17 @@ describe('mergeRepertoires', () => {
 		const tail = () =>
 			repertoire([mv('Kf8'), mv('Ng6')], { rootFEN: AFTER_NXE5 });
 
-		it('joins it onto the move that reaches the position it opens from', () => {
+		it('carries the line on from the move that reaches the position', () => {
 			const merged = mergeRepertoires([base(), middle()], '0.0.7');
 
 			assert.equal(merged.skipped, 0);
-			// b4 follows h6, so it hangs off h6 - the move that reaches its position.
+			// The base line stops at h6, so what continues from there is the
+			// continuation rather than a variation resuming it.
 			assert.deepEqual(outline(merged.repertoire.moves), [
 				'c3',
 				'h6',
-				'  b4',
-				'  Nxe5',
+				'b4',
+				'Nxe5',
 			]);
 		});
 
@@ -275,10 +276,10 @@ describe('mergeRepertoires', () => {
 			assert.deepEqual(outline(merged.repertoire.moves), [
 				'c3',
 				'h6',
-				'  b4',
-				'  Nxe5',
-				'    Kf8',
-				'    Ng6',
+				'b4',
+				'Nxe5',
+				'Kf8',
+				'Ng6',
 			]);
 		});
 
@@ -291,10 +292,53 @@ describe('mergeRepertoires', () => {
 			assert.deepEqual(outline(merged.repertoire.moves), [
 				'c3',
 				'h6',
+				'b4',
+				'Nxe5',
+				'Kf8',
+				'Ng6',
+			]);
+		});
+
+		it('hangs the rest of its replies off the join as alternatives', () => {
+			const merged = mergeRepertoires(
+				[
+					base(),
+					repertoire([mv('b4')], {
+						rootFEN: AFTER_H6,
+						rootVariants: [va([mv('d4')]), va([mv('Qb3')])],
+					}),
+				],
+				'0.0.7'
+			);
+
+			// Only one of them can be the continuation; the others are alternatives
+			// to it, which is to say variations on the move before it.
+			assert.deepEqual(outline(merged.repertoire.moves), [
+				'c3',
+				'h6',
+				'  d4',
+				'  Qb3',
+				'b4',
+			]);
+		});
+
+		it('stays a variation where the line it joins already goes on', () => {
+			const merged = mergeRepertoires(
+				[
+					// h6 is no longer the end of the line: Bb6 follows it.
+					repertoire([mv('c3'), mv('h6', { after: AFTER_H6 }), mv('Bb6')]),
+					middle(),
+				],
+				'0.0.7'
+			);
+
+			// b4 is an alternative to Bb6 now, not a continuation of the line.
+			assert.deepEqual(outline(merged.repertoire.moves), [
+				'c3',
+				'h6',
 				'  b4',
 				'  Nxe5',
-				'    Kf8',
-				'    Ng6',
+				'Bb6',
 			]);
 		});
 
@@ -307,7 +351,7 @@ describe('mergeRepertoires', () => {
 			);
 
 			assert.equal(merged.skipped, 0);
-			assert.deepEqual(outline(merged.repertoire.moves), ['c3', 'h6', '  b4']);
+			assert.deepEqual(outline(merged.repertoire.moves), ['c3', 'h6', 'b4']);
 		});
 
 		it('still counts one going nowhere in the tree as skipped', () => {

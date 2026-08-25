@@ -2,7 +2,10 @@ import { hasComment } from 'src/lib/comments';
 import {
 	MoveTree,
 	ROOT_MOVE_ID,
+	findMovePath,
 	flattenTree,
+	getContinuation,
+	getListAtPath,
 	getReplies,
 	positionKey,
 } from 'src/lib/move-tree';
@@ -63,10 +66,17 @@ const cloneMove = (move: ChessRepertoireMove): ChessRepertoireMove => ({
  *
  * `afterMove` is the move both trees are standing on, `null` at the root. At
  * each position the replies are compared by SAN: one the target already has is
- * descended into, and one it lacks is hung off `afterMove` as a new variation -
- * which is where variations live, an alternative to the move that follows. At
- * the root that home is the tree's own `rootVariants`, so an alternative first
- * move arrives like any other.
+ * descended into, and one it lacks is added.
+ *
+ * Where it is added depends on whether the target's line goes on from here.
+ * Where it does, the new reply is an alternative to what already follows, so it
+ * hangs off `afterMove` as a variation - which is where variations live, and at
+ * the root that home is the tree's own `rootVariants`. Where the line stops, the
+ * first thing grafted on carries it on instead: a repertoire written to continue
+ * from this position is the continuation, not an alternative to one, and a note
+ * holding an opening in instalments should read as one line rather than as a
+ * line that ends and a variation that resumes it. Anything after that first one
+ * is an alternative to it, and hangs off `afterMove` as usual.
  */
 const graft = (
 	target: MoveTree,
@@ -74,7 +84,12 @@ const graft = (
 	targetAfter: ChessRepertoireMove | null,
 	sourceAfter: ChessRepertoireMove | null
 ): void => {
-	const targetReplies = getReplies(target, targetAfter?.moveId ?? null);
+	const at = targetAfter?.moveId ?? null;
+	const targetReplies = getReplies(target, at);
+
+	// Re-read per graft rather than per reply: only the first addition can take
+	// a vacant continuation, and it fills it.
+	let carriesOn = !getContinuation(target, at);
 
 	for (const reply of getReplies(source, sourceAfter?.moveId ?? null)) {
 		const existing = targetReplies.find((move) => move.san === reply.san);
@@ -86,6 +101,17 @@ const graft = (
 			continue;
 		}
 
+		const line = [reply, ...restOfLine(source, reply)].map(cloneMove);
+		const into = carriesOn ? lineOf(target, targetAfter) : null;
+
+		if (into) {
+			// `targetAfter` has no continuation, so it is the last move of `into`.
+			into.push(...line);
+			carriesOn = false;
+
+			continue;
+		}
+
 		const home: Variant[] = targetAfter
 			? targetAfter.variants
 			: target.rootVariants;
@@ -93,9 +119,21 @@ const graft = (
 		home.push({
 			variantId: reply.moveId,
 			parentMoveId: targetAfter?.moveId ?? ROOT_MOVE_ID,
-			moves: [reply, ...restOfLine(source, reply)].map(cloneMove),
+			moves: line,
 		});
 	}
+};
+
+/** The run of moves `move` sits in, so a continuation can be added after it. */
+const lineOf = (
+	tree: MoveTree,
+	move: ChessRepertoireMove | null
+): ChessRepertoireMove[] | null => {
+	if (!move) return tree.moves;
+
+	const path = findMovePath(tree, move.moveId);
+
+	return path ? getListAtPath(tree, path) : null;
 };
 
 /** The moves after `move` in its own line, which travel with it when grafted. */
