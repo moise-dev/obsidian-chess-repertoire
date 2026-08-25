@@ -1,4 +1,4 @@
-import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { LayoutGrid, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 import * as React from 'react';
 import {
 	useCallback,
@@ -9,6 +9,7 @@ import {
 	useState,
 } from 'react';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
+import { CanvasCard, JsonCanvas, toCanvas } from 'src/lib/canvas';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MapSegment,
@@ -155,6 +156,13 @@ const stateClass = ({ isExcluded, isHole, attempts, misses }: SegmentState) => {
 	return misses / attempts > 0.25 ? 'is-shaky' : 'is-known';
 };
 
+/** Canvas's preset colours, for the states worth colouring. */
+const STATE_COLORS: Record<string, string> = {
+	'is-hole': '1',
+	'is-shaky': '2',
+	'is-known': '4',
+};
+
 const stateTitle = (state: SegmentState) => {
 	if (state.isExcluded) return 'Excluded from drills';
 	if (state.isHole) return 'No reply recorded yet';
@@ -205,6 +213,8 @@ interface MoveMapProps {
 	boardColor: BoardColor;
 	loadStats: () => Promise<Record<string, MoveDrillStats>>;
 	onSelectMove: (moveId: string) => void;
+	/** Writes the diagram out as a canvas file, answering where it went. */
+	onExport: (canvas: JsonCanvas) => Promise<string>;
 }
 
 /**
@@ -227,6 +237,7 @@ export const MoveMap = ({
 	boardColor,
 	loadStats,
 	onSelectMove,
+	onExport,
 }: MoveMapProps) => {
 	const [stats, setStats] = useState<Record<string, MoveDrillStats>>({});
 	const [heights, setHeights] = useState<Record<string, number>>({});
@@ -427,6 +438,45 @@ export const MoveMap = ({
 		});
 	}, []);
 
+	/**
+	 * The same facts the cards are drawn from, in the shape the canvas writer
+	 * wants. Built here rather than in the writer so the file says exactly what
+	 * the diagram says.
+	 */
+	const canvasCards = useMemo((): CanvasCard[] => {
+		if (!layout) return [];
+
+		return layout.nodes.map(({ segment }) => {
+			const state = segmentState(segment, excluded, stats, userColor);
+			const rows = toScoresheet(segment, (ply) =>
+				moveNumberAtPly(ply, firstPlayer, initialMoveNumber)
+			);
+
+			return {
+				segmentId: segment.id,
+				range:
+					rows[0].number === rows[rows.length - 1].number
+						? `${rows[0].number}`
+						: `${rows[0].number}\u2013${rows[rows.length - 1].number}`,
+				moves: rows
+					.map((row) =>
+						[`${row.number}.`, row.white?.san ?? '...', row.black?.san]
+							.filter(Boolean)
+							.join(' ')
+					)
+					.join('  '),
+				state: stateTitle(state),
+				color: STATE_COLORS[stateClass(state)],
+			};
+		});
+	}, [excluded, firstPlayer, initialMoveNumber, layout, stats, userColor]);
+
+	const onExportClick = useCallback(async () => {
+		if (!layout) return;
+
+		await onExport(toCanvas(layout, canvasCards, { cardWidth: CARD_WIDTH }));
+	}, [canvasCards, layout, onExport]);
+
 	const onMoveClick = useCallback(
 		(moveId: string) => {
 			// The pointer that just finished a pan is not choosing a move.
@@ -476,6 +526,13 @@ export const MoveMap = ({
 				</button>
 				<button className="cs-icon-button" title="Fit to view" onClick={fit}>
 					<Maximize2 size={16} />
+				</button>
+				<button
+					className="cs-icon-button"
+					title="Export as an Obsidian canvas"
+					onClick={onExportClick}
+				>
+					<LayoutGrid size={16} />
 				</button>
 			</div>
 

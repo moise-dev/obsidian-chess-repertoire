@@ -78,6 +78,8 @@ A move that reaches a position some other line also reaches carries a small ⇄,
 
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
+The last button exports the diagram as an Obsidian **canvas** file beside the note - the cards where the map put them, coloured by how each line is holding up. That one is a snapshot: nothing reads it back, and it goes stale as soon as the study changes. That is what it is for. The map cannot be drawn on or rearranged, and a canvas can, so a repertoire you want to spread out and scribble over goes there. An existing file is never overwritten - the name is suffixed - so a canvas you have already annotated survives a second export.
+
 Which side the map reads for is the study's own, shown as a chip beside the move list and switched by clicking it. A study that has never said assumes the side the board is turned to and draws the chip dashed to admit as much; starting a drill and choosing a colour settles it too, since that is the same question.
 
 ### Merging the studies in a note

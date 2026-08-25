@@ -4,10 +4,17 @@ import { Api } from 'chessground/api';
 import { DrawShape } from 'chessground/draw';
 import { Draft } from 'immer';
 import { nanoid } from 'nanoid';
-import { App, MarkdownPostProcessorContext, Notice, TFile } from 'obsidian';
+import {
+	App,
+	MarkdownPostProcessorContext,
+	Notice,
+	TFile,
+	normalizePath,
+} from 'obsidian';
 import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChessStudyPluginSettings } from 'src/components/obsidian/SettingsTab';
+import { JsonCanvas } from 'src/lib/canvas';
 import {
 	MoveClassification,
 	classificationBadgeSvg,
@@ -739,6 +746,44 @@ export const ChessStudy = ({
 	 * The side it reads for is the study's own when it has one, falling back to
 	 * the way the board is turned - see `resolveStudyColor`.
 	 */
+	/**
+	 * Writes the map out as a canvas beside the note.
+	 *
+	 * A snapshot rather than a second copy of the study: nothing reads it back,
+	 * and it goes stale the moment the study changes. That is the point - it is
+	 * for spreading out and drawing on, which the map itself cannot be.
+	 *
+	 * An existing file is never overwritten; the name is suffixed instead, so a
+	 * canvas you have already annotated survives a second export.
+	 */
+	const exportCanvas = useCallback(
+		async (canvas: JsonCanvas) => {
+			const folder = ctx.sourcePath.split('/').slice(0, -1).join('/');
+			const base = (gameState.study.header?.title || 'Study map').replace(
+				/[\\/:*?"<>|]/g,
+				'-'
+			);
+
+			let path = normalizePath(`${folder ? `${folder}/` : ''}${base}.canvas`);
+
+			for (
+				let attempt = 2;
+				app.vault.getAbstractFileByPath(path) && attempt < 100;
+				attempt++
+			)
+				path = normalizePath(
+					`${folder ? `${folder}/` : ''}${base} ${attempt}.canvas`
+				);
+
+			await app.vault.create(path, JSON.stringify(canvas, null, 2));
+
+			new Notice(`Map exported to ${path}`);
+
+			return path;
+		},
+		[app, ctx.sourcePath, gameState.study.header?.title]
+	);
+
 	const onOpenMap = useCallback(() => {
 		new MoveMapModal(app, {
 			moves: gameState.study.moves,
@@ -752,12 +797,14 @@ export const ChessStudy = ({
 			loadStats: async () => (await dataAdapter.loadDrillData(chessStudyId)).stats,
 			onSelectMove: (moveId: string) =>
 				dispatch({ type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY', moveId }),
+			onExport: exportCanvas,
 		}).open();
 	}, [
 		app,
 		boardColor,
 		chessStudyId,
 		dataAdapter,
+		exportCanvas,
 		dispatch,
 		firstPlayer,
 		gameState.currentMove?.moveId,

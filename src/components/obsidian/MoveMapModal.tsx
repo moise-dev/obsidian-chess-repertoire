@@ -3,6 +3,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { MoveMap } from 'src/components/react/MoveMap';
+import { JsonCanvas } from 'src/lib/canvas';
 import { ChessStudyMove, MoveDrillStats } from 'src/lib/storage';
 
 export interface MoveMapModalOptions {
@@ -16,6 +17,7 @@ export interface MoveMapModalOptions {
 	boardColor: BoardColor;
 	loadStats: () => Promise<Record<string, MoveDrillStats>>;
 	onSelectMove: (moveId: string) => void;
+	onExport: (canvas: JsonCanvas) => Promise<string>;
 }
 
 /**
