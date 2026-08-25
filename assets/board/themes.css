@@ -1,35 +1,44 @@
 /*
  * Board themes.
  *
+ * The map's cards draw their own boards outside the widget, so each theme is
+ * listed for `.cs-map-board` as well - otherwise a map would show blue squares
+ * under a study set to green.
+ *
  * Each theme is just two colours. The checkerboard itself is drawn with a
  * conic-gradient (a 25% tile holds a 2x2 block of squares, so the 8x8 grid
  * falls out of it) rather than the base64 SVGs chessground ships, which means
  * a new theme costs two custom properties instead of an encoded asset.
  */
 
-.chess-study .cs-board {
+.chess-study .cs-board,
+.cs-map-board {
 	--cs-sq-light: #e9edf6;
 	--cs-sq-dark: #4b7399;
 	--cs-hl: 255, 210, 46;
 	--cs-dot: 0, 0, 0;
 }
 
-.chess-study .blue-board {
+.chess-study .blue-board,
+.cs-map-board.blue-board {
 	--cs-sq-light: #e9edf6;
 	--cs-sq-dark: #4b7399;
 }
 
-.chess-study .blue-soft-board {
+.chess-study .blue-soft-board,
+.cs-map-board.blue-soft-board {
 	--cs-sq-light: #dee3e6;
 	--cs-sq-dark: #8ca2ad;
 }
 
-.chess-study .green-board {
+.chess-study .green-board,
+.cs-map-board.green-board {
 	--cs-sq-light: #ebecd0;
 	--cs-sq-dark: #779556;
 }
 
-.chess-study .brown-board {
+.chess-study .brown-board,
+.cs-map-board.brown-board {
 	--cs-sq-light: #f0d9b5;
 	--cs-sq-dark: #b58863;
 }
@@ -142,16 +151,48 @@
 }
 
 /* A coordinate sits on the opposite colour of the square underneath it. */
-.chess-study .cs-board .cg-wrap.orientation-white coords.ranks coord:nth-child(2n),
-.chess-study .cs-board .cg-wrap.orientation-white coords.files coord:nth-child(2n),
-.chess-study .cs-board .cg-wrap.orientation-black coords.ranks coord:nth-child(2n + 1),
-.chess-study .cs-board .cg-wrap.orientation-black coords.files coord:nth-child(2n + 1) {
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-white
+	coords.ranks
+	coord:nth-child(2n),
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-white
+	coords.files
+	coord:nth-child(2n),
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-black
+	coords.ranks
+	coord:nth-child(2n + 1),
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-black
+	coords.files
+	coord:nth-child(2n + 1) {
 	color: var(--cs-sq-dark);
 }
 
-.chess-study .cs-board .cg-wrap.orientation-black coords.ranks coord:nth-child(2n),
-.chess-study .cs-board .cg-wrap.orientation-black coords.files coord:nth-child(2n),
-.chess-study .cs-board .cg-wrap.orientation-white coords.ranks coord:nth-child(2n + 1),
-.chess-study .cs-board .cg-wrap.orientation-white coords.files coord:nth-child(2n + 1) {
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-black
+	coords.ranks
+	coord:nth-child(2n),
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-black
+	coords.files
+	coord:nth-child(2n),
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-white
+	coords.ranks
+	coord:nth-child(2n + 1),
+.chess-study
+	.cs-board
+	.cg-wrap.orientation-white
+	coords.files
+	coord:nth-child(2n + 1) {
 	color: var(--cs-sq-light);
 }

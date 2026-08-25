@@ -1,6 +1,7 @@
 import { App, Modal } from 'obsidian';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
+import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { MoveMap } from 'src/components/react/MoveMap';
 import { ChessStudyMove, MoveDrillStats } from 'src/lib/storage';
 
@@ -12,6 +13,7 @@ export interface MoveMapModalOptions {
 	firstPlayer: string;
 	initialMoveNumber: number;
 	userColor: 'w' | 'b';
+	boardColor: BoardColor;
 	loadStats: () => Promise<Record<string, MoveDrillStats>>;
 	onSelectMove: (moveId: string) => void;
 }

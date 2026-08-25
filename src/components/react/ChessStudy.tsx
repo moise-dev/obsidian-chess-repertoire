@@ -743,12 +743,14 @@ export const ChessStudy = ({
 			firstPlayer,
 			initialMoveNumber,
 			userColor: orientation === 'black' ? 'b' : 'w',
+			boardColor,
 			loadStats: async () => (await dataAdapter.loadDrillData(chessStudyId)).stats,
 			onSelectMove: (moveId: string) =>
 				dispatch({ type: 'DISPLAY_SELECTED_MOVE_IN_HISTORY', moveId }),
 		}).open();
 	}, [
 		app,
+		boardColor,
 		chessStudyId,
 		dataAdapter,
 		dispatch,

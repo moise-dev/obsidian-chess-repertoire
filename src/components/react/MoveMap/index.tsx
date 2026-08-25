@@ -8,6 +8,7 @@ import {
 	useRef,
 	useState,
 } from 'react';
+import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
 	MapSegment,
@@ -36,49 +37,66 @@ const FIT_PADDING = 32;
 const clamp = (value: number, low: number, high: number) =>
 	Math.min(Math.max(value, low), high);
 
-/**
- * Filled glyphs for both sides, coloured by CSS rather than by codepoint. The
- * outline glyphs for White vanish against a light square in half the themes
- * this plugin has to live in.
- */
-const GLYPHS: Record<string, string> = {
-	k: '♚',
-	q: '♛',
-	r: '♜',
-	b: '♝',
-	n: '♞',
-	p: '♟',
+/** FEN letter to the role name chessground keys its sprites by. */
+const ROLES: Record<string, string> = {
+	k: 'king',
+	q: 'queen',
+	r: 'rook',
+	b: 'bishop',
+	n: 'knight',
+	p: 'pawn',
 };
 
-const MiniBoard = ({ fen, flipped }: { fen: string; flipped: boolean }) => {
+/**
+ * One piece, drawn with the same sprite the real board uses.
+ *
+ * `piece` is chessground's own element and JSX has no type for it, hence
+ * `createElement`. Reaching for the sprites rather than the Unicode chess
+ * glyphs because font coverage of those is patchy - the pawns arrive and the
+ * pieces come back as empty boxes - and because a map of a study should not
+ * show a different set of pieces from the study.
+ */
+const Piece = ({ role, color }: { role: string; color: string }) =>
+	React.createElement('piece', { className: `${role} ${color}` });
+
+const MiniBoard = ({
+	fen,
+	flipped,
+	boardColor,
+}: {
+	fen: string;
+	flipped: boolean;
+	boardColor: BoardColor;
+}) => {
 	const ranks = useMemo(() => {
 		const board = fenToBoard(fen);
 
 		return flipped ? board.map((rank) => [...rank].reverse()).reverse() : board;
 	}, [fen, flipped]);
 
+	// `cg-wrap` on the outside is what lets chessground's sprite rules find the
+	// pieces; the grid itself carries the board colours.
 	return (
-		<div className="cs-map-board" aria-hidden="true">
-			{ranks.map((rank, rankIndex) =>
-				rank.map((piece, fileIndex) => (
-					<div
-						key={`${rankIndex}-${fileIndex}`}
-						className={`cs-map-square ${
-							(rankIndex + fileIndex) % 2 ? 'is-dark' : 'is-light'
-						}`}
-					>
-						{piece && (
-							<span
-								className={`cs-map-piece ${
-									piece === piece.toUpperCase() ? 'is-white' : 'is-black'
-								}`}
-							>
-								{GLYPHS[piece.toLowerCase()]}
-							</span>
-						)}
-					</div>
-				))
-			)}
+		<div className="cs-map-board-wrap cg-wrap">
+			<div className={`cs-map-board ${boardColor}-board`} aria-hidden="true">
+				{ranks.map((rank, rankIndex) =>
+					rank.map((piece, fileIndex) => (
+						<div
+							key={`${rankIndex}-${fileIndex}`}
+							className={`cs-map-square ${
+								(rankIndex + fileIndex) % 2 ? 'is-dark' : 'is-light'
+							}`}
+						>
+							{piece && (
+								<Piece
+									role={ROLES[piece.toLowerCase()]}
+									color={piece === piece.toUpperCase() ? 'white' : 'black'}
+								/>
+							)}
+						</div>
+					))
+				)}
+			</div>
 		</div>
 	);
 };
@@ -141,6 +159,8 @@ interface MoveMapProps {
 	initialMoveNumber: number;
 	/** The side the study is written for, taken from the board's orientation. */
 	userColor: 'w' | 'b';
+	/** The study's own board theme, so the map does not show a different one. */
+	boardColor: BoardColor;
 	loadStats: () => Promise<Record<string, MoveDrillStats>>;
 	onSelectMove: (moveId: string) => void;
 }
@@ -162,6 +182,7 @@ export const MoveMap = ({
 	firstPlayer,
 	initialMoveNumber,
 	userColor,
+	boardColor,
 	loadStats,
 	onSelectMove,
 }: MoveMapProps) => {
@@ -461,6 +482,7 @@ export const MoveMap = ({
 								<MiniBoard
 									fen={last ? last.after : rootFEN}
 									flipped={userColor === 'b'}
+									boardColor={boardColor}
 								/>
 
 								<div className="cs-map-sheet">
