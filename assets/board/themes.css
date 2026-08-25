@@ -101,24 +101,58 @@
  * them and they are never seen.
  */
 
+/*
+ * Coordinates in a gutter beside the board rather than printed on it.
+ *
+ * Each label is given an eighth of the gutter and centred in it, so a rank
+ * label sits level with its rank and a file label under its file - which is
+ * what makes them readable at a glance rather than something to count along.
+ * They are on the widget's own background out here, so they take the theme's
+ * muted text colour instead of a square colour.
+ */
 .chess-study .cs-board .cg-wrap coords {
 	position: absolute;
 	display: flex;
 	pointer-events: none;
-	opacity: 1;
+	/*
+	 * !important because another chess plugin can be installed alongside this
+	 * one, and at least one of them ships an unscoped `.cg-wrap coords {
+	 * opacity: 0 !important }` that reaches every board in the app. Specificity
+	 * cannot answer !important, so this is the only way to keep our own
+	 * coordinates visible when a vault has both.
+	 */
+	opacity: 1 !important;
+	color: var(--text-muted);
 	font-family: inherit;
-	font-size: clamp(7px, 2.2cqw, 13px);
+	font-size: clamp(10px, 2.3cqw, 15px);
 	font-weight: 600;
-	line-height: 1.1;
+	line-height: 1;
 }
 
+.chess-study .cs-board .cg-wrap coords coord {
+	/*
+	 * The same arms race as the opacity above. That plugin also carries
+	 * lichess's parity tint - every other label coloured to match the square
+	 * beneath it - at a specificity ours cannot beat, which left half the
+	 * labels dark grey on our widget's background. Out here in the gutter there
+	 * are no squares to match, so one muted colour for all sixteen.
+	 */
+	color: var(--cs-coord-color, var(--text-muted)) !important;
+	flex: 1 0 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	transform: none;
+}
+
+/* Ranks down the left, whichever side chessground would have put them. */
 .chess-study .cs-board .cg-wrap coords.ranks,
 .chess-study .cs-board .cg-wrap coords.ranks.left {
-	left: 0;
+	left: calc(var(--cs-coord-offset) * -1);
 	top: 0;
-	width: 100%;
+	width: var(--cs-coords);
 	height: 100%;
-	align-items: flex-start;
 	flex-flow: column-reverse;
 }
 
@@ -126,17 +160,11 @@
 	flex-flow: column;
 }
 
-.chess-study .cs-board .cg-wrap coords.ranks coord {
-	transform: none;
-	padding: 0.35em 0 0 0.4em;
-}
-
 .chess-study .cs-board .cg-wrap coords.files {
 	left: 0;
-	bottom: 0;
+	bottom: calc(var(--cs-coord-offset) * -1);
 	width: 100%;
-	height: 100%;
-	align-items: flex-end;
+	height: var(--cs-coords);
 	flex-flow: row;
 	text-transform: lowercase;
 }
@@ -145,54 +173,12 @@
 	flex-flow: row-reverse;
 }
 
-.chess-study .cs-board .cg-wrap coords.files coord {
-	text-align: right;
-	padding: 0 0.4em 0.3em 0;
-}
-
-/* A coordinate sits on the opposite colour of the square underneath it. */
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-white
-	coords.ranks
-	coord:nth-child(2n),
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-white
-	coords.files
-	coord:nth-child(2n),
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-black
-	coords.ranks
-	coord:nth-child(2n + 1),
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-black
-	coords.files
-	coord:nth-child(2n + 1) {
-	color: var(--cs-sq-dark);
-}
-
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-black
-	coords.ranks
-	coord:nth-child(2n),
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-black
-	coords.files
-	coord:nth-child(2n),
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-white
-	coords.ranks
-	coord:nth-child(2n + 1),
-.chess-study
-	.cs-board
-	.cg-wrap.orientation-white
-	coords.files
-	coord:nth-child(2n + 1) {
-	color: var(--cs-sq-light);
+/*
+ * The board's own rounding and shadow, which used to live on the wrapper. They
+ * moved here when the wrapper had to stop clipping, so the coordinates in its
+ * padding are not cut off.
+ */
+.chess-study .cs-board cg-board {
+	border-radius: 6px;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }

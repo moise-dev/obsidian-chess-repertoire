@@ -133,6 +133,7 @@ export const ChessStudy = ({
 		viewComments,
 		boardSize,
 		showCoordinates,
+		coordinateColor,
 		chessStudyId,
 	} = parseUserConfig(pluginSettings, source);
 
@@ -152,6 +153,18 @@ export const ChessStudy = ({
 
 	const rootRef = useRef<HTMLDivElement>(null);
 	const [width, setWidth] = useState<number | null>(boardSize ?? null);
+
+	// Both of these are read by the stylesheet rather than applied directly:
+	// the width by the shell, the colour by the coordinate labels, which are
+	// chessground's elements and so out of React's reach.
+	const rootStyle = useMemo(() => {
+		const style: Record<string, string> = {};
+
+		if (width) style['--cs-width'] = `${width}px`;
+		if (coordinateColor) style['--cs-coord-color'] = coordinateColor;
+
+		return Object.keys(style).length ? (style as React.CSSProperties) : undefined;
+	}, [width, coordinateColor]);
 
 	// Setup Chess.js API
 	const [initialChessLogic, firstPlayer, initialMoveNumber] = useMemo(() => {
@@ -942,9 +955,7 @@ export const ChessStudy = ({
 		<div
 			className="chess-study"
 			ref={rootRef}
-			style={
-				width ? ({ '--cs-width': `${width}px` } as React.CSSProperties) : undefined
-			}
+			style={rootStyle}
 			tabIndex={0}
 			onKeyDown={(event) => {
 				if (handleKey(event.nativeEvent)) {

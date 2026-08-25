@@ -143,7 +143,7 @@ Seven chess.com-style labels (Brilliant, Great, Excellent, Good, Inaccuracy, Mis
 - **Fills the note width** instead of a fixed 750px box, and stacks the board above the move list on narrow screens.
 - **Resizable** by dragging the bottom-right corner. The width is written back into the code block, so a study keeps its size.
 - **Four board themes** (Blue by default, Blue soft, Green, Brown), drawn from two colours each rather than a bitmap per theme, with square highlights that follow the theme.
-- **Coordinates drawn inside the board**, chess.com style. The original positioned them outside it, where the widget clipped them.
+- **Coordinates in a gutter beside the board**, each label centred on its own rank or file. The original put them outside too, but the widget clipped them; the wrapper is padded for them now rather than cropping them away. They take the theme's muted text colour, or one you pick.
 - **Flip the board**, and **copy the current FEN** to the clipboard.
 - A **notes panel** that is labelled, collapsible, and shows which move a note belongs to.
 - A chip beside the move list saying **which side the study is written for**, which is what the drill and the map read.
@@ -217,6 +217,7 @@ showCoordinates: false
 | `boardOrientation` | `white` \| `black`                            | Which way round the board starts                              |
 | `boardColor`       | `blue` \| `blue-soft` \| `green` \| `brown`   | Board theme                                                   |
 | `showCoordinates`  | `true` \| `false`                             | Show the a-h / 1-8 labels                                     |
+| `coordinateColor`  | hex colour, e.g. `"#d08770"`                  | Colour of those labels. Leave unset to follow the theme.      |
 | `boardSize`        | number of pixels                              | Widget width. Written automatically when you drag to resize.  |
 | `viewComments`     | `true` \| `false`                             | Whether the notes panel starts open                           |
 

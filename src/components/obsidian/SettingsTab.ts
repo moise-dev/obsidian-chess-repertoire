@@ -17,6 +17,11 @@ export interface ChessStudyPluginSettings {
 	/** Width of the widget in px. `null` means "fill the available width". */
 	boardSize: number | null;
 	showCoordinates: true | false;
+	/**
+	 * Colour of the a-h / 1-8 labels, as a hex string. Empty means "follow the
+	 * theme", which is the right answer for most vaults and the default.
+	 */
+	coordinateColor: string;
 }
 
 export const DEFAULT_SETTINGS: ChessStudyPluginSettings = {
@@ -25,6 +30,26 @@ export const DEFAULT_SETTINGS: ChessStudyPluginSettings = {
 	viewComments: true,
 	boardSize: null,
 	showCoordinates: true,
+	coordinateColor: '',
+};
+
+/**
+ * The theme's muted text colour, resolved to something the colour picker can
+ * show. It only understands hex, and `--text-muted` is usually an rgb() or a
+ * var chain, so it is measured off a throwaway element rather than read.
+ */
+const themeMutedColor = (): string => {
+	const probe = document.body.createDiv();
+	probe.style.color = 'var(--text-muted)';
+
+	const match = getComputedStyle(probe)
+		.color.match(/\d+/g)
+		?.slice(0, 3)
+		.map((part) => Number(part).toString(16).padStart(2, '0'));
+
+	probe.remove();
+
+	return match ? `#${match.join('')}` : '#888888';
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -80,6 +105,33 @@ export class SettingsTab extends PluginSettingTab {
 					.onChange((showCoordinates) => {
 						this.plugin.settings.showCoordinates = showCoordinates;
 						this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Coordinate color')
+			.setDesc(
+				"Color of the coordinate labels. Reset to follow the theme's muted text color."
+			)
+			.addColorPicker((picker) => {
+				// The picker has no empty state, so it shows what the labels
+				// currently look like: the chosen colour, or the theme's own.
+				picker
+					.setValue(this.plugin.settings.coordinateColor || themeMutedColor())
+					.onChange((coordinateColor) => {
+						this.plugin.settings.coordinateColor = coordinateColor;
+						this.plugin.saveSettings();
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon('rotate-ccw')
+					.setTooltip('Follow the theme')
+					.onClick(() => {
+						this.plugin.settings.coordinateColor = '';
+						this.plugin.saveSettings();
+						// Redraw so the picker falls back to the theme's colour.
+						this.display();
 					});
 			});
 

@@ -23,6 +23,18 @@
 	/* Lets the layout and the board coordinates respond to the widget's own
 	   width rather than the width of the note. */
 	container-type: inline-size;
+	/*
+	 * The gutter the board coordinates sit in. A flat px rather than a
+	 * container unit: it is read both by the wrapper's padding and by the
+	 * coordinates inside it, and those two sit in different query containers -
+	 * the same expression would resolve to two different widths and the labels
+	 * would drift out of their gutter.
+	 */
+	--cs-coords: 19px;
+	/* Breathing room between the board's edge and the gutter, so the labels do
+	   not read as part of the border. */
+	--cs-coord-gap: 3px;
+	--cs-coord-offset: calc(var(--cs-coords) + var(--cs-coord-gap));
 }
 
 .chess-study:focus {
@@ -100,18 +112,19 @@
 
 .chess-study .cs-board-wrap {
 	width: 100%;
-	aspect-ratio: 1 / 1;
-	border-radius: 6px;
-	overflow: hidden;
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+	/* Room down the left and along the bottom for the coordinates. Nothing is
+	   clipped here any more, or they would be cut off in their own gutter. */
+	padding: 0 0 var(--cs-coord-offset) var(--cs-coord-offset);
+	overflow: visible;
 	/* Board coordinates size themselves off this. */
 	container-type: inline-size;
 }
 
+/* The square the board actually occupies, now that the wrapper is padded. */
 .chess-study .cs-board {
 	display: block;
 	width: 100%;
-	height: 100%;
+	aspect-ratio: 1 / 1;
 }
 
 /* Stack once the widget itself gets narrow, not once the note does. */
