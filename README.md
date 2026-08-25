@@ -13,6 +13,7 @@
 - [What v2 adds](#what-v2-adds)
 	- [Trainer](#trainer)
 	- [The map](#the-map)
+	- [A board on its own](#a-board-on-its-own)
 	- [Merging the studies in a note](#merging-the-studies-in-a-note)
 	- [PGN import that keeps your annotations](#pgn-import-that-keeps-your-annotations)
 	- [Variations at any depth](#variations-at-any-depth)
@@ -78,7 +79,19 @@ A move that reaches a position some other line also reaches carries a small ⇄,
 
 Drag to pan, scroll to zoom, or use the fit button to frame the whole thing. Clicking any move sends the board to it and closes the map.
 
-The last button exports the diagram as an Obsidian **canvas** file beside the note - the cards where the map put them, coloured by how each line is holding up. That one is a snapshot: nothing reads it back, and it goes stale as soon as the study changes. That is what it is for. The map cannot be drawn on or rearranged, and a canvas can, so a repertoire you want to spread out and scribble over goes there. An existing file is never overwritten - the name is suffixed - so a canvas you have already annotated survives a second export.
+The last button exports the diagram as an Obsidian **canvas** file beside the note - a card per line, where the map put it, with its board, its moves and how it is holding up. That one is a snapshot: nothing reads it back, and it goes stale as soon as the study changes. That is what it is for. The map cannot be drawn on or rearranged, and a canvas can, so a repertoire you want to spread out and scribble over goes there. An existing file is never overwritten - the name is suffixed - so a canvas you have already annotated survives a second export.
+
+The boards on those cards are `chessPosition` blocks, which means they are drawn by this plugin rather than baked into the file. In the vault you exported from that is no different from any other board; open the canvas somewhere without the plugin and the cards keep their notation and lose their diagrams.
+
+### A board on its own
+
+```chessPosition
+fen: r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4
+orientation: white
+size: 240
+```
+
+A position with no study behind it: no moves, no notes, no stored file. `fen` is the only setting it needs - `orientation` and `size` are optional, and without a size it fills the width it is given. It is what the exported canvas uses for its diagrams, and it is useful on its own wherever a note wants to show a position rather than play through one.
 
 Which side the map reads for is the study's own, shown as a chip beside the move list and switched by clicking it. A study that has never said assumes the side the board is turned to and draws the chip dashed to admit as much; starting a drill and choosing a colour settles it too, since that is the same question.
 

@@ -9,6 +9,7 @@ import {
 	useState,
 } from 'react';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
+import { MiniBoard } from 'src/components/react/MiniBoard';
 import { CanvasCard, JsonCanvas, toCanvas } from 'src/lib/canvas';
 import { collectExcludedMoveIds } from 'src/lib/drill';
 import {
@@ -16,7 +17,6 @@ import {
 	Transposition,
 	anchorMove,
 	buildSegments,
-	fenToBoard,
 	findTranspositions,
 	layoutSegments,
 	toScoresheet,
@@ -46,73 +46,6 @@ const positionLabel = (move: ChessStudyMove | null, number: number) => {
 	if (!move) return 'Starting position';
 
 	return `After ${number}${move.color === 'b' ? '...' : '.'} ${move.san}`;
-};
-
-/** FEN letter to the role name chessground keys its sprites by. */
-const ROLES: Record<string, string> = {
-	k: 'king',
-	q: 'queen',
-	r: 'rook',
-	b: 'bishop',
-	n: 'knight',
-	p: 'pawn',
-};
-
-/**
- * One piece, drawn with the same sprite the real board uses.
- *
- * `piece` is chessground's own element and JSX has no type for it, hence
- * `createElement`. Reaching for the sprites rather than the Unicode chess
- * glyphs because font coverage of those is patchy - the pawns arrive and the
- * pieces come back as empty boxes - and because a map of a study should not
- * show a different set of pieces from the study.
- */
-const Piece = ({ role, color }: { role: string; color: string }) =>
-	React.createElement('piece', { className: `${role} ${color}` });
-
-const MiniBoard = ({
-	fen,
-	flipped,
-	boardColor,
-	label,
-}: {
-	fen: string;
-	flipped: boolean;
-	boardColor: BoardColor;
-	/** Which position this is, since a card no longer always shows its last. */
-	label: string;
-}) => {
-	const ranks = useMemo(() => {
-		const board = fenToBoard(fen);
-
-		return flipped ? board.map((rank) => [...rank].reverse()).reverse() : board;
-	}, [fen, flipped]);
-
-	// `cg-wrap` on the outside is what lets chessground's sprite rules find the
-	// pieces; the grid itself carries the board colours.
-	return (
-		<div className="cs-map-board-wrap cg-wrap" title={label}>
-			<div className={`cs-map-board ${boardColor}-board`} aria-hidden="true">
-				{ranks.map((rank, rankIndex) =>
-					rank.map((piece, fileIndex) => (
-						<div
-							key={`${rankIndex}-${fileIndex}`}
-							className={`cs-map-square ${
-								(rankIndex + fileIndex) % 2 ? 'is-dark' : 'is-light'
-							}`}
-						>
-							{piece && (
-								<Piece
-									role={ROLES[piece.toLowerCase()]}
-									color={piece === piece.toUpperCase() ? 'white' : 'black'}
-								/>
-							)}
-						</div>
-					))
-				)}
-			</div>
-		</div>
-	);
 };
 
 /** How well the moves you own inside one segment have held up under drilling. */
@@ -448,12 +381,15 @@ export const MoveMap = ({
 
 		return layout.nodes.map(({ segment }) => {
 			const state = segmentState(segment, excluded, stats, userColor);
+			const anchor = anchorMove(segment);
 			const rows = toScoresheet(segment, (ply) =>
 				moveNumberAtPly(ply, firstPlayer, initialMoveNumber)
 			);
 
 			return {
 				segmentId: segment.id,
+				fen: anchor ? anchor.after : rootFEN,
+				flipped: userColor === 'b',
 				range:
 					rows[0].number === rows[rows.length - 1].number
 						? `${rows[0].number}`
@@ -469,12 +405,20 @@ export const MoveMap = ({
 				color: STATE_COLORS[stateClass(state)],
 			};
 		});
-	}, [excluded, firstPlayer, initialMoveNumber, layout, stats, userColor]);
+	}, [
+		excluded,
+		firstPlayer,
+		initialMoveNumber,
+		layout,
+		rootFEN,
+		stats,
+		userColor,
+	]);
 
 	const onExportClick = useCallback(async () => {
 		if (!layout) return;
 
-		await onExport(toCanvas(layout, canvasCards, { cardWidth: CARD_WIDTH }));
+		await onExport(toCanvas(layout, canvasCards));
 	}, [canvasCards, layout, onExport]);
 
 	const onMoveClick = useCallback(

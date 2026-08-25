@@ -43,15 +43,56 @@ export interface CanvasCard {
 	state: string | null;
 	/** Canvas preset colour for that state. */
 	color?: string;
+	/** The position the card is about, drawn as a board on the card. */
+	fen: string;
+	/** Whether that board is turned round, i.e. the study is written for Black. */
+	flipped: boolean;
 }
 
 /**
  * Canvas cards are read at arm's length rather than zoomed into, so they want
- * more room than the map's own. The layout is scaled rather than recomputed, so
- * the export keeps the shape of the diagram it was taken from.
+ * more room than the map's own. Positions are scaled from the layout, which is
+ * what keeps an exported canvas looking like the diagram it came from.
  */
 const SCALE = 1.6;
-const MIN_HEIGHT = 120;
+const CARD_WIDTH = 400;
+/** The board block, plus the heading and the state line around it. */
+const FIXED_HEIGHT = 300;
+const LINE_HEIGHT = 26;
+/** Roughly how many characters of notation fit across a card. */
+const LINE_LENGTH = 46;
+
+/**
+ * A card sized to what is on it.
+ *
+ * Not the map's own height scaled: those cards hold a 132px board and a
+ * scoresheet in fixed columns, while these hold a board sized to the card and
+ * the moves as one flowing line. Taking the map's heights left every card
+ * mostly empty.
+ */
+const cardHeight = (card: CanvasCard | undefined): number =>
+	FIXED_HEIGHT +
+	Math.ceil((card?.moves.length ?? 0) / LINE_LENGTH) * LINE_HEIGHT;
+
+/**
+ * The board, as a block this plugin renders.
+ *
+ * A canvas card is markdown, so the boards arrive by asking the plugin for
+ * them. It does mean the boards are drawn only where the plugin is installed -
+ * true of the vault the canvas was written into, and the alternatives are
+ * worse: a study file per card, or chess glyphs whose font coverage we already
+ * know is patchy.
+ */
+const boardBlock = (card: CanvasCard | undefined): string => {
+	if (!card?.fen) return '';
+
+	return [
+		'```chessPosition',
+		`fen: ${card.fen}`,
+		...(card.flipped ? ['orientation: black'] : []),
+		'```',
+	].join('\n');
+};
 
 /**
  * The map as a canvas file.
@@ -62,8 +103,7 @@ const MIN_HEIGHT = 120;
  */
 export const toCanvas = (
 	layout: MapLayout,
-	cards: CanvasCard[],
-	options: { cardWidth: number }
+	cards: CanvasCard[]
 ): JsonCanvas => {
 	const byId = new Map(cards.map((card) => [card.segmentId, card]));
 
@@ -75,6 +115,7 @@ export const toCanvas = (
 			type: 'text',
 			text: [
 				`**${card?.range ?? ''}**`,
+				boardBlock(card),
 				card?.moves ?? '',
 				card?.state ? `*${card.state}*` : '',
 			]
@@ -82,8 +123,8 @@ export const toCanvas = (
 				.join('\n\n'),
 			x: Math.round(node.x * SCALE),
 			y: Math.round(node.y * SCALE),
-			width: Math.round(options.cardWidth * SCALE),
-			height: Math.max(Math.round(node.height * SCALE), MIN_HEIGHT),
+			width: CARD_WIDTH,
+			height: cardHeight(card),
 			...(card?.color ? { color: card.color } : {}),
 		};
 	});

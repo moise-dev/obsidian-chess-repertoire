@@ -1204,6 +1204,23 @@
  * hundred of these, and a hundred board instances is a different feature - but
  * the same pieces and the same theme as the study it came from.
  */
+/*
+ * A `chessPosition` block: a board and nothing else. Sized to the width it is
+ * given rather than fixed, since the card of an exported canvas is wider than
+ * the map's own.
+ */
+.cs-position {
+	display: flex;
+	justify-content: center;
+}
+
+.cs-position .cs-map-board-wrap {
+	width: 100%;
+	max-width: 220px;
+	height: auto;
+	aspect-ratio: 1;
+}
+
 .cs-map-board-wrap {
 	flex: 0 0 auto;
 	align-self: center;

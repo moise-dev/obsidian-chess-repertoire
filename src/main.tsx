@@ -6,6 +6,7 @@ import {
 	ChessStudyDataAdapter,
 	ChessStudyFileData,
 } from 'src/lib/storage';
+import { PositionView } from './components/PositionView';
 import { ReactView } from './components/ReactView';
 import { ChessStringModal } from './components/obsidian/ChessStringModal';
 import {
@@ -23,6 +24,7 @@ import { findCodeBlocks } from './lib/blocks';
 import { mergeDrillStats, mergeStudies } from './lib/merge';
 import { parseUserConfig } from './lib/obsidian';
 import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';
+import { parsePositionConfig } from './lib/position';
 import './main.css';
 
 type FEN = string;
@@ -192,6 +194,8 @@ export default class ChessStudyPlugin extends Plugin {
 			},
 		});
 
+		this.registerPositionBlock();
+
 		// Add chess study code block processor
 		this.registerMarkdownCodeBlockProcessor(
 			'chessStudy',
@@ -224,6 +228,31 @@ export default class ChessStudyPlugin extends Plugin {
 						0
 					);
 				}
+			}
+		);
+	}
+
+	/**
+	 * A bare position, for anywhere a board is wanted without a study behind it
+	 * - the cards of an exported map, most of all, which would otherwise be
+	 * lines of notation with nothing to look at.
+	 */
+	private registerPositionBlock() {
+		this.registerMarkdownCodeBlockProcessor(
+			'chessPosition',
+			(source, el, ctx) => {
+				const config = parsePositionConfig(this.settings, source);
+
+				if (!config) {
+					el.createEl('p', {
+						text: 'This chessPosition block has no readable FEN.',
+						cls: 'cs-empty-state',
+					});
+
+					return;
+				}
+
+				ctx.addChild(new PositionView(el, this.app, this.settings, config));
 			}
 		);
 	}

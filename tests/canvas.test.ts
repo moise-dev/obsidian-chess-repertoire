@@ -51,16 +51,18 @@ const layout = () => {
 const cards = (root: ReturnType<typeof layout>['root']): CanvasCard[] =>
 	flattenSegments(root).map((segment) => ({
 		segmentId: segment.id,
+		fen: `position-${segment.id} w KQkq - 0 1`,
+		flipped: false,
 		range: `${segment.depth + 1}`,
 		moves: segment.moves.map((move) => move.san).join(' '),
-		state: segment.depth ? 'Never drilled' : null,
+		state: 'Never drilled',
 		color: segment.depth ? '2' : undefined,
 	}));
 
 describe('toCanvas', () => {
 	it('writes a node per card and an edge per fork', () => {
 		const { root, layout: placed } = layout();
-		const canvas = toCanvas(placed, cards(root), { cardWidth: 100 });
+		const canvas = toCanvas(placed, cards(root));
 
 		assert.deepEqual(canvas.nodes.map((node) => node.id).sort(), [
 			'a',
@@ -75,37 +77,52 @@ describe('toCanvas', () => {
 
 	it('keeps the shape of the diagram, scaled up', () => {
 		const { root, layout: placed } = layout();
-		const canvas = toCanvas(placed, cards(root), { cardWidth: 100 });
+		const canvas = toCanvas(placed, cards(root));
 
 		const at = (id: string) => canvas.nodes.find((node) => node.id === id)!;
 
-		// The map put the second column at x=120 and cards 100 wide.
+		// The map put the second column at x=120.
 		assert.equal(at('a').x, 0);
 		assert.equal(at('c').x, 192);
-		assert.equal(at('a').width, 160);
 	});
 
-	it('never gives a card less room than it can be read in', () => {
+	it('sizes a card to what is on it rather than to the map', () => {
 		const { root, layout: placed } = layout();
-		const canvas = toCanvas(placed, cards(root), { cardWidth: 100 });
+		const canvas = toCanvas(placed, cards(root));
 
-		assert.ok(canvas.nodes.every((node) => node.height >= 120));
+		const at = (id: string) => canvas.nodes.find((node) => node.id === id)!;
+
+		assert.ok(canvas.nodes.every((node) => node.height >= 300));
+		// Every card here holds one short line of moves, so all are the same
+		// height - the map's own would have made the trunk the tall one.
+		assert.equal(at('a').height, at('x1').height);
 	});
 
-	it('writes the range, the moves and the state as markdown', () => {
+	it('writes the range, a board, the moves and the state as markdown', () => {
 		const { root, layout: placed } = layout();
-		const canvas = toCanvas(placed, cards(root), { cardWidth: 100 });
+		const canvas = toCanvas(placed, cards(root));
 
 		const trunk = canvas.nodes.find((node) => node.id === 'a')!;
-		const branch = canvas.nodes.find((node) => node.id === 'x1')!;
 
-		assert.equal(trunk.text, '**1**\n\na b');
-		assert.equal(branch.text, '**2**\n\nx1\n\n*Never drilled*');
+		assert.equal(
+			trunk.text,
+			'**1**\n\n```chessPosition\nfen: position-a w KQkq - 0 1\n```\n\na b\n\n*Never drilled*'
+		);
+	});
+
+	it('turns the boards round for a study written for Black', () => {
+		const { root, layout: placed } = layout();
+		const canvas = toCanvas(
+			placed,
+			cards(root).map((card) => ({ ...card, flipped: true }))
+		);
+
+		assert.ok(canvas.nodes[0].text.includes('orientation: black'));
 	});
 
 	it('colours a card only where there is a colour to give', () => {
 		const { root, layout: placed } = layout();
-		const canvas = toCanvas(placed, cards(root), { cardWidth: 100 });
+		const canvas = toCanvas(placed, cards(root));
 
 		assert.equal(canvas.nodes.find((node) => node.id === 'a')!.color, undefined);
 		assert.equal(canvas.nodes.find((node) => node.id === 'x1')!.color, '2');
