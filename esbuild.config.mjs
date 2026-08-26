@@ -1,5 +1,5 @@
-import builtins from 'builtin-modules';
 import esbuild from 'esbuild';
+import { builtinModules } from 'node:module';
 import process from 'process';
 import { renameStyles } from './rename-styles.mjs';
 
@@ -31,7 +31,8 @@ const context = await esbuild.context({
 		'@lezer/common',
 		'@lezer/highlight',
 		'@lezer/lr',
-		...builtins,
+		...builtinModules,
+		...builtinModules.map((name) => `node:${name}`),
 	],
 	format: 'cjs',
 	target: 'es2018',
