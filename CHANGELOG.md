@@ -4,6 +4,44 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-26
+
+Housekeeping, from the Obsidian plugin review. Nothing here changes what the
+plugin does; the one user-visible line is the minimum app version.
+
+### Changed
+
+- **Obsidian 1.13 is now the minimum.** The settings tab is declared through
+  `getSettingDefinitions()` rather than drawn by hand, so Obsidian renders it and
+  its settings search can find the settings by name. Anyone on an older Obsidian
+  keeps being offered 1.1.0, which is unaffected.
+
+- The merge command drops "chess" from its name, since Obsidian already shows the
+  plugin's name beside it. Command ids are unchanged, so existing hotkeys still
+  work.
+
+- The build declares `@codemirror/state` and `@codemirror/view` instead of
+  borrowing them, replaces `builtin-modules` with node's own `module.builtinModules`,
+  and moves from ESLint 8 to 10 with type-aware rules that now run in CI.
+
+### Fixed
+
+- `tsconfig`'s `lib` still named ES5/ES6/ES7, so `flatMap`, `Object.entries` and
+  `Object.fromEntries` only type-checked by way of a lib reference `@types/node`
+  happens to pull in. Anything built without that saw them as `any`, and the
+  checking that should have covered every move, every drill record and every
+  loaded repertoire was not happening.
+
+- Promises that nothing awaited: the autosave timer, the board-size write, the
+  map's drill-stats load, and the drill's colour prompt. A failure in any of them
+  was an unhandled rejection nobody would ever see.
+
+- A repertoire loaded from disk is now completed on the way in - version, header
+  and root variants filled where an older file lacks them - rather than being
+  handed on as whatever the file happened to hold.
+
+- Every reported dependency advisory. `npm audit` is clean.
+
 ## [1.1.0] - 2026-08-25
 
 ### Added
@@ -76,5 +114,6 @@ Notable changes to Chess Repertoire, newest first. The format follows
 Initial release under the name Chess Repertoire, forked from
 [chrislicodes/obsidian-chess-study](https://github.com/chrislicodes/obsidian-chess-study).
 
+[1.2.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.2.0
 [1.1.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.1.0
 [1.0.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.0.0

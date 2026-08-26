@@ -3,8 +3,6 @@ import {
 	ColorComponent,
 	PluginSettingTab,
 	Setting,
-	SettingDefinitionBase,
-	SettingDefinitionControl,
 	SettingDefinitionItem,
 } from 'obsidian';
 import ChessRepertoirePlugin from 'src/main';
@@ -43,20 +41,6 @@ export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 
 type SettingKey = keyof ChessRepertoirePluginSettings;
 
-/** A setting Obsidian can draw by itself, keyed to one of ours. */
-type ControlDefinition = SettingDefinitionControl<SettingKey>;
-
-/**
- * A setting that draws its own control. Obsidian hands the callback a second
- * argument this tab has no use for, so it is left off here and the narrower
- * signature still satisfies {@link SettingDefinitionItem}.
- */
-type RenderDefinition = SettingDefinitionBase & {
-	render: (setting: Setting) => void;
-};
-
-type Definition = ControlDefinition | RenderDefinition;
-
 /**
  * The theme's muted text colour, resolved to something the colour picker can
  * show. It only understands hex, and `--text-muted` is usually an rgb() or a
@@ -84,15 +68,10 @@ export class SettingsTab extends PluginSettingTab {
 	}
 
 	/**
-	 * The settings, as data. Obsidian 1.13 and later renders these itself, and
-	 * indexes them so the settings search can find them; `display()` below
-	 * walks the same array for older versions.
+	 * The settings, as data. Obsidian renders these itself and indexes them so
+	 * the settings search can find them.
 	 */
 	getSettingDefinitions(): SettingDefinitionItem[] {
-		return this.definitions();
-	}
-
-	private definitions(): Definition[] {
 		return [
 			{
 				name: 'Board orientation',
@@ -196,60 +175,14 @@ export class SettingsTab extends PluginSettingTab {
 					.setIcon('rotate-ccw')
 					.setTooltip('Follow the theme')
 					.onClick(() => {
-						// Putting the theme's colour straight into the picker rather
-						// than redrawing the tab: `update()` is 1.13 only, and
-						// `display()` would draw a second copy over the declarative
-						// one. Before the setting is cleared, so that it still ends up
-						// empty if this picker fires its own onChange.
+						// Straight into the picker rather than redrawing the whole
+						// tab for one control. Before the setting is cleared, so it
+						// still ends up empty if the picker fires its own onChange.
 						picker?.setValue(themeMutedColor());
 
 						this.plugin.settings.coordinateColor = '';
 						void this.plugin.saveSettings();
 					});
 			});
-	}
-
-	/**
-	 * @deprecated Obsidian 1.13 renders `getSettingDefinitions()` instead. This
-	 * builds the same settings by hand for the versions that came before it.
-	 */
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		for (const definition of this.definitions()) {
-			const setting = new Setting(containerEl).setName(definition.name);
-
-			if (definition.desc) setting.setDesc(definition.desc);
-
-			if (!('control' in definition)) {
-				definition.render(setting);
-
-				continue;
-			}
-
-			const { control } = definition;
-			const key = control.key;
-			const commit = (value: unknown) => void this.setControlValue(key, value);
-
-			if (control.type === 'dropdown')
-				setting.addDropdown((dropdown) => {
-					for (const [value, label] of Object.entries(control.options))
-						dropdown.addOption(value, label);
-
-					dropdown.setValue(String(this.getControlValue(key))).onChange(commit);
-				});
-			else if (control.type === 'toggle')
-				setting.addToggle((toggle) => {
-					toggle.setValue(Boolean(this.getControlValue(key))).onChange(commit);
-				});
-			else if (control.type === 'text')
-				setting.addText((text) => {
-					if (control.placeholder) text.setPlaceholder(control.placeholder);
-
-					text.setValue(String(this.getControlValue(key))).onChange(commit);
-				});
-		}
 	}
 }
