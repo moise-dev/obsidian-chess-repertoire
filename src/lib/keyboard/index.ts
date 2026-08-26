@@ -28,41 +28,6 @@ const repertoires = new Map<HTMLElement, RepertoireKeyHandler>();
 /** The repertoire last interacted with, which is the one the keys belong to. */
 let active: HTMLElement | null = null;
 
-/** `window.CHESS_REPERTOIRE_DEBUG_KEYS = true` narrates where a key press went. */
-const isDebugging = () =>
-	!!(window as unknown as Record<string, unknown>).CHESS_REPERTOIRE_DEBUG_KEYS;
-
-const describe = (node: Element | null): string => {
-	if (!node) return 'none';
-
-	const className =
-		typeof node.className === 'string' && node.className
-			? `.${node.className.trim().split(/\s+/).join('.')}`
-			: '';
-
-	return `${node.tagName.toLowerCase()}${className}`;
-};
-
-export const debugKeys = (
-	stage: string,
-	event: KeyboardEvent,
-	note = ''
-): void => {
-	if (!isDebugging()) return;
-
-	console.log(
-		`[chess-repertoire keys] ${stage}`,
-		{
-			key: event.key,
-			target: describe(event.target as Element),
-			activeElement: describe(document.activeElement),
-			activeRepertoire: describe(active),
-			defaultPrevented: event.defaultPrevented,
-		},
-		note
-	);
-};
-
 /**
  * Puts a repertoire on the register for as long as it is on screen. The returned
  * function takes it off again.
@@ -113,21 +78,12 @@ const repertoireFor = (event: KeyboardEvent): HTMLElement | null => {
  * handling and the Vim keymap from seeing an arrow press, the second keeps the
  * browser from scrolling on one.
  */
-export const handleRepertoireKey = (
-	event: KeyboardEvent,
-	stage: string
-): boolean => {
+export const handleRepertoireKey = (event: KeyboardEvent): boolean => {
 	const repertoire = repertoireFor(event);
 
-	if (!repertoire) {
-		debugKeys(stage, event, 'no repertoire owns this key');
-
-		return false;
-	}
+	if (!repertoire) return false;
 
 	const handled = repertoires.get(repertoire)?.(event) ?? false;
-
-	debugKeys(stage, event, handled ? 'handled' : 'repertoire declined it');
 
 	if (!handled) return false;
 

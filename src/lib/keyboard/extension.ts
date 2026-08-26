@@ -12,6 +12,6 @@ import { handleRepertoireKey } from './index';
 export const chessRepertoireKeymap = () =>
 	Prec.highest(
 		EditorView.domEventHandlers({
-			keydown: (event) => handleRepertoireKey(event, 'codemirror'),
+			keydown: (event) => handleRepertoireKey(event),
 		})
 	);

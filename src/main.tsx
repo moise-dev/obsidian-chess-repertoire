@@ -29,9 +29,8 @@ import { looksLikeFen, parsePgn, titleFromHeaders } from './lib/pgn';
 import { parsePositionConfig } from './lib/position';
 import './main.css';
 
-type FEN = string;
-type PGN = string;
-export type ChessString = FEN | PGN;
+/** Either a position (FEN) or a game (PGN); `looksLikeFen` tells them apart. */
+export type ChessString = string;
 
 export const ROOT_FEN =
 	'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -76,8 +75,8 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 		// Add command
 		this.addCommand({
-			id: 'insert-chess-repertoire',
-			name: 'Insert FEN/PGN-Editor at cursor position',
+			id: 'insert-editor',
+			name: 'Insert FEN/PGN editor at cursor position',
 			editorCallback: (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
 
@@ -113,7 +112,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 							rootFEN: isFen ? chessStringTrimmed : parsed?.rootFEN ?? ROOT_FEN,
 						};
 
-						this.dataAdapter.createStorageFolderIfNotExists();
+						await this.dataAdapter.createStorageFolderIfNotExists();
 
 						const id = await this.dataAdapter.saveFile(chessRepertoireFileData);
 
@@ -127,14 +126,16 @@ export default class ChessRepertoirePlugin extends Plugin {
 					}
 				};
 
-				new ChessStringModal(this.app, onSubmit).open();
+				new ChessStringModal(this.app, (chessString) =>
+					void onSubmit(chessString)
+				).open();
 			},
 		});
 
 		// Combine every repertoire in a note into one
 		this.addCommand({
-			id: 'merge-chess-repertoires',
-			name: 'Merge every chess repertoire in this note into one',
+			id: 'merge-in-note',
+			name: 'Merge every repertoire in this note into one',
 			editorCallback: async (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
 				const ids = this.repertoireIdsIn(editor.getValue());
@@ -204,7 +205,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 				if (!chessRepertoireId.trim().length)
 					return new Notice(
-						"No chessRepertoireId parameter found, please add one manually if the file already exists or add it via the 'Insert PGN-Editor at cursor position' command.",
+						"No chessRepertoireId parameter found, please add one manually if the file already exists or add it via the 'Insert FEN/PGN editor at cursor position' command.",
 						0
 					);
 
@@ -222,9 +223,9 @@ export default class ChessRepertoirePlugin extends Plugin {
 							this.dataAdapter
 						)
 					);
-				} catch (e) {
+				} catch {
 					new Notice(
-						`There was an error while trying to load ${chessRepertoireId}.json. You can check the plugin folder if the file exist and if not add one via the 'Insert PGN-Editor at cursor position' command.`,
+						`There was an error while trying to load ${chessRepertoireId}.json. You can check the plugin folder if the file exist and if not add one via the 'Insert FEN/PGN editor at cursor position' command.`,
 						0
 					);
 				}
@@ -247,7 +248,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 		this.registerDomEvent(
 			window,
 			'keydown',
-			(event) => handleRepertoireKey(event, 'window'),
+			(event) => handleRepertoireKey(event),
 			{ capture: true }
 		);
 
@@ -293,7 +294,7 @@ export default class ChessRepertoirePlugin extends Plugin {
 					return (
 						parseUserConfig(this.settings, body).chessRepertoireId?.trim() ?? ''
 					);
-				} catch (e) {
+				} catch {
 					return '';
 				}
 			})
@@ -301,7 +302,12 @@ export default class ChessRepertoirePlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const saved = (await this.loadData()) as
+			| Partial<ChessRepertoirePluginSettings>
+			| null
+			| undefined;
+
+		this.settings = { ...DEFAULT_SETTINGS, ...saved };
 	}
 
 	async saveSettings() {

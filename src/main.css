@@ -1360,3 +1360,19 @@
 .cs-map-square.is-dark {
 	background-color: var(--cs-sq-dark, #4b7399);
 }
+
+/* ------------------------------------------------------------------ *
+ * Settings
+ * ------------------------------------------------------------------ */
+
+/*
+ * A throwaway element the settings tab measures to find out what colour
+ * `--text-muted` actually resolves to. It is added and removed inside one
+ * synchronous call, so it only has to avoid disturbing the layout while it
+ * is there.
+ */
+.chess-repertoire-color-probe {
+	position: absolute;
+	visibility: hidden;
+	color: var(--text-muted);
+}

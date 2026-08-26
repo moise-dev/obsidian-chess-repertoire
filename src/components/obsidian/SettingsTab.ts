@@ -1,4 +1,11 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import {
+	App,
+	PluginSettingTab,
+	Setting,
+	SettingDefinitionBase,
+	SettingDefinitionControl,
+	SettingDefinitionItem,
+} from 'obsidian';
 import ChessRepertoirePlugin from 'src/main';
 
 export const BOARD_COLORS = {
@@ -33,14 +40,29 @@ export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 	coordinateColor: '',
 };
 
+type SettingKey = keyof ChessRepertoirePluginSettings;
+
+/** A setting Obsidian can draw by itself, keyed to one of ours. */
+type ControlDefinition = SettingDefinitionControl<SettingKey>;
+
+/**
+ * A setting that draws its own control. Obsidian hands the callback a second
+ * argument this tab has no use for, so it is left off here and the narrower
+ * signature still satisfies {@link SettingDefinitionItem}.
+ */
+type RenderDefinition = SettingDefinitionBase & {
+	render: (setting: Setting) => void;
+};
+
+type Definition = ControlDefinition | RenderDefinition;
+
 /**
  * The theme's muted text colour, resolved to something the colour picker can
  * show. It only understands hex, and `--text-muted` is usually an rgb() or a
  * var chain, so it is measured off a throwaway element rather than read.
  */
 const themeMutedColor = (): string => {
-	const probe = document.body.createDiv();
-	probe.style.color = 'var(--text-muted)';
+	const probe = document.body.createDiv({ cls: 'chess-repertoire-color-probe' });
 
 	const match = getComputedStyle(probe)
 		.color.match(/\d+/g)
@@ -60,67 +82,106 @@ export class SettingsTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
+	/**
+	 * The settings, as data. Obsidian 1.13 and later renders these itself, and
+	 * indexes them so the settings search can find them; `display()` below
+	 * walks the same array for older versions.
+	 */
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return this.definitions();
+	}
 
-		containerEl.empty();
+	private definitions(): Definition[] {
+		return [
+			{
+				name: 'Board orientation',
+				desc: 'Sets the default orientation of the board',
+				control: {
+					type: 'dropdown',
+					key: 'boardOrientation',
+					options: { white: 'White', black: 'Black' },
+					defaultValue: DEFAULT_SETTINGS.boardOrientation,
+				},
+			},
+			{
+				name: 'Board color',
+				desc: 'Sets the default color of the board',
+				control: {
+					type: 'dropdown',
+					key: 'boardColor',
+					options: BOARD_COLORS,
+					defaultValue: DEFAULT_SETTINGS.boardColor,
+				},
+			},
+			{
+				name: 'Board coordinates',
+				desc: 'Show the a-h / 1-8 labels on the board',
+				control: {
+					type: 'toggle',
+					key: 'showCoordinates',
+					defaultValue: DEFAULT_SETTINGS.showCoordinates,
+				},
+			},
+			{
+				name: 'Coordinate color',
+				desc: "Color of the coordinate labels. Reset to follow the theme's muted text color.",
+				aliases: ['coordinates'],
+				render: (setting) => this.renderCoordinateColor(setting),
+			},
+			{
+				name: 'Default width',
+				desc: 'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual repertoires can be resized by dragging their bottom-right corner.',
+				control: {
+					type: 'text',
+					key: 'boardSize',
+					placeholder: 'fill available width',
+				},
+			},
+			{
+				name: 'Show comments',
+				desc: 'Show the notes panel underneath the board by default',
+				control: {
+					type: 'toggle',
+					key: 'viewComments',
+					defaultValue: DEFAULT_SETTINGS.viewComments,
+				},
+			},
+		];
+	}
 
-		new Setting(containerEl)
-			.setName('Board orientation')
-			.setDesc('Sets the default orientation of the board')
-			.addDropdown((dropdown) => {
-				dropdown.addOption('white', 'White');
-				dropdown.addOption('black', 'Black');
+	getControlValue(key: string): unknown {
+		const value = this.plugin.settings[key as SettingKey];
 
-				dropdown
-					.setValue(this.plugin.settings.boardOrientation)
-					.onChange((orientation) => {
-						this.plugin.settings.boardOrientation = orientation as 'white' | 'black';
-						this.plugin.saveSettings();
-					});
-			});
+		// The width is stored as a number so the board can use it directly, but
+		// its control is a text field that has to be able to say "empty".
+		return key === 'boardSize' ? value?.toString() ?? '' : value;
+	}
 
-		new Setting(containerEl)
-			.setName('Board color')
-			.setDesc('Sets the default color of the board')
-			.addDropdown((dropdown) => {
-				for (const [value, label] of Object.entries(BOARD_COLORS)) {
-					dropdown.addOption(value, label);
-				}
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		if (key === 'boardSize') {
+			const parsed = Number.parseInt(String(value), 10);
 
-				dropdown
-					.setValue(this.plugin.settings.boardColor)
-					.onChange((boardColor) => {
-						this.plugin.settings.boardColor = boardColor as BoardColor;
-						this.plugin.saveSettings();
-					});
-			});
+			this.plugin.settings.boardSize = Number.isFinite(parsed) ? parsed : null;
+		} else {
+			Object.assign(this.plugin.settings, { [key]: value });
+		}
 
-		new Setting(containerEl)
-			.setName('Board coordinates')
-			.setDesc('Show the a-h / 1-8 labels on the board')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.showCoordinates)
-					.onChange((showCoordinates) => {
-						this.plugin.settings.showCoordinates = showCoordinates;
-						this.plugin.saveSettings();
-					});
-			});
+		await this.plugin.saveSettings();
+	}
 
-		new Setting(containerEl)
-			.setName('Coordinate color')
-			.setDesc(
-				"Color of the coordinate labels. Reset to follow the theme's muted text color."
-			)
+	/**
+	 * The colour picker and its reset button. A plain `color` control cannot
+	 * carry the extra button, and the picker has no empty state, so it shows
+	 * what the labels currently look like: the chosen colour, or the theme's own.
+	 */
+	private renderCoordinateColor(setting: Setting): void {
+		setting
 			.addColorPicker((picker) => {
-				// The picker has no empty state, so it shows what the labels
-				// currently look like: the chosen colour, or the theme's own.
 				picker
 					.setValue(this.plugin.settings.coordinateColor || themeMutedColor())
 					.onChange((coordinateColor) => {
 						this.plugin.settings.coordinateColor = coordinateColor;
-						this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 					});
 			})
 			.addExtraButton((button) => {
@@ -129,38 +190,57 @@ export class SettingsTab extends PluginSettingTab {
 					.setTooltip('Follow the theme')
 					.onClick(() => {
 						this.plugin.settings.coordinateColor = '';
-						this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 						// Redraw so the picker falls back to the theme's colour.
+						this.update();
 						this.display();
 					});
 			});
+	}
 
-		new Setting(containerEl)
-			.setName('Default width')
-			.setDesc(
-				'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual repertoires can be resized by dragging their bottom-right corner.'
-			)
-			.addText((text) => {
-				text
-					.setPlaceholder('fill available width')
-					.setValue(this.plugin.settings.boardSize?.toString() ?? '')
-					.onChange((value) => {
-						const parsed = Number.parseInt(value, 10);
-						this.plugin.settings.boardSize = Number.isFinite(parsed) ? parsed : null;
-						this.plugin.saveSettings();
-					});
-			});
+	/**
+	 * @deprecated Obsidian 1.13 renders `getSettingDefinitions()` instead. This
+	 * builds the same settings by hand for the versions that came before it.
+	 */
+	display(): void {
+		const { containerEl } = this;
 
-		new Setting(containerEl)
-			.setName('Show comments')
-			.setDesc('Show the notes panel underneath the board by default')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.viewComments)
-					.onChange((viewComments) => {
-						this.plugin.settings.viewComments = viewComments;
-						this.plugin.saveSettings();
-					});
-			});
+		containerEl.empty();
+
+		for (const definition of this.definitions()) {
+			const setting = new Setting(containerEl).setName(definition.name);
+
+			if (definition.desc) setting.setDesc(definition.desc);
+
+			if (!('control' in definition)) {
+				definition.render(setting);
+
+				continue;
+			}
+
+			const { control } = definition;
+			const key = control.key;
+			const commit = (value: unknown) => void this.setControlValue(key, value);
+
+			if (control.type === 'dropdown')
+				setting.addDropdown((dropdown) => {
+					for (const [value, label] of Object.entries(control.options))
+						dropdown.addOption(value, label);
+
+					dropdown
+						.setValue(String(this.getControlValue(key)))
+						.onChange(commit);
+				});
+			else if (control.type === 'toggle')
+				setting.addToggle((toggle) => {
+					toggle.setValue(Boolean(this.getControlValue(key))).onChange(commit);
+				});
+			else if (control.type === 'text')
+				setting.addText((text) => {
+					if (control.placeholder) text.setPlaceholder(control.placeholder);
+
+					text.setValue(String(this.getControlValue(key))).onChange(commit);
+				});
+		}
 	}
 }
