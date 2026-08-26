@@ -1,3 +1,10 @@
+/*
+ * The squares below are keyed by their index on purpose, so the lint rule
+ * against it is off for this file. A board is the same sixty-four cells in the
+ * same order every time: the index *is* the square's identity, there is nothing
+ * to reorder, and a rank-and-file name would only be the same key spelled out.
+ */
+/* eslint-disable @eslint-react/no-array-index-key */
 import * as React from 'react';
 import { useMemo } from 'react';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';

@@ -249,9 +249,9 @@ export const MoveMap = ({
 	const [view, setView] = useState({ x: 0, y: 0, z: 1 });
 
 	const viewportRef = useRef<HTMLDivElement>(null);
-	const cardRefs = useRef(new Map<string, HTMLDivElement>());
-	const hasFitted = useRef(false);
-	const panned = useRef(false);
+	const cardsRef = useRef(new Map<string, HTMLDivElement>());
+	const hasFittedRef = useRef(false);
+	const pannedRef = useRef(false);
 
 	// The diagram draws without them and colours in when they arrive; a repertoire
 	// never drilled has none to wait for.
@@ -299,13 +299,13 @@ export const MoveMap = ({
 		const measured: Record<string, number> = {};
 		let changed = false;
 
-		for (const [id, element] of cardRefs.current) {
+		for (const [id, element] of cardsRef.current) {
 			measured[id] = element.offsetHeight;
 
 			if (heights[id] !== measured[id]) changed = true;
 		}
 
-		if (changed || Object.keys(heights).length !== cardRefs.current.size)
+		if (changed || Object.keys(heights).length !== cardsRef.current.size)
 			setHeights(measured);
 		// Keyed on the layout, which changes whenever the cards do - through
 		// `root` when the repertoire changes, through `heights` when a measurement
@@ -337,9 +337,9 @@ export const MoveMap = ({
 	// Frame the whole thing once, after the first measured layout rather than
 	// the guessed one, then leave the view alone.
 	useEffect(() => {
-		if (hasFitted.current || !layout || !Object.keys(heights).length) return;
+		if (hasFittedRef.current || !layout || !Object.keys(heights).length) return;
 
-		hasFitted.current = true;
+		hasFittedRef.current = true;
 		fit();
 	}, [fit, heights, layout]);
 
@@ -385,16 +385,16 @@ export const MoveMap = ({
 		const startX = event.clientX;
 		const startY = event.clientY;
 
-		panned.current = false;
+		pannedRef.current = false;
 
 		const onPointerMove = (moveEvent: PointerEvent) => {
 			const dx = moveEvent.clientX - startX;
 			const dy = moveEvent.clientY - startY;
 
 			// A few pixels of slop, so a click that wobbles is still a click.
-			if (!panned.current && Math.abs(dx) + Math.abs(dy) < 4) return;
+			if (!pannedRef.current && Math.abs(dx) + Math.abs(dy) < 4) return;
 
-			panned.current = true;
+			pannedRef.current = true;
 
 			setView((current) => ({ ...current, x: current.x + dx, y: current.y + dy }));
 		};
@@ -504,7 +504,7 @@ export const MoveMap = ({
 	const onMoveClick = useCallback(
 		(moveId: string) => {
 			// The pointer that just finished a pan is not choosing a move.
-			if (panned.current) return;
+			if (pannedRef.current) return;
 
 			onSelectMove(moveId);
 		},
@@ -612,8 +612,8 @@ export const MoveMap = ({
 							<div
 								key={segment.id}
 								ref={(element) => {
-									if (element) cardRefs.current.set(segment.id, element);
-									else cardRefs.current.delete(segment.id);
+									if (element) cardsRef.current.set(segment.id, element);
+									else cardsRef.current.delete(segment.id);
 								}}
 								className={`cs-map-card ${stateClass(state)}${
 									holdsCurrent ? ' is-current' : ''
@@ -647,7 +647,7 @@ export const MoveMap = ({
 									{rows.map((row) => (
 										<React.Fragment key={row.number}>
 											<span className="cs-map-sheet-number">{row.number}.</span>
-											{[row.white, row.black].map((move, column) =>
+											{[row.white, row.black].map((move) =>
 												move ? (
 													<span className="cs-map-cell" key={move.moveId}>
 														<button
@@ -666,7 +666,9 @@ export const MoveMap = ({
 														/>
 													</span>
 												) : (
-													<span key={column} className="cs-map-sheet-gap" aria-hidden="true">
+													// A row exists because a move was put in it, so at most
+													// one of the two halves is a gap and one key covers it.
+													<span key="gap" className="cs-map-sheet-gap" aria-hidden="true">
 														{'\u2026'}
 													</span>
 												)

@@ -541,20 +541,20 @@ export const ChessRepertoire = ({
 	// Serialised form of what is currently on disk, so a save that would be a
 	// no-op is skipped. Navigation does not touch `repertoire`, but this keeps the
 	// autosave correct even if some future action touches it without changing it.
-	const savedSnapshot = useRef(JSON.stringify(chessRepertoireData));
+	const savedSnapshotRef = useRef(JSON.stringify(chessRepertoireData));
 	const [isDirty, setIsDirty] = useState(false);
 
 	const saveRepertoire = useCallback(async () => {
 		const snapshot = JSON.stringify(gameState.repertoire);
 
-		if (snapshot === savedSnapshot.current) {
+		if (snapshot === savedSnapshotRef.current) {
 			setIsDirty(false);
 			return;
 		}
 
 		await dataAdapter.saveFile(gameState.repertoire, chessRepertoireId);
 
-		savedSnapshot.current = snapshot;
+		savedSnapshotRef.current = snapshot;
 		setIsDirty(false);
 	}, [chessRepertoireId, dataAdapter, gameState.repertoire]);
 
@@ -580,7 +580,7 @@ export const ChessRepertoire = ({
 			.catch((e) => console.error('chess-repertoire: autosave failed', e));
 
 	useEffect(() => {
-		if (JSON.stringify(gameState.repertoire) === savedSnapshot.current) return;
+		if (JSON.stringify(gameState.repertoire) === savedSnapshotRef.current) return;
 
 		setIsDirty(true);
 
