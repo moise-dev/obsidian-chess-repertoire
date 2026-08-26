@@ -92,7 +92,7 @@ export function isPromotionMove(chess: Chess, orig: Square, dest: Square) {
 }
 
 export function toDests(chess: Chess): Map<Square, Square[]> {
-	const dests = new Map();
+	const dests = new Map<Square, Square[]>();
 	SQUARES.forEach((s) => {
 		const ms = chess.moves({ square: s, verbose: true });
 		if (ms.length)

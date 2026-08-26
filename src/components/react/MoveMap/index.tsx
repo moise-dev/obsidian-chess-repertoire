@@ -274,7 +274,7 @@ export const MoveMap = ({
 		[rootFEN, tree]
 	);
 	const transpositions = useMemo(
-		() => (root ? findTranspositions(root) : new Map()),
+		() => (root ? findTranspositions(root) : new Map<string, Transposition[]>()),
 		[root]
 	);
 

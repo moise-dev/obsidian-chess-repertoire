@@ -299,7 +299,7 @@ export const fenToBoard = (fen: string): (string | null)[][] =>
 		.split(' ')[0]
 		.split('/')
 		.map((rank) =>
-			[...rank].flatMap((char) =>
-				/\d/.test(char) ? Array(Number(char)).fill(null) : [char]
+			[...rank].flatMap<string | null>((char) =>
+				/\d/.test(char) ? (Array(Number(char)).fill(null) as null[]) : [char]
 			)
 		);

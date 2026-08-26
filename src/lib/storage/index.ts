@@ -104,6 +104,16 @@ export interface ChessRepertoireFileData {
 	playerColor?: 'w' | 'b';
 }
 
+/**
+ * A repertoire as it comes off disk. Every field is optional because the file
+ * may have been written by any storage version the plugin has ever shipped;
+ * `loadFile` fills the gaps in before anything downstream sees it.
+ */
+type StoredRepertoire = Partial<ChessRepertoireFileData>;
+
+/** A drill file off disk, on the same terms. */
+type StoredDrillData = Partial<ChessRepertoireDrillData>;
+
 const normaliseMoves = (moves: ChessRepertoireMove[] | undefined): void => {
 	if (!Array.isArray(moves)) return;
 
@@ -140,24 +150,29 @@ export class ChessRepertoireDataAdapter {
 			normalizePath(`${this.storagePath}/${id}.json`)
 		);
 
-		const jsonData = JSON.parse(data);
-
-		//Make sure data is compatible with storage version 0.0.1.
-		if (!jsonData.rootFEN) {
-			jsonData.rootFEN = ROOT_FEN;
-		}
+		const stored = JSON.parse(data) as StoredRepertoire;
 
 		//Storage versions before 0.0.4 gave `variants` only to mainline moves.
 		//Filling it in here means nothing downstream has to test for it.
-		normaliseMoves(jsonData.moves);
+		normaliseMoves(stored.moves);
 
 		//Storage versions before 0.0.7 had nowhere to put an alternative to the
 		//first move, so an older repertoire simply has none.
-		if (!Array.isArray(jsonData.rootVariants)) jsonData.rootVariants = [];
+		const rootVariants = Array.isArray(stored.rootVariants)
+			? stored.rootVariants
+			: [];
 
-		for (const variant of jsonData.rootVariants) normaliseMoves(variant.moves);
+		for (const variant of rootVariants) normaliseMoves(variant.moves);
 
-		return jsonData;
+		return {
+			...stored,
+			version: stored.version ?? CURRENT_STORAGE_VERSION,
+			header: stored.header ?? { title: null },
+			moves: stored.moves ?? [],
+			rootVariants,
+			//Make sure data is compatible with storage version 0.0.1.
+			rootFEN: stored.rootFEN || ROOT_FEN,
+		};
 	}
 
 	private drillPath(id: string) {
@@ -177,9 +192,12 @@ export class ChessRepertoireDataAdapter {
 		try {
 			if (!(await this.adapter.exists(path))) return emptyDrillData();
 
-			const parsed = JSON.parse(await this.adapter.read(path));
+			const parsed = JSON.parse(
+				await this.adapter.read(path)
+			) as StoredDrillData | null;
 
-			if (!parsed || typeof parsed.stats !== 'object') return emptyDrillData();
+			if (!parsed?.stats || typeof parsed.stats !== 'object')
+				return emptyDrillData();
 
 			return {
 				version: parsed.version ?? CURRENT_DRILL_VERSION,
@@ -204,6 +222,6 @@ export class ChessRepertoireDataAdapter {
 	async createStorageFolderIfNotExists() {
 		const folderExists = await this.adapter.exists(this.storagePath);
 
-		if (!folderExists) this.adapter.mkdir(this.storagePath);
+		if (!folderExists) await this.adapter.mkdir(this.storagePath);
 	}
 }
