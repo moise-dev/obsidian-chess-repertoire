@@ -38,6 +38,7 @@ jobs:
    - name: Build plugin
      run: |
       npm ci
+      npm run lint
       npm test
       npm run build
 
