@@ -75,7 +75,11 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 		// Add command
 		this.addCommand({
-			id: 'insert-editor',
+			// Obsidian namespaces this as `chess-repertoire:insert-chess-repertoire`,
+			// so the plugin's name is in there twice. Renaming it would clear the
+			// review's warning and silently drop everyone's hotkey for it, which is
+			// the worse of the two.
+			id: 'insert-chess-repertoire',
 			name: 'Insert FEN/PGN editor at cursor position',
 			editorCallback: (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
@@ -126,15 +130,17 @@ export default class ChessRepertoirePlugin extends Plugin {
 					}
 				};
 
-				new ChessStringModal(this.app, (chessString) =>
-					void onSubmit(chessString)
+				new ChessStringModal(
+					this.app,
+					(chessString) => void onSubmit(chessString)
 				).open();
 			},
 		});
 
 		// Combine every repertoire in a note into one
 		this.addCommand({
-			id: 'merge-in-note',
+			// Kept for the same reason as the id above.
+			id: 'merge-chess-repertoires',
 			name: 'Merge every repertoire in this note into one',
 			editorCallback: async (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
