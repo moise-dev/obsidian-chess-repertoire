@@ -66,7 +66,7 @@ const tree = (): MoveTree =>
 			],
 			rootVariants: [],
 		})
-	);
+	) as MoveTree;
 
 const sans = (moves: ChessRepertoireMove[]) =>
 	moves.map((m) => m.san).join(' ');
@@ -339,7 +339,7 @@ describe('alternatives to the first move', () => {
 					va('r2', '', [mv('s', [va('v9', 's', [mv('n')])])]),
 				],
 			})
-		);
+		) as MoveTree;
 
 	it('addresses them from the root', () => {
 		const t = rooted();

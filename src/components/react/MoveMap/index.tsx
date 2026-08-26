@@ -258,9 +258,13 @@ export const MoveMap = ({
 	useEffect(() => {
 		let cancelled = false;
 
-		loadStats().then((loaded) => {
-			if (!cancelled) setStats(loaded);
-		});
+		loadStats()
+			.then((loaded) => {
+				if (!cancelled) setStats(loaded);
+			})
+			.catch((e) =>
+				console.error('chess-repertoire: could not read the drill history', e)
+			);
 
 		return () => {
 			cancelled = true;
@@ -550,7 +554,7 @@ export const MoveMap = ({
 				<button
 					className="cs-icon-button"
 					title="Export as an Obsidian canvas"
-					onClick={onExportClick}
+					onClick={() => void onExportClick()}
 				>
 					<LayoutGrid size={16} />
 				</button>

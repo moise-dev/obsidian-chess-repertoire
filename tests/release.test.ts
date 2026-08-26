@@ -3,7 +3,12 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
 // Paths are relative to the repo root, which is where `npm test` runs from.
-const read = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
+const read = (path: string) =>
+	JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+
+/** The version a release file names, as something these tests can compare and print. */
+const versionOf = (metadata: Record<string, unknown>) =>
+	String(metadata.version);
 
 /**
  * Obsidian installs the release whose tag matches `manifest.json` exactly, so a
@@ -22,17 +27,17 @@ describe('release metadata', () => {
 
 	it('gives package.json and manifest.json the same version', () => {
 		assert.equal(
-			manifest.version,
-			pkg.version,
+			versionOf(manifest),
+			versionOf(pkg),
 			'run `node version-bump.mjs` after bumping package.json'
 		);
 	});
 
 	it('records this version in versions.json', () => {
 		assert.equal(
-			versions[manifest.version],
+			versions[versionOf(manifest)],
 			manifest.minAppVersion,
-			`versions.json is missing an entry for ${manifest.version}`
+			`versions.json is missing an entry for ${versionOf(manifest)}`
 		);
 	});
 
@@ -40,8 +45,8 @@ describe('release metadata', () => {
 		const changelog = readFileSync('CHANGELOG.md', 'utf8');
 
 		assert.ok(
-			changelog.includes(`## [${manifest.version}]`),
-			`CHANGELOG.md has nothing for ${manifest.version}`
+			changelog.includes(`## [${versionOf(manifest)}]`),
+			`CHANGELOG.md has nothing for ${versionOf(manifest)}`
 		);
 	});
 });

@@ -237,6 +237,42 @@ export const useTrainer = ({
 			return;
 		}
 
+		const beginSession = async (color: TrainerColor) => {
+			setPlayerColor(color);
+
+			// A repertoire that has not said which side it is written for learns it
+			// here, since answering this question is saying so.
+			const chosen = color === 'black' ? 'b' : 'w';
+
+			if (chosen !== repertoireColor)
+				dispatch({ type: 'SET_PLAYER_COLOR', color: chosen });
+
+			setOrientation(color);
+			setReport(null);
+			setMistakes([]);
+			setMovesPlayed(0);
+			setAttempt(null);
+			setHintIndex(-1);
+
+			// Read per session rather than on mount: a note can hold several
+			// repertoires and most of them are never drilled. Pruned on the way in,
+			// so a repertoire edited for years does not carry records for lines it no
+			// longer has.
+			statsRef.current = pruneDrillData(
+				await dataAdapter.loadDrillData(chessRepertoireId),
+				tree
+			).stats;
+			repliesRef.current = {};
+
+			// Rewind to the repertoire's own starting position - the standard array
+			// for an ordinary game, or whatever FEN the repertoire opens from - so a
+			// session always drills from the top, wherever the board happened to
+			// be sitting when the button was pressed.
+			dispatch({ type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' });
+
+			setIsActive(true);
+		};
+
 		new ColorChoiceModal(app, {
 			body:
 				'The drill runs the repertoire from its first move. Your opponent picks from the replies you wrote down, so no two sessions need take the same line.',
@@ -246,41 +282,9 @@ export const useTrainer = ({
 					: repertoireColor === 'w'
 					? 'white'
 					: undefined,
-			onChoose: async (color) => {
-				setPlayerColor(color);
-
-				// A repertoire that has not said which side it is written for learns it
-				// here, since answering this question is saying so.
-				const chosen = color === 'black' ? 'b' : 'w';
-
-				if (chosen !== repertoireColor)
-					dispatch({ type: 'SET_PLAYER_COLOR', color: chosen });
-
-				setOrientation(color);
-				setReport(null);
-				setMistakes([]);
-				setMovesPlayed(0);
-				setAttempt(null);
-				setHintIndex(-1);
-
-				// Read per session rather than on mount: a note can hold several
-				// repertoires and most of them are never drilled. Pruned on the way in,
-				// so a repertoire edited for years does not carry records for lines it no
-				// longer has.
-				statsRef.current = pruneDrillData(
-					await dataAdapter.loadDrillData(chessRepertoireId),
-					tree
-				).stats;
-				repliesRef.current = {};
-
-				// Rewind to the repertoire's own starting position - the standard array
-				// for an ordinary game, or whatever FEN the repertoire opens from - so a
-				// session always drills from the top, wherever the board happened to
-				// be sitting when the button was pressed.
-				dispatch({ type: 'DISPLAY_FIRST_MOVE_IN_HISTORY' });
-
-				setIsActive(true);
-			},
+			// The modal wants a handler that returns nothing, and reading the drill
+			// history is a round trip to disk, so the session starts on its own.
+			onChoose: (color) => void beginSession(color),
 		}).open();
 	}, [
 		app,

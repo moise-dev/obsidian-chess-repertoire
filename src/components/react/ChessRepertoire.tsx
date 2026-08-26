@@ -584,7 +584,7 @@ export const ChessRepertoire = ({
 
 		setIsDirty(true);
 
-		const timer = window.setTimeout(autosave, 1200);
+		const timer = window.setTimeout(() => void autosave(), 1200);
 
 		// Only cancels the pending save - this cleanup runs on every change, so
 		// flushing here would fire on each one and defeat the debounce.
@@ -671,7 +671,8 @@ export const ChessRepertoire = ({
 				window.removeEventListener('pointerup', onPointerUp);
 
 				setWidth(nextWidth);
-				persistWidth(nextWidth);
+				// Swallows its own failures; nothing here waits on the write.
+				void persistWidth(nextWidth);
 			};
 
 			window.addEventListener('pointermove', onPointerMove);
@@ -1098,7 +1099,7 @@ export const ChessRepertoire = ({
 							moveId: moveId,
 						})
 					}
-					onSaveButtonClick={onSaveButtonClick}
+					onSaveButtonClick={() => void onSaveButtonClick()}
 					onExportButtonClick={() => {
 						new ExportModal(app, {
 							fen: chessLogic.fen(),
