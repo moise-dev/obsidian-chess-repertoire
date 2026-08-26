@@ -66,7 +66,7 @@ const outline = (moves: ChessRepertoireMove[], depth = 0): string[] =>
 	moves.flatMap((move) => [
 		`${'  '.repeat(depth)}${move.san}`,
 		...(move.variants ?? []).flatMap((variant) =>
-			outline(variant.moves as ChessRepertoireMove[], depth + 1)
+			outline(variant.moves, depth + 1)
 		),
 	]);
 

@@ -7,7 +7,6 @@ import {
 	playOtherSide,
 } from '../src/lib/chess-logic';
 import { MoveTree } from '../src/lib/move-tree';
-import { ChessRepertoireMove } from '../src/lib/storage';
 
 const fakeCg = () =>
 	({ set: () => undefined } as unknown as Parameters<typeof playOtherSide>[0]);
@@ -57,16 +56,13 @@ describe('collectDrawnMoveIds', () => {
 		const chess = new Chess(fen);
 
 		return {
-			moves: sans.map(
-				(san) =>
-					({
-						...chess.move(san),
-						moveId: san,
-						variants: [],
-						shapes: [],
-						comment: null,
-					} as unknown as ChessRepertoireMove)
-			),
+			moves: sans.map((san) => ({
+				...chess.move(san),
+				moveId: san,
+				variants: [],
+				shapes: [],
+				comment: null,
+			})),
 			rootVariants: [],
 		};
 	};
@@ -118,7 +114,7 @@ describe('collectDrawnMoveIds', () => {
 	 */
 	it('does not call a checkmate a draw', () => {
 		const fen = '7k/8/6K1/8/8/8/8/5Q2 w - - 0 1';
-		const tree = line(fen, ['Qf8#' as string]);
+		const tree = line(fen, ['Qf8#']);
 
 		assert.equal(tree.moves[0].san, 'Qf8#');
 		assert.equal(collectDrawnMoveIds(tree, fen).size, 0);
@@ -156,7 +152,7 @@ describe('collectDrawnMoveIds', () => {
 			from: 'h4',
 			to: 'h5',
 			moveId: 'bogus',
-		} as ChessRepertoireMove;
+		};
 		tree.rootVariants.push({
 			variantId: 'r',
 			parentMoveId: '',

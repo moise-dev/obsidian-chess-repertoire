@@ -55,8 +55,8 @@ export const buildHintStages = (
 
 	return [
 		...(comment ? ([{ kind: 'comment', text: comment }] as HintStage[]) : []),
-		{ kind: 'piece', from: expected.from as Square },
-		{ kind: 'arrow', from: expected.from as Square, to: expected.to as Square },
+		{ kind: 'piece', from: expected.from },
+		{ kind: 'arrow', from: expected.from, to: expected.to },
 	];
 };
 

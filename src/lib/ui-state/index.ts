@@ -75,16 +75,14 @@ export const displayMoveInHistory = (
 			const target = list?.[index + offset];
 
 			if (target) {
-				moveToDisplay = target as Draft<ChessRepertoireMove>;
+				moveToDisplay = target;
 			} else if (offset < 0) {
 				// Off the front of a variation: fall back to its parent move. On the
 				// mainline there is no parent, so this leaves the root position - and
 				// so does an alternative to the first move, whose parent is the root.
 				const parentPath = getParentMovePath(path);
 
-				moveToDisplay = parentPath
-					? (getMoveAtPath(tree, parentPath) as Draft<ChessRepertoireMove>)
-					: null;
+				moveToDisplay = parentPath ? getMoveAtPath(tree, parentPath) : null;
 			} else {
 				// Off the end of a line: stay put rather than jumping somewhere
 				// unrelated.
@@ -92,7 +90,7 @@ export const displayMoveInHistory = (
 			}
 		}
 	} else if (offset > 0) {
-		moveToDisplay = (tree.moves[0] as Draft<ChessRepertoireMove>) ?? null;
+		moveToDisplay = tree.moves[0] ?? null;
 	} else if (offset < 0) {
 		return draft;
 	}
@@ -140,9 +138,7 @@ export const getCurrentMove = (
 
 	const path = findMovePath(draft.repertoire, currentMoveId);
 
-	return path
-		? (getMoveAtPath(draft.repertoire, path) as Draft<ChessRepertoireMove>)
-		: null;
+	return path ? getMoveAtPath(draft.repertoire, path) : null;
 };
 
 /**

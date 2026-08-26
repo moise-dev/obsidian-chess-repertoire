@@ -488,7 +488,7 @@ export const getReplies = (
 
 	return [
 		...(continuation ? [continuation] : []),
-		...firstMoves((move.variants ?? []) as MoveTree['rootVariants']),
+		...firstMoves(move.variants ?? []),
 	];
 };
 

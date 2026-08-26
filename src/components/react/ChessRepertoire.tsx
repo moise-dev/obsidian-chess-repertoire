@@ -170,7 +170,7 @@ export const ChessRepertoire = ({
 		if (width) style['--cs-width'] = `${width}px`;
 		if (coordinateColor) style['--cs-coord-color'] = coordinateColor;
 
-		return Object.keys(style).length ? (style as React.CSSProperties) : undefined;
+		return Object.keys(style).length ? style : undefined;
 	}, [width, coordinateColor]);
 
 	// Setup Chess.js API
@@ -425,15 +425,14 @@ export const ChessRepertoire = ({
 					const moves = draft.repertoire.moves;
 					const currentMoveId = draft.currentMove?.moveId;
 
-					const makeMove = (): Draft<ChessRepertoireMove> =>
-						({
-							...newMove,
-							moveId: nanoid(),
-							variants: [],
-							shapes: [],
-							comment: null,
-							classification: null,
-						} as Draft<ChessRepertoireMove>);
+					const makeMove = (): Draft<ChessRepertoireMove> => ({
+						...newMove,
+						moveId: nanoid(),
+						variants: [],
+						shapes: [],
+						comment: null,
+						classification: null,
+					});
 
 					// Nothing selected: we are at the root position, whose replies are
 					// the mainline's first move and the alternatives beside it.

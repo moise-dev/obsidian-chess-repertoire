@@ -11,7 +11,6 @@ export default tseslint.config(
 	js.configs.recommended,
 	tseslint.configs.recommendedTypeChecked,
 	eslintReact.configs['recommended-typescript'],
-	reactHooks.configs.flat['recommended-latest'],
 	{
 		languageOptions: {
 			globals: { ...globals.browser, ...globals.node },
@@ -20,7 +19,13 @@ export default tseslint.config(
 				tsconfigRootDir: import.meta.dirname,
 			},
 		},
+		plugins: { 'react-hooks': reactHooks },
 		rules: {
+			// The two classic rules only. eslint-plugin-react-hooks 7 ships the
+			// React Compiler suite in its recommended config, which is a much
+			// wider net than this repo has ever been held to.
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
 			'no-unused-vars': 'off',
 			'@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
 			'@typescript-eslint/ban-ts-comment': 'off',

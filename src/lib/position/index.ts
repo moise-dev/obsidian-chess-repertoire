@@ -18,11 +18,8 @@ export const parsePositionConfig = (
 	let parsed;
 
 	try {
-		parsed = parseUserConfig(settings, source) as unknown as Record<
-			string,
-			unknown
-		>;
-	} catch (e) {
+		parsed = parseUserConfig(settings, source);
+	} catch {
 		return null;
 	}
 
@@ -32,7 +29,7 @@ export const parsePositionConfig = (
 
 	try {
 		new Chess(fen);
-	} catch (e) {
+	} catch {
 		return null;
 	}
 

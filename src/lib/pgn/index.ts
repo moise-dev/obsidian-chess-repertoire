@@ -222,7 +222,7 @@ const parseLine = (
 			shapes: [],
 			comment: null,
 			classification,
-		} as ChessRepertoireMove);
+		});
 	}
 
 	return moves;
@@ -438,7 +438,7 @@ export const exportPgn = (
 		firstPlayer,
 		initialMoveNumber,
 		true,
-		tree.rootVariants as Variant[]
+		tree.rootVariants
 	);
 
 	return [...headers, '', `${movetext}${movetext ? ' ' : ''}*`].join('\n');
