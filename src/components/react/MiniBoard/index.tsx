@@ -1,14 +1,9 @@
-/*
- * The squares below are keyed by their index on purpose, so the lint rule
- * against it is off for this file. A board is the same sixty-four cells in the
- * same order every time: the index *is* the square's identity, there is nothing
- * to reorder, and a rank-and-file name would only be the same key spelled out.
- */
-/* eslint-disable @eslint-react/no-array-index-key */
 import * as React from 'react';
 import { useMemo } from 'react';
 import { BoardColor } from 'src/components/obsidian/SettingsTab';
 import { fenToBoard } from 'src/lib/move-map';
+
+const FILES = 'abcdefgh';
 
 /** FEN letter to the role name chessground keys its sprites by. */
 export const ROLES: Record<string, string> = {
@@ -56,10 +51,24 @@ export const MiniBoard = ({
 	label,
 	size,
 }: MiniBoardProps) => {
-	const ranks = useMemo(() => {
+	// Flattened to sixty-four squares, each carrying its own name. Naming them
+	// here rather than in the markup is what lets the grid below key a cell by
+	// the square it is instead of by where it sits in an array.
+	const squares = useMemo(() => {
 		const board = fenToBoard(fen);
+		const rows = flipped
+			? board.map((rank) => [...rank].reverse()).reverse()
+			: board;
 
-		return flipped ? board.map((rank) => [...rank].reverse()).reverse() : board;
+		return rows.flatMap((rank, rankIndex) =>
+			rank.map((piece, fileIndex) => ({
+				name: flipped
+					? `${FILES[7 - fileIndex]}${rankIndex + 1}`
+					: `${FILES[fileIndex]}${8 - rankIndex}`,
+				piece,
+				isDark: (rankIndex + fileIndex) % 2 === 1,
+			}))
+		);
 	}, [fen, flipped]);
 
 	// `cg-wrap` on the outside is what lets chessground's sprite rules find the
@@ -71,23 +80,19 @@ export const MiniBoard = ({
 			style={size ? { width: size, height: size } : undefined}
 		>
 			<div className={`cs-map-board ${boardColor}-board`} aria-hidden="true">
-				{ranks.map((rank, rankIndex) =>
-					rank.map((piece, fileIndex) => (
-						<div
-							key={`${rankIndex}-${fileIndex}`}
-							className={`cs-map-square ${
-								(rankIndex + fileIndex) % 2 ? 'is-dark' : 'is-light'
-							}`}
-						>
-							{piece && (
-								<Piece
-									role={ROLES[piece.toLowerCase()]}
-									color={piece === piece.toUpperCase() ? 'white' : 'black'}
-								/>
-							)}
-						</div>
-					))
-				)}
+				{squares.map(({ name, piece, isDark }) => (
+					<div
+						key={name}
+						className={`cs-map-square ${isDark ? 'is-dark' : 'is-light'}`}
+					>
+						{piece && (
+							<Piece
+								role={ROLES[piece.toLowerCase()]}
+								color={piece === piece.toUpperCase() ? 'white' : 'black'}
+							/>
+						)}
+					</div>
+				))}
 			</div>
 		</div>
 	);

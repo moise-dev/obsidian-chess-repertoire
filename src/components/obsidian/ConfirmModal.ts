@@ -28,6 +28,9 @@ export class ConfirmModal extends Modal {
 			.addButton((btn) =>
 				btn
 					.setButtonText(this.options.confirmText)
+					// Deprecated in favour of `setDestructive`, which is 1.13 only.
+					// Swapping it would break every Obsidian this plugin still
+					// supports, so it stays until `minAppVersion` moves.
 					.setWarning()
 					.onClick(() => {
 						this.close();

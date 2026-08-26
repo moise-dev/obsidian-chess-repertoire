@@ -1,5 +1,6 @@
 import {
 	App,
+	ColorComponent,
 	PluginSettingTab,
 	Setting,
 	SettingDefinitionBase,
@@ -124,13 +125,15 @@ export class SettingsTab extends PluginSettingTab {
 			},
 			{
 				name: 'Coordinate color',
-				desc: "Color of the coordinate labels. Reset to follow the theme's muted text color.",
+				desc:
+					"Color of the coordinate labels. Reset to follow the theme's muted text color.",
 				aliases: ['coordinates'],
 				render: (setting) => this.renderCoordinateColor(setting),
 			},
 			{
 				name: 'Default width',
-				desc: 'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual repertoires can be resized by dragging their bottom-right corner.',
+				desc:
+					'Default width of the widget in pixels. Leave empty to fill the width of the note. Individual repertoires can be resized by dragging their bottom-right corner.',
 				control: {
 					type: 'text',
 					key: 'boardSize',
@@ -175,9 +178,13 @@ export class SettingsTab extends PluginSettingTab {
 	 * what the labels currently look like: the chosen colour, or the theme's own.
 	 */
 	private renderCoordinateColor(setting: Setting): void {
+		let picker: ColorComponent | null = null;
+
 		setting
-			.addColorPicker((picker) => {
-				picker
+			.addColorPicker((component) => {
+				picker = component;
+
+				component
 					.setValue(this.plugin.settings.coordinateColor || themeMutedColor())
 					.onChange((coordinateColor) => {
 						this.plugin.settings.coordinateColor = coordinateColor;
@@ -189,11 +196,15 @@ export class SettingsTab extends PluginSettingTab {
 					.setIcon('rotate-ccw')
 					.setTooltip('Follow the theme')
 					.onClick(() => {
+						// Putting the theme's colour straight into the picker rather
+						// than redrawing the tab: `update()` is 1.13 only, and
+						// `display()` would draw a second copy over the declarative
+						// one. Before the setting is cleared, so that it still ends up
+						// empty if this picker fires its own onChange.
+						picker?.setValue(themeMutedColor());
+
 						this.plugin.settings.coordinateColor = '';
 						void this.plugin.saveSettings();
-						// Redraw so the picker falls back to the theme's colour.
-						this.update();
-						this.display();
 					});
 			});
 	}
@@ -227,9 +238,7 @@ export class SettingsTab extends PluginSettingTab {
 					for (const [value, label] of Object.entries(control.options))
 						dropdown.addOption(value, label);
 
-					dropdown
-						.setValue(String(this.getControlValue(key)))
-						.onChange(commit);
+					dropdown.setValue(String(this.getControlValue(key))).onChange(commit);
 				});
 			else if (control.type === 'toggle')
 				setting.addToggle((toggle) => {
