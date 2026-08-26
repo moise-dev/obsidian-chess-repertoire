@@ -594,13 +594,12 @@
 
 /*
  * Placeholder. An "empty" ProseMirror paragraph still holds a trailing <br>,
- * so :empty alone does not catch it.
+ * so `:empty` does not catch it and neither does anything else CSS can ask
+ * about the markup. Tiptap's Placeholder extension decides what is empty and
+ * marks it, and what to say is in the extension's own configuration.
  */
-.chess-repertoire .ProseMirror > p:only-child:empty::before,
-.chess-repertoire
-	.ProseMirror
-	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
-	content: 'Add a note for this move…';
+.chess-repertoire .ProseMirror > p.is-empty:only-child::before {
+	content: attr(data-placeholder);
 	float: left;
 	height: 0;
 	color: var(--text-faint);
@@ -639,17 +638,6 @@
 /* No move selected: the note has nothing to attach to. */
 .chess-repertoire .cs-notes-body.is-disabled {
 	opacity: 0.7;
-}
-
-.chess-repertoire
-	.cs-notes-body.is-disabled
-	.ProseMirror
-	> p:only-child:empty::before,
-.chess-repertoire
-	.cs-notes-body.is-disabled
-	.ProseMirror
-	> p:only-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
-	content: 'Select a move to add a note to it.';
 }
 
 /* Marks moves carrying a note or board arrows. */
@@ -795,7 +783,8 @@
 
 .chess-repertoire .cs-side-subtitle:hover {
 	color: var(--text-normal);
-	text-decoration: underline dotted;
+	text-decoration-line: underline;
+	text-decoration-style: dotted;
 }
 
 .chess-repertoire .cs-side-subtitle.is-empty {
@@ -1215,7 +1204,21 @@
  * of shouting arrows says less than one where they wait to be looked for.
  */
 .cs-map-transposition {
-	all: unset;
+	/*
+	 * Obsidian dresses a bare button up - background, border, padding, a
+	 * shadow - and this one is a glyph in a line of moves. Undone by hand
+	 * rather than with `all`, which Obsidian's own CSS lint rejects.
+	 */
+	appearance: none;
+	display: inline;
+	height: auto;
+	margin: 0;
+	border: none;
+	background: none;
+	box-shadow: none;
+	font: inherit;
+	text-align: inherit;
+	text-shadow: none;
 	padding: 0 2px;
 	border-radius: 3px;
 	color: var(--text-faint);
@@ -1262,12 +1265,21 @@
 }
 
 /*
- * `all: unset` because Obsidian styles bare buttons - background, padding, a
- * shadow - and a move is a word, not a button. Everything it needs is set back
- * below.
+ * Obsidian styles bare buttons - background, padding, a shadow - and a move is
+ * a word, not a button. Stripped back to nothing here and given only what it
+ * needs below.
  */
 .cs-map-sheet .cs-map-move {
-	all: unset;
+	appearance: none;
+	display: inline;
+	height: auto;
+	margin: 0;
+	border: none;
+	background: none;
+	box-shadow: none;
+	font: inherit;
+	text-align: inherit;
+	text-shadow: none;
 	padding: 1px 4px;
 	border-radius: 3px;
 	justify-self: start;

@@ -20,6 +20,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tiptap/extension-placeholder": "^2.27.2",
     "@tiptap/pm": "2.27.2",
     "@tiptap/react": "2.27.2",
     "@tiptap/starter-kit": "2.27.2",

@@ -1,3 +1,4 @@
+import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ChevronDown, ChevronRight } from 'lucide-react';
@@ -32,7 +33,20 @@ export const CommentSection = React.memo(
 		const isEditable = Boolean(moveLabel);
 
 		const editor = useEditor({
-			extensions: [StarterKit],
+			extensions: [
+				StarterKit,
+				Placeholder.configure({
+					placeholder: ({ editor: instance }) =>
+						instance.isEditable
+							? 'Add a note for this move…'
+							: 'Select a move to add a note to it.',
+					// The prompt is the panel's only content when there is no note,
+					// so it has to be there before the cursor is, and when the panel
+					// is read-only because no move is selected.
+					showOnlyCurrent: false,
+					showOnlyWhenEditable: false,
+				}),
+			],
 			onUpdate: (state) => {
 				const comment = state.editor.getJSON();
 				if (comment) setComments(comment);
