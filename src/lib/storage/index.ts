@@ -130,7 +130,12 @@ export class ChessRepertoireDataAdapter {
 
 	constructor(adapter: DataAdapter, storagePath: string) {
 		this.adapter = adapter;
-		this.storagePath = storagePath;
+		this.storagePath = normalizePath(storagePath);
+	}
+
+	/** Follows the folder setting when the user changes it mid-session. */
+	setStoragePath(storagePath: string) {
+		this.storagePath = normalizePath(storagePath);
 	}
 
 	async saveFile(data: ChessRepertoireFileData, id?: string) {
@@ -219,9 +224,22 @@ export class ChessRepertoireDataAdapter {
 		await this.adapter.write(this.drillPath(id), JSON.stringify(data), {});
 	}
 
+	/**
+	 * Creates the storage folder and every parent it needs.
+	 *
+	 * The old location sat one level under a folder that already existed; a
+	 * user-chosen vault path can be nested as deeply as they like, and `mkdir`
+	 * will not create the parents for it.
+	 */
 	async createStorageFolderIfNotExists() {
-		const folderExists = await this.adapter.exists(this.storagePath);
+		let current = '';
 
-		if (!folderExists) await this.adapter.mkdir(this.storagePath);
+		for (const part of this.storagePath.split('/')) {
+			if (!part) continue;
+
+			current = current ? `${current}/${part}` : part;
+
+			if (!(await this.adapter.exists(current))) await this.adapter.mkdir(current);
+		}
 	}
 }

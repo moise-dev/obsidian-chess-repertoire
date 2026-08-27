@@ -6,12 +6,18 @@ import {
 	ChessRepertoireDataAdapter,
 	ChessRepertoireFileData,
 } from 'src/lib/storage';
+import {
+	CURRENT_DATA_VERSION,
+	moveStorageFiles,
+	runMigrations,
+} from 'src/lib/storage/migration';
 import { PositionView } from './components/PositionView';
 import { ReactView } from './components/ReactView';
 import { ChessStringModal } from './components/obsidian/ChessStringModal';
 import {
 	ChessRepertoirePluginSettings,
 	DEFAULT_SETTINGS,
+	DEFAULT_STORAGE_FOLDER,
 	SettingsTab,
 } from './components/obsidian/SettingsTab';
 
@@ -54,9 +60,30 @@ const mergeNotice = (merged: number, skipped: number): string =>
 export default class ChessRepertoirePlugin extends Plugin {
 	settings: ChessRepertoirePluginSettings;
 	dataAdapter: ChessRepertoireDataAdapter;
-	storagePath = normalizePath(
-		`${this.app.vault.configDir}/plugins/${this.manifest.id}/storage/`
-	);
+
+	/**
+	 * The folder repertoires are read from and written to.
+	 *
+	 * A getter rather than a field: the folder is a setting now, and the value is
+	 * wanted again every time it changes. Empty falls back to the default, which
+	 * is what every vault upgrading from 1.2.0 or earlier will have.
+	 */
+	get storagePath(): string {
+		return normalizePath(
+			this.settings.storageFolder.trim() || DEFAULT_STORAGE_FOLDER
+		);
+	}
+
+	/**
+	 * Where the repertoires actually are, as opposed to where the setting now
+	 * says they should be.
+	 *
+	 * The two come apart while the setting is being edited, and the move has to
+	 * start from the folder holding the files rather than from whatever the
+	 * setting said a moment ago - otherwise a run of edits leaves them behind in
+	 * the first folder and moves nothing out of the ones in between.
+	 */
+	private settledStoragePath: string;
 
 	async onload() {
 		// Load Settings
@@ -68,7 +95,11 @@ export default class ChessRepertoirePlugin extends Plugin {
 			this.storagePath
 		);
 
+		this.settledStoragePath = this.storagePath;
+
 		await this.dataAdapter.createStorageFolderIfNotExists();
+
+		await this.runMigrations();
 
 		// Add settings tab
 		this.addSettingTab(new SettingsTab(this.app, this));
@@ -305,6 +336,108 @@ export default class ChessRepertoirePlugin extends Plugin {
 				}
 			})
 			.filter(Boolean);
+	}
+
+	/**
+	 * Points the adapter at the configured folder, makes sure it is there, and
+	 * brings the repertoires along from wherever they currently are.
+	 *
+	 * Called whenever the setting settles on a new value. Does nothing when the
+	 * folder has not actually moved, so calling it twice is free.
+	 */
+	async applyStorageFolder() {
+		const previous = this.settledStoragePath;
+
+		this.dataAdapter.setStoragePath(this.storagePath);
+
+		await this.dataAdapter.createStorageFolderIfNotExists();
+
+		if (previous === this.storagePath) return;
+
+		// Recorded before the move rather than after: a move that throws half way
+		// has already left files in the new folder, and the next change should
+		// start from there rather than trying the old folder again.
+		this.settledStoragePath = this.storagePath;
+
+		try {
+			const { transferred, skipped, failed } = await moveStorageFiles(
+				this.app.vault.adapter,
+				previous,
+				this.storagePath
+			);
+
+			if (transferred)
+				new Notice(
+					`Chess Repertoire moved ${transferred} ${
+						transferred === 1 ? 'file' : 'files'
+					} into "${this.storagePath}".`
+				);
+
+			if (skipped)
+				new Notice(
+					`Chess Repertoire left ${skipped} ${
+						skipped === 1 ? 'file' : 'files'
+					} in "${previous}": something of the same name was already in "${
+						this.storagePath
+					}".`,
+					0
+				);
+
+			if (failed)
+				new Notice(
+					`Chess Repertoire could not move ${failed} ${
+						failed === 1 ? 'file' : 'files'
+					} out of "${previous}". ${
+						failed === 1 ? 'It is' : 'They are'
+					} still there and can be moved by hand.`,
+					0
+				);
+		} catch (e) {
+			// The new folder is already in effect, so the worst case is repertoires
+			// left in the old one - recoverable by hand, and not worth failing the
+			// setting change over.
+			console.error(
+				'chess-repertoire: could not move the repertoires to the new folder',
+				e
+			);
+
+			new Notice(
+				`Chess Repertoire could not move your repertoires out of "${previous}". They are still there.`,
+				0
+			);
+		}
+	}
+
+	/**
+	 * Walks the vault through whatever migrations it has not been through, and
+	 * records how far it got.
+	 *
+	 * Never fatal: a migration that throws must not stop the plugin loading, or a
+	 * vault it cannot migrate becomes a vault it cannot open either.
+	 */
+	private async runMigrations() {
+		if (this.settings.dataVersion >= CURRENT_DATA_VERSION) return;
+
+		try {
+			const { version, notices } = await runMigrations(this.settings.dataVersion, {
+				adapter: this.app.vault.adapter,
+				configDir: this.app.vault.configDir,
+				pluginId: this.manifest.id,
+				storagePath: this.storagePath,
+			});
+
+			if (version !== this.settings.dataVersion) {
+				this.settings.dataVersion = version;
+
+				await this.saveSettings();
+			}
+
+			// Persistent: these say where a user's repertoires went, which is not
+			// something to catch out of the corner of an eye.
+			for (const notice of notices) new Notice(notice, 0);
+		} catch (e) {
+			console.error('chess-repertoire: could not migrate the vault', e);
+		}
 	}
 
 	async loadSettings() {

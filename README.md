@@ -92,8 +92,10 @@ Chess Repertoire is **not in the community plugin store** yet, so install it by 
 4. Reload Obsidian and enable **Chess Repertoire** under Settings → Community plugins.
 
 > **Upgrading from the original Chess Study?** Copy your old plugin's `storage`
-> folder into the new one before enabling it, or your existing repertoires won't
-> be found.
+> folder into `<vault>/.obsidian/plugins/chess-repertoire/` before enabling it, or
+> your existing repertoires won't be found. Chess Repertoire moves what it finds
+> there into the vault the first time it loads - see [Where repertoires are
+> stored](#where-repertoires-are-stored).
 
 ## Usage
 
@@ -123,6 +125,18 @@ showCoordinates: false
 | `coordinateColor`   | hex colour, e.g. `"#d08770"`                 | Colour of those labels. Leave unset to follow the theme.    |
 | `boardSize`         | number of pixels                             | Widget width. Written automatically when you drag to resize. |
 | `viewComments`      | `true` \| `false`                            | Whether the notes panel starts open                          |
+
+<!-- omit in toc -->
+### Where repertoires are stored
+
+Repertoires and their drill history are `.json` files in your vault, one per repertoire, named by the id in the code block. **Repertoire folder** in the plugin settings decides which folder; leave it empty for `Chess Repertoires` in the root of the vault. It is the one setting that cannot be overridden per repertoire.
+
+Changing it moves the files already written into the new folder. A file whose name is already taken in the destination is left where it is rather than overwritten, and anything that could not be moved stays readable in the old folder.
+
+Two things worth knowing:
+
+- Obsidian Sync counts `.json` as an unsupported extension, so these files only sync with **Settings → Sync → All other file types** turned on. Without it they are still covered by version history and file recovery, but they will not reach your other machines.
+- The filenames are ids and mean nothing to read. If they clutter your search results and graph, add the folder to **Settings → Files & links → Excluded files**; the plugin keeps reading it normally.
 
 
 ## Keyboard shortcuts

@@ -4,6 +4,46 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-27
+
+Repertoires move out of the plugin's own folder and into the vault, where the
+rest of your notes are.
+
+### Added
+
+- **A setting for where repertoires are kept.** Settings → Community plugins →
+  Chess Repertoire → Repertoire folder, a folder picker over the vault. Leave it
+  empty for "Chess Repertoires" in the root. Changing it moves the files already
+  written into the new folder, so it can be reorganised later without stranding
+  anything; a name already taken in the destination is left alone rather than
+  overwritten, and anything that could not be moved stays readable where it was.
+
+### Changed
+
+- **Repertoires are stored in the vault rather than in
+  `.obsidian/plugins/chess-repertoire/storage`.** That folder is deleted whole
+  when the plugin is uninstalled, and Obsidian Sync, version history and file
+  recovery all pass over it - so uninstalling to reinstall, which is the ordinary
+  way to fix a plugin, took every repertoire with it and left nothing to restore
+  from.
+
+  Existing repertoires are copied into the new folder the first time 1.3.0 loads,
+  and the old folder is then renamed to `storage_bak` rather than deleted. The
+  copy never overwrites, and the rename only happens once every file has arrived;
+  a run that could not read something copies nothing over it, leaves the
+  originals alone and tries again next load.
+
+  Your notes need no changes. They reference repertoires by id, and the id is
+  unchanged.
+
+  **`storage_bak` is not a backup you can keep.** It is still inside the plugin
+  folder, so it goes the same way on uninstall. Check your repertoires open, copy
+  anything else out of it, and delete it.
+
+  Repertoires are `.json`, which Obsidian Sync counts as an unsupported
+  extension: moving them into the vault only syncs them if **Settings → Sync →
+  All other file types** is on.
+
 ## [1.2.0] - 2026-08-26
 
 Housekeeping, from the Obsidian plugin review. Nothing here changes what the

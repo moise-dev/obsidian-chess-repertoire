@@ -4,7 +4,9 @@ import {
 	PluginSettingTab,
 	Setting,
 	SettingDefinitionItem,
+	debounce,
 } from 'obsidian';
+import { INITIAL_DATA_VERSION } from 'src/lib/storage/migration';
 import ChessRepertoirePlugin from 'src/main';
 
 export const BOARD_COLORS = {
@@ -15,6 +17,36 @@ export const BOARD_COLORS = {
 } as const;
 
 export type BoardColor = keyof typeof BOARD_COLORS;
+
+/**
+ * Where repertoires go when the user has not said otherwise.
+ *
+ * A folder in the vault rather than in the plugin's own directory: everything
+ * under `.obsidian/plugins/<id>/` is deleted when the plugin is uninstalled,
+ * and is not covered by "all files and extensions" sync, version history or
+ * file recovery. Repertoires are the user's work and belong with their notes.
+ */
+export const DEFAULT_STORAGE_FOLDER = 'Chess Repertoires';
+
+/**
+ * Why a folder cannot be used, or nothing when it can.
+ *
+ * Obsidian's adapter takes vault-relative paths, so anything absolute or
+ * climbing out of the vault would be written somewhere the user cannot see and
+ * sync will not carry. Rejected here rather than sanitised: silently rewriting
+ * someone's path to a different folder is worse than telling them.
+ */
+export const validateStorageFolder = (folder: string): string | void => {
+	const trimmed = folder.trim();
+
+	if (!trimmed) return;
+
+	if (trimmed.startsWith('/') || /^[a-zA-Z]:/.test(trimmed))
+		return 'Use a folder inside the vault, not a full path.';
+
+	if (trimmed.split(/[\\/]/).includes('..'))
+		return 'The folder has to be inside the vault.';
+};
 
 export interface ChessRepertoirePluginSettings {
 	boardOrientation: 'white' | 'black';
@@ -28,6 +60,21 @@ export interface ChessRepertoirePluginSettings {
 	 * theme", which is the right answer for most vaults and the default.
 	 */
 	coordinateColor: string;
+	/**
+	 * Vault-relative folder holding the repertoire and drill files.
+	 *
+	 * Empty means `DEFAULT_STORAGE_FOLDER`, so a vault that has never opened the
+	 * settings - every vault upgrading from 1.2.0 and earlier - lands somewhere
+	 * sensible without being asked.
+	 */
+	storageFolder: string;
+	/**
+	 * The shape of the data this vault has been migrated to; see
+	 * `CURRENT_DATA_VERSION`. Absent - every vault up to 1.2.0 - means
+	 * `INITIAL_DATA_VERSION`, and the migrations sort out what that vault
+	 * actually has on disk.
+	 */
+	dataVersion: number;
 }
 
 export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
@@ -37,6 +84,8 @@ export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 	boardSize: null,
 	showCoordinates: true,
 	coordinateColor: '',
+	storageFolder: '',
+	dataVersion: INITIAL_DATA_VERSION,
 };
 
 type SettingKey = keyof ChessRepertoirePluginSettings;
@@ -120,6 +169,20 @@ export class SettingsTab extends PluginSettingTab {
 				},
 			},
 			{
+				name: 'Repertoire folder',
+				desc: `Vault folder holding your repertoires and drill history. Leave empty to use "${DEFAULT_STORAGE_FOLDER}" in the root of the vault. Changing this moves the files already written into the new folder.`,
+				aliases: ['storage', 'folder', 'location'],
+				control: {
+					// A folder suggester rather than a plain text field: the path has
+					// to be one the vault actually has, and a typo here would strand
+					// every repertoire in a folder nobody meant to make.
+					type: 'folder',
+					key: 'storageFolder',
+					placeholder: DEFAULT_STORAGE_FOLDER,
+					validate: (value) => validateStorageFolder(value),
+				},
+			},
+			{
 				name: 'Show comments',
 				desc: 'Show the notes panel underneath the board by default',
 				control: {
@@ -139,7 +202,32 @@ export class SettingsTab extends PluginSettingTab {
 		return key === 'boardSize' ? value?.toString() ?? '' : value;
 	}
 
+	/**
+	 * Follows the folder setting once the user has stopped changing it.
+	 *
+	 * The control reports every keystroke, and acting on each one would create a
+	 * folder per prefix typed and drag the repertoires through all of them. The
+	 * setting itself is saved immediately; only the part that touches the vault
+	 * waits for the value to settle.
+	 */
+	private readonly applyStorageFolder = debounce(
+		() => void this.plugin.applyStorageFolder(),
+		1000,
+		true
+	);
+
 	async setControlValue(key: string, value: unknown): Promise<void> {
+		if (key === 'storageFolder') {
+			// Trimmed so a stray space does not become a folder named ' '.
+			this.plugin.settings.storageFolder = String(value).trim();
+
+			await this.plugin.saveSettings();
+
+			this.applyStorageFolder();
+
+			return;
+		}
+
 		if (key === 'boardSize') {
 			const parsed = Number.parseInt(String(value), 10);
 
