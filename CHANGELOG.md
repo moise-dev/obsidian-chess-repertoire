@@ -4,9 +4,16 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] - 2026-08-27
+## [1.3.1] - 2026-08-30
 
 ### Fixed
+
+- **Every arrow drawn on a position is kept, and lets go of the pointer.** Only
+  the first survived: the second stayed stuck to the mouse instead of being
+  drawn, and neither it nor any after it was saved. The board hands over the
+  arrows it holds by reference and goes on writing to that same list, which was
+  then frozen as part of the move - so the next arrow failed to be added, part
+  way through the step that releases it.
 
 - **A position holding more than one of your own moves no longer marks every one
   but the first as a mistake.** A drill asked for the continuation of the line it
@@ -17,7 +24,7 @@ Notable changes to Chess Repertoire, newest first. The format follows
   Your own moves are now picked the way the opponent's replies always were:
   branches you have never drilled first, then the ones you keep missing. Since
   nothing on the board can show which branch the drill took, the trainer bar says
-  so - *3 moves prepared here (Nf3, Bc4, d4) - this line plays Bc4*.
+  so - _3 moves prepared here (Nf3, Bc4, d4) - this line plays Bc4_.
 
   A move named that way is given rather than asked for, so it is left out of your
   drill history whether you find it or not, and playing one of the other prepared
@@ -181,6 +188,8 @@ plugin does; the one user-visible line is the minimum app version.
 Initial release under the name Chess Repertoire, forked from
 [chrislicodes/obsidian-chess-study](https://github.com/chrislicodes/obsidian-chess-study).
 
+[1.3.1]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.3.1
+[1.3.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.3.0
 [1.2.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.2.0
 [1.1.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.1.0
 [1.0.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.0.0
