@@ -10,18 +10,36 @@ import {
 	readClassification,
 } from 'src/lib/classification';
 import { commentToPlainText, hasComment } from 'src/lib/comments';
+import { scrollOffsetToShow } from 'src/lib/scroll';
 
+/** The moves panel's own scrolling box, and the only thing that may scroll. */
+const MOVE_LIST = '.move-item-section';
+
+/**
+ * Keeps the current move in view inside the move list, and moves nothing else.
+ *
+ * Deliberately not `scrollIntoView`: that scrolls every scrollable ancestor,
+ * the note itself included, so following a long line took the board off the
+ * screen. Setting the list's own `scrollTop` cannot reach past the list.
+ */
 const useScrollIntoView = <T extends HTMLElement>(isCurrentMove: boolean) => {
 	const ref = React.useRef<T>(null);
 
 	React.useEffect(() => {
 		if (!isCurrentMove) return;
 
-		ref.current?.scrollIntoView({
-			behavior: 'smooth',
-			block: 'nearest',
-			inline: 'end',
-		});
+		const move = ref.current;
+		const list = move?.closest<HTMLElement>(MOVE_LIST);
+
+		if (!move || !list) return;
+
+		const offset = scrollOffsetToShow(
+			move.getBoundingClientRect(),
+			list.getBoundingClientRect()
+		);
+
+		if (offset)
+			list.scrollTo({ top: list.scrollTop + offset, behavior: 'smooth' });
 	}, [isCurrentMove]);
 
 	return ref;

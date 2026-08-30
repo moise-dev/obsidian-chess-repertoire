@@ -8,6 +8,13 @@ Notable changes to Chess Repertoire, newest first. The format follows
 
 ### Fixed
 
+- **Stepping through a long line no longer scrolls the note away from the
+  board.** The move list keeps the current move in view, and the one line that
+  did it asked the browser to make the move visible - which scrolls everything
+  that can scroll, up to and including the note the widget sits in. On a
+  repertoire long enough to need scrolling, pressing an arrow key carried the
+  board off the top of the screen. The list now scrolls itself and nothing else.
+
 - **A note is no longer wiped by leaving a drill.** The notes panel is put away
   for the length of a session and built again afterwards, and building it
   announced the note it was holding before it had loaded one - so an empty
