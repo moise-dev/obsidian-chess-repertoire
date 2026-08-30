@@ -80,8 +80,14 @@ export const ChessgroundWrapper = React.memo(
 						// the erase is left to clicks on an empty square or an enemy
 						// piece, and picking up your own piece keeps them.
 						eraseOnClick: false,
+						// Copied, not passed on. This is chessground's own array and
+						// it goes on mutating it, while the state it is handed to
+						// freezes whatever it is given. Freezing it means the next
+						// arrow's `shapes.push` throws - inside chessground's `end`,
+						// before it releases the arrow, which then follows the mouse
+						// around for ever.
 						onChange: (shapes) => {
-							setShapes(shapes);
+							setShapes([...shapes]);
 						},
 					},
 					turnColor: toColor(chess),
