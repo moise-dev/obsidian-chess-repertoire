@@ -4,7 +4,7 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.0] - 2026-08-30
 
 ### Fixed
 
@@ -229,6 +229,7 @@ plugin does; the one user-visible line is the minimum app version.
 Initial release under the name Chess Repertoire, forked from
 [chrislicodes/obsidian-chess-study](https://github.com/chrislicodes/obsidian-chess-study).
 
+[1.4.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.4.0
 [1.3.1]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.3.1
 [1.3.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.3.0
 [1.2.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.2.0
