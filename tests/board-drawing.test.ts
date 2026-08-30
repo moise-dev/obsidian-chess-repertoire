@@ -17,6 +17,8 @@ import { after, before, describe, it } from 'node:test';
 
 import { JSDOM } from 'jsdom';
 
+import { closeDom, installDom } from './stubs/dom';
+
 const BOARD_PX = 512;
 
 /**
@@ -24,34 +26,6 @@ const BOARD_PX = 512;
  * so the document has to exist before either of them does. That is why every
  * import below this point is dynamic.
  */
-const installDom = () => {
-	const dom = new JSDOM('<!doctype html><div id="root"></div>', {
-		pretendToBeVisual: true,
-		url: 'http://localhost',
-	});
-
-	const globals = globalThis as unknown as Record<string, unknown>;
-	const view = dom.window as unknown as Record<string, unknown>;
-
-	for (const key of [
-		'window',
-		'document',
-		'navigator',
-		'requestAnimationFrame',
-		'cancelAnimationFrame',
-		'MouseEvent',
-		'Event',
-		'Element',
-		'HTMLElement',
-		'Node',
-		'getComputedStyle',
-	])
-		globals[key] = view[key];
-
-	globals.IS_REACT_ACT_ENVIRONMENT = true;
-
-	return dom;
-};
 
 /** The part of chessground's api these tests look at. */
 interface BoardApi {
@@ -219,7 +193,7 @@ describe('drawing arrows on the board', () => {
 	// either of them leaves behind.
 	after(() => {
 		board.unmount();
-		dom.window.close();
+		closeDom(dom);
 	});
 
 	it('releases every arrow, not just the first', async () => {
