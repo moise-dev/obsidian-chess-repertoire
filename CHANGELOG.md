@@ -38,6 +38,13 @@ Notable changes to Chess Repertoire, newest first. The format follows
   to nothing at a position where every line has been drilled at least once, so
   a repertoire you have covered behaves exactly as before.
 
+- The two bugs above were both in the seam between this plugin and a library it
+  uses, where nothing the type checker or the existing tests could see. The
+  suite now renders components against a real document for the handful of cases
+  that need one - the board's arrows and the notes panel each have their own -
+  and it no longer forces its own exit, which had been letting runs finish early
+  and report a pass over tests that never ran.
+
 ## [1.3.1] - 2026-08-30
 
 ### Fixed
