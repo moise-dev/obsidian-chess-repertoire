@@ -6,6 +6,15 @@ Notable changes to Chess Repertoire, newest first. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **A note is no longer wiped by leaving a drill.** The notes panel is put away
+  for the length of a session and built again afterwards, and building it
+  announced the note it was holding before it had loaded one - so an empty
+  editor was saved over whatever the move actually said, and autosave committed
+  it moments later. It took a move that had a note and a session that ended on
+  it, which is why it came and went.
+
 ### Changed
 
 - **The drill reaches the deep parts of a repertoire.** Which branch a session

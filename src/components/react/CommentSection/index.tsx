@@ -54,7 +54,13 @@ export const CommentSection = React.memo(
 		});
 
 		useEffect(() => {
-			editor?.setEditable(isEditable);
+			// Told not to announce it. Whether a note can be edited is not a change
+			// to the note, but `setEditable` reports one anyway unless asked not
+			// to - and this runs before the note has been loaded in, so what it
+			// announced was an empty editor. That answer was written back over a
+			// real note every time this panel was mounted on a move that had one,
+			// which is what happens on the way out of a drill.
+			editor?.setEditable(isEditable, false);
 		}, [editor, isEditable]);
 
 		useEffect(() => {
