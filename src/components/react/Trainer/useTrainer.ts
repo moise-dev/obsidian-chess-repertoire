@@ -8,25 +8,21 @@ import { toColor } from 'src/lib/chess-logic';
 import {
 	chooseReply,
 	getDrillableReplies,
-	isDrillable,
 	pruneDrillData,
 	recordAttempt,
 } from 'src/lib/drill';
-import {
-	MoveTree,
-	findMovePath,
-	getContinuation,
-	getMoveAtPath,
-} from 'src/lib/move-tree';
+import { MoveTree, findMovePath, getMoveAtPath } from 'src/lib/move-tree';
 import {
 	CURRENT_DRILL_VERSION,
 	ChessRepertoireDataAdapter,
 	MoveDrillStats,
 } from 'src/lib/storage';
 import {
+	BranchCue,
 	HintStage,
 	TrainerColor,
 	TrainerMistake,
+	buildBranchCue,
 	buildHintStages,
 	errorShapes,
 	hintShapes,
@@ -65,6 +61,8 @@ export interface Trainer {
 	errorCount: number;
 	/** The note revealed by the first hint, once it has been asked for. */
 	commentHint: string | null;
+	/** Which of your own moves this line wants, where there is more than one. */
+	branchCue: BranchCue | null;
 	/** Hints already given for the move being asked for, and how many exist. */
 	hintsGiven: number;
 	hintCount: number;
@@ -101,12 +99,13 @@ interface UseTrainerOptions {
  * other, and a move that is not in the repertoire is refused rather than recorded.
  * A session starts from the repertoire's first position and works down from there.
  *
- * The two sides are asked different questions, because a repertoire is not
- * symmetric. Your own move is the one you wrote down, so only the continuation
- * of the line is accepted. The opponent's move is theirs to choose, so every
- * reply the repertoire records is one you undertook to know, and the drill picks
- * among them - favouring the ones you get wrong, and showing lines you have
- * never drilled before anything you have.
+ * Both sides are asked the same question - which of the moves recorded here does
+ * this session play? - and answered the same way: lines never drilled come first,
+ * then the ones you keep missing. The difference is who answers it. The
+ * repertoire answers for the opponent, silently. You answer for yourself, and
+ * where the position holds more than one move of your own the drill has to say
+ * which it settled on, because nothing on the board can. That move is then a
+ * signpost rather than a question, and goes unrecorded.
  *
  * It keeps no position of its own: what is asked for is decided by the move on
  * the board, so there is nothing that can fall out of step with it.
@@ -147,20 +146,48 @@ export const useTrainer = ({
 	/** The colour whose moves the history is about: the one being drilled. */
 	const userColor = playerColor === 'white' ? 'w' : 'b';
 
-	// The one move the repertoire accepts from you here. Variations at this position
-	// are alternatives you could have chosen and did not, so they are not other
-	// answers to the same question.
-	const expected = useMemo(() => {
-		const next = getContinuation(tree, currentMoveId);
+	const isPlayerTurn = toColor(chess) === playerColor;
 
-		return next && isDrillable(next) ? next : null;
-	}, [currentMoveId, tree]);
-
-	// What the repertoire may play against you here. Excluded branches are left out,
-	// so a line kept for reference is never played into.
+	// Everything the repertoire has at this position, whichever side is to play.
+	// Excluded branches are left out, so a line kept for reference is neither
+	// played into nor asked for.
 	const replies = useMemo(
 		() => getDrillableReplies(tree, currentMoveId),
 		[currentMoveId, tree]
+	);
+
+	// The move being asked for. Usually the only one there is - but a position can
+	// hold several moves of your own, two prepared replies to the same position,
+	// and then the drill settles on one of them the same way it settles on a reply
+	// for the other side: branches never drilled first, then the ones you keep
+	// missing. Which one it took is announced by `branchCue`, since the board has
+	// no way to show it.
+	const expected = useMemo(() => {
+		if (!isActive || !isPlayerTurn) return null;
+
+		const key = currentMoveId ?? '';
+		const settled = replies.find(
+			(reply) => reply.moveId === repliesRef.current[key]
+		);
+
+		if (settled) return settled;
+
+		const chosen = chooseReply(tree, currentMoveId, statsRef.current, userColor);
+
+		// Remembered for the rest of the session, so re-rendering asks for the same
+		// move and stepping back into the position with the arrow keys reviews the
+		// branch you played rather than rerouting you into another one. Written
+		// here rather than in an effect so the first render of a position already
+		// knows its answer, and reading it back first keeps that write idempotent.
+		if (chosen) repliesRef.current[key] = chosen.moveId;
+
+		return chosen;
+	}, [currentMoveId, isActive, isPlayerTurn, replies, tree, userColor]);
+
+	// Only says anything where there was a choice to make.
+	const branchCue = useMemo(
+		() => buildBranchCue(replies, expected),
+		[expected, replies]
 	);
 
 	const currentMove = useMemo(() => {
@@ -176,10 +203,9 @@ export const useTrainer = ({
 		[currentMove, expected]
 	);
 
-	const isPlayerTurn = toColor(chess) === playerColor;
-	// A drill ends where the repertoire stops answering: no continuation for you, or
-	// nothing left for the repertoire to reply with.
-	const isComplete = isActive && (isPlayerTurn ? !expected : !replies.length);
+	// A drill ends where the repertoire runs out: nothing prepared here, for either
+	// side to play.
+	const isComplete = isActive && !replies.length;
 
 	// Forget the hints and the refused move as soon as the position moves on.
 	useEffect(() => {
@@ -346,21 +372,33 @@ export const useTrainer = ({
 	 */
 	const submitMove = useCallback(
 		(move: Move) => {
+			// At a branch the move was named before it was asked for, so playing it
+			// says nothing about what you know and the history is left alone either
+			// way. What is being drilled there is the line underneath.
+			const announced = Boolean(branchCue);
+
 			if (!expected || expected.san !== move.san) {
-				if (expected)
+				if (expected && !announced)
 					statsRef.current = recordAttempt(statsRef.current, expected.moveId, true);
 
 				setAttempt(move);
-				setMistakes((tally) =>
-					recordMistake(tally, {
-						atMoveId: currentMoveId,
-						label: expected
-							? moveNumberLabel(tree, expected, firstPlayer, initialMoveNumber)
-							: '',
-						played: move.san,
-						expected: expected?.san ?? '',
-					})
-				);
+
+				// Another of your own prepared moves at a branch is a wrong turning
+				// rather than a gap: the report is about what you did not know, and
+				// this you did. The board still goes back, since the session is
+				// drilling the branch it named.
+				if (!(announced && replies.some((reply) => reply.san === move.san)))
+					setMistakes((tally) =>
+						recordMistake(tally, {
+							atMoveId: currentMoveId,
+							label: expected
+								? moveNumberLabel(tree, expected, firstPlayer, initialMoveNumber)
+								: '',
+							played: move.san,
+							expected: expected?.san ?? '',
+						})
+					);
+
 				dispatch({ type: 'RESET_BOARD_TO_CURRENT' });
 
 				return;
@@ -369,11 +407,12 @@ export const useTrainer = ({
 			// A move found only after a hint is not a move you knew, so it counts
 			// against the line rather than for it - which is what brings the line
 			// back round sooner.
-			statsRef.current = recordAttempt(
-				statsRef.current,
-				expected.moveId,
-				hintIndex >= 0
-			);
+			if (!announced)
+				statsRef.current = recordAttempt(
+					statsRef.current,
+					expected.moveId,
+					hintIndex >= 0
+				);
 
 			setMovesPlayed((count) => count + 1);
 
@@ -383,12 +422,14 @@ export const useTrainer = ({
 			});
 		},
 		[
+			branchCue,
 			currentMoveId,
 			dispatch,
 			expected,
 			firstPlayer,
 			hintIndex,
 			initialMoveNumber,
+			replies,
 			tree,
 		]
 	);
@@ -426,6 +467,7 @@ export const useTrainer = ({
 		status,
 		errorCount: mistakes.reduce((total, mistake) => total + mistake.count, 0),
 		commentHint: commentStage?.text ?? null,
+		branchCue,
 		hintsGiven: hintIndex + 1,
 		hintCount: stages.length,
 		shapes,

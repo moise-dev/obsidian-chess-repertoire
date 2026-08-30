@@ -23,6 +23,7 @@ export const TrainerBar = React.memo((props: Trainer) => {
 		status,
 		errorCount,
 		commentHint,
+		branchCue,
 		hintsGiven,
 		hintCount,
 		requestHint,
@@ -71,6 +72,13 @@ export const TrainerBar = React.memo((props: Trainer) => {
 					Stop
 				</button>
 			</div>
+			{branchCue && (
+				<p className="cs-trainer-branch">
+					{branchCue.options.length} moves prepared here (
+					{branchCue.options.join(', ')}) - this line plays{' '}
+					<strong>{branchCue.expected}</strong>.
+				</p>
+			)}
 			{commentHint && <p className="cs-trainer-hint">{commentHint}</p>}
 		</div>
 	);

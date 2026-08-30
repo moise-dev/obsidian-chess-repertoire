@@ -26,7 +26,9 @@ Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.
 
 The graduation-cap button starts a drill. Pick a colour, and the board rewinds to the repertoire's starting position: you play your side, the repertoire plays the other. A move the repertoire doesn't know is refused and drawn as a red arrow.
 
-Your own moves must follow the line you wrote down. Your opponent's replies are drawn from everything the repertoire records for that position, weighted toward lines you've gotten wrong before and lines you've never drilled. So if you have any variations, the opponent might play any variations or the mainline.
+Your opponent's replies are drawn from everything the repertoire records for that position, weighted toward lines you've gotten wrong before and lines you've never drilled. So if you have any variations, the opponent might play any variations or the mainline.
+
+Your own moves are picked the same way, in the rare position where you've prepared more than one. Since the board can't show which of them the drill is after, it says so above the hint button - "3 moves prepared here (Nf3, Bc4, d4) - this line plays Bc4" - and that move is then given rather than asked for: it doesn't count for or against you, and playing one of the others rewinds the board without being marked wrong. What's being drilled there is the line underneath.
 
 A line you'd rather keep than rehearse can be excluded from drills without deleting it, from any move's right-click menu.
 

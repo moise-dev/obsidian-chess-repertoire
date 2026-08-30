@@ -4,6 +4,33 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-08-27
+
+### Fixed
+
+- **A position holding more than one of your own moves no longer marks every one
+  but the first as a mistake.** A drill asked for the continuation of the line it
+  was in and refused the rest, so a second prepared reply of your own colour -
+  two White third moves, say - was scored against you for being the move you
+  wrote down.
+
+  Your own moves are now picked the way the opponent's replies always were:
+  branches you have never drilled first, then the ones you keep missing. Since
+  nothing on the board can show which branch the drill took, the trainer bar says
+  so - *3 moves prepared here (Nf3, Bc4, d4) - this line plays Bc4*.
+
+  A move named that way is given rather than asked for, so it is left out of your
+  drill history whether you find it or not, and playing one of the other prepared
+  moves rewinds the board without counting as a mistake. What is being drilled
+  there is the line underneath it, which is unchanged.
+
+### Changed
+
+- **A line whose next mainline move is excluded now carries on into its
+  variations** instead of ending the drill. Excluding a move takes that move and
+  what follows it out of rehearsal; it was also taking the alternatives beside it,
+  which are a different branch.
+
 ## [1.3.0] - 2026-08-27
 
 Repertoires move out of the plugin's own folder and into the vault, where the

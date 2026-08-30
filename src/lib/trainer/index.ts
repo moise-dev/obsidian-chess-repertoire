@@ -139,3 +139,29 @@ export const recordMistake = (
 		position === index ? { ...entry, count: entry.count + 1 } : entry
 	);
 };
+
+/** What the bar says at a position holding more than one of your own moves. */
+export interface BranchCue {
+	/** Every move you prepared here, in the order the move list shows them. */
+	options: string[];
+	/** The one this session settled on, which is also in `options`. */
+	expected: string;
+}
+
+/**
+ * The branch to announce before the move is asked for, or null where there is
+ * nothing to choose between.
+ *
+ * A position can hold several moves of your own - two prepared replies to the
+ * same position - and the drill has to settle on one of them. Nothing on the
+ * board says which, so every branch but the chosen one would be refused as a
+ * mistake for no reason the board can show. Naming it gives away one move and
+ * leaves the line under it to be remembered, which is the part worth drilling.
+ */
+export const buildBranchCue = (
+	replies: ChessRepertoireMove[],
+	expected: ChessRepertoireMove | null
+): BranchCue | null =>
+	expected && replies.length > 1
+		? { options: replies.map((reply) => reply.san), expected: expected.san }
+		: null;

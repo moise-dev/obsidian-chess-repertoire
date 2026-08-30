@@ -929,6 +929,20 @@
 	font-size: 14px;
 }
 
+/* Which of several prepared moves this line is asking for. */
+.chess-repertoire .cs-trainer-branch {
+	padding: 6px 8px;
+	border-radius: 6px;
+	background-color: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: 14px;
+}
+
+.chess-repertoire .cs-trainer-branch strong {
+	color: var(--text-normal);
+	font-weight: 600;
+}
+
 /* The report left behind by a finished session. */
 .chess-repertoire .cs-trainer.is-clean {
 	border-left-color: var(--text-success);
@@ -992,6 +1006,14 @@
 /* ------------------------------------------------------------------ *
  * Repertoire map
  * ------------------------------------------------------------------ */
+
+/*
+ * The suggested colour, spelled out under the explanation. Muted: it is a
+ * reading of the buttons below it rather than a third thing to decide.
+ */
+.cs-color-choice-suggestion {
+	color: var(--text-muted);
+}
 
 /*
  * The map wants the whole screen: a repertoire is wider than a note column,

@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import { MoveTree, getContinuation } from '../src/lib/move-tree';
 import { ChessRepertoireMove } from '../src/lib/storage';
 import {
+	buildBranchCue,
 	buildHintStages,
 	errorShapes,
 	hintShapes,
@@ -149,6 +150,27 @@ describe('buildHintStages', () => {
 
 	it('has nothing to offer at the end of a line', () => {
 		assert.deepEqual(buildHintStages(null, mv('e4')), []);
+	});
+});
+
+describe('buildBranchCue', () => {
+	it('says nothing where the position holds one move', () => {
+		const only = mv('Nf3');
+
+		assert.equal(buildBranchCue([only], only), null);
+	});
+
+	it('lists every prepared move and names the one being asked for', () => {
+		const replies = [mv('Nf3'), mv('Bc4'), mv('d4')];
+
+		assert.deepEqual(buildBranchCue(replies, replies[1]), {
+			options: ['Nf3', 'Bc4', 'd4'],
+			expected: 'Bc4',
+		});
+	});
+
+	it('says nothing at the end of a line, where there is nothing to ask for', () => {
+		assert.equal(buildBranchCue([mv('Nf3'), mv('Bc4')], null), null);
 	});
 });
 
