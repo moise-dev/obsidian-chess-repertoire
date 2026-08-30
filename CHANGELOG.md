@@ -4,6 +4,24 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The drill reaches the deep parts of a repertoire.** Which branch a session
+  takes was weighted only by how often the moves already drilled under it were
+  missed - a rate, which says the same about a branch holding three hundred
+  moves never asked for as about one holding none. Measured over a thousand
+  simulated sessions, picking a branch that way came out no better than tossing
+  a coin, and a move several variations deep went undrilled almost indefinitely.
+
+  A branch's share of the moves still never asked for now counts towards
+  choosing it, alongside the miss rate. On a repertoire of 130 of your own
+  moves that takes the share never drilled after a thousand sessions from 14%
+  to 5%, and spreads the work more evenly rather than less. The term falls away
+  to nothing at a position where every line has been drilled at least once, so
+  a repertoire you have covered behaves exactly as before.
+
 ## [1.3.1] - 2026-08-30
 
 ### Fixed

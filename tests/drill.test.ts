@@ -214,7 +214,7 @@ describe('subtreeRecord', () => {
 			'w'
 		);
 
-		assert.deepEqual(record, { attempts: 4, misses: 3 });
+		assert.deepEqual(record, { attempts: 4, misses: 3, undrilled: 0 });
 	});
 
 	it('reports nothing for a line never drilled', () => {
@@ -223,8 +223,41 @@ describe('subtreeRecord', () => {
 		assert.deepEqual(subtreeRecord(t, t.moves[0].variants[1].moves[0], {}, 'w'), {
 			attempts: 0,
 			misses: 0,
+			undrilled: 1,
 		});
 	});
+
+	it("counts the user's moves under a reply that have never been asked for", () => {
+		const t = lopsided();
+
+		// Nf3 answered, Bb5 and Ba4 further down the same line never reached.
+		const record = subtreeRecord(t, t.moves[1], stats({ Nf3: [3, 1] }), 'w');
+
+		assert.deepEqual(record, { attempts: 3, misses: 1, undrilled: 2 });
+	});
+});
+
+/**
+ * White is the user. After 1.e4 Black has two replies, and they are wildly
+ * different sizes: e5 runs on for three more moves of White's, c5 stops after
+ * one. Enough of a difference for the weighting to have to notice it.
+ *
+ *   mainline  e4 e5 Nf3 Nc6 Bb5 a6 Ba4
+ *   e4  ->  v1: c5 Nc3
+ */
+const lopsided = (): MoveTree => ({
+	moves: [
+		mv('e4', {
+			variants: [va('v1', 'e4', [mv('c5', { color: 'b' }), mv('Nc3')])],
+		}),
+		mv('e5', { color: 'b' }),
+		mv('Nf3'),
+		mv('Nc6', { color: 'b' }),
+		mv('Bb5'),
+		mv('a6', { color: 'b' }),
+		mv('Ba4'),
+	],
+	rootVariants: [],
 });
 
 describe('weighReplies', () => {
@@ -257,6 +290,54 @@ describe('weighReplies', () => {
 		assert.ok(byC5 > byE6 && byE6 > byE5);
 		// A line always answered correctly still comes up sometimes.
 		assert.ok(byE5 > 0);
+	});
+
+	/**
+	 * Without this the weight is a rate and nothing else, which says the same
+	 * about a branch holding three moves never asked for as about one holding
+	 * none - and a session then wanders as if it were tossing a coin, leaving
+	 * the deep parts of a repertoire undrilled for hundreds of sessions.
+	 */
+	it('weighs a branch by how much of it has never been asked for', () => {
+		const t = lopsided();
+
+		// Both branches answered exactly as badly as each other, but c5's line is
+		// finished and e5's has two moves still never reached.
+		const [byE5, byC5] = weighReplies(
+			t,
+			'e4',
+			stats({ Nf3: [10, 5], Nc3: [10, 5] }),
+			'w'
+		).map((reply) => reply.weight);
+
+		assert.ok(
+			byE5 > byC5,
+			`the branch with unlearned moves under it should weigh more: ${byE5} vs ${byC5}`
+		);
+	});
+
+	it('leaves the weighting to the miss rate once a position is fully drilled', () => {
+		const t = lopsided();
+
+		const [byE5, byC5] = weighReplies(
+			t,
+			'e4',
+			stats({ Nf3: [10, 5], Bb5: [10, 5], Ba4: [10, 5], Nc3: [4, 0] }),
+			'w'
+		).map((reply) => reply.weight);
+
+		// Nothing left unasked, so the coverage term is gone and these are the
+		// plain rates: 0.15 + 15/30 and 0.15 + 0/4.
+		assert.ok(Math.abs(byE5 - 0.65) < 1e-9, `expected 0.65, got ${byE5}`);
+		assert.ok(Math.abs(byC5 - 0.15) < 1e-9, `expected 0.15, got ${byC5}`);
+	});
+
+	it('prefers the larger branch when neither has been drilled at all', () => {
+		const [byE5, byC5] = weighReplies(lopsided(), 'e4', {}, 'w').map(
+			(reply) => reply.weight
+		);
+
+		assert.ok(byE5 > byC5, `${byE5} vs ${byC5}`);
 	});
 });
 

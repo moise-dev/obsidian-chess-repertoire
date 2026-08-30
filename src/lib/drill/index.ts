@@ -19,6 +19,20 @@ import {
 const FAMILIAR_WEIGHT = 0.15;
 
 /**
+ * How much a branch's share of the repertoire's undrilled moves counts towards
+ * asking it, against the miss rate of what has been drilled there.
+ *
+ * Without it the weight is a rate and nothing else, which is deliberately
+ * scale-free and therefore blind to how much of a branch has never been seen:
+ * measured over a deep repertoire, picking replies came out no better than a
+ * coin flip, and most of the tree was never reached at all. Sampling a branch
+ * in proportion to the unlearned material under it is what cancels that, since
+ * a move twenty plies down is behind twenty choices and is otherwise reached
+ * exponentially less often than one near the root.
+ */
+const COVERAGE_WEIGHT = 1;
+
+/**
  * The side a repertoire is drilled for.
  *
  * The repertoire's own answer when it has one; otherwise the way the board is
@@ -92,6 +106,8 @@ export const collectExcludedMoveIds = (tree: MoveTree): Set<string> => {
 export interface DrillRecord {
 	attempts: number;
 	misses: number;
+	/** The user's own moves under here that have never been asked for at all. */
+	undrilled: number;
 }
 
 /**
@@ -114,14 +130,15 @@ export const subtreeRecord = (
 			(record, entry) => {
 				const entryStats = stats[entry.moveId];
 
-				if (!entryStats) return record;
+				if (!entryStats) return { ...record, undrilled: record.undrilled + 1 };
 
 				return {
+					...record,
 					attempts: record.attempts + entryStats.attempts,
 					misses: record.misses + entryStats.misses,
 				};
 			},
-			{ attempts: 0, misses: 0 }
+			{ attempts: 0, misses: 0, undrilled: 0 }
 		);
 
 export interface WeightedReply {
@@ -144,16 +161,34 @@ export const weighReplies = (
 	moveId: string | null,
 	stats: Record<string, MoveDrillStats>,
 	userColor: 'w' | 'b'
-): WeightedReply[] =>
-	getDrillableReplies(tree, moveId).map((move) => {
-		const { attempts, misses } = subtreeRecord(tree, move, stats, userColor);
+): WeightedReply[] => {
+	const records = getDrillableReplies(tree, moveId).map((move) => ({
+		move,
+		record: subtreeRecord(tree, move, stats, userColor),
+	}));
+
+	// Shares rather than counts, so the coverage term stays comparable to a miss
+	// rate however big the repertoire is, and falls away to nothing once every
+	// line here has been drilled at least once.
+	const undrilledHere = records.reduce(
+		(sum, { record }) => sum + record.undrilled,
+		0
+	);
+
+	return records.map(({ move, record }) => {
+		const { attempts, misses, undrilled } = record;
+		const coverage = undrilledHere
+			? COVERAGE_WEIGHT * (undrilled / undrilledHere)
+			: 0;
 
 		return {
 			move,
 			unseen: attempts === 0,
-			weight: attempts === 0 ? 1 : FAMILIAR_WEIGHT + misses / attempts,
+			weight:
+				attempts === 0 ? 1 + coverage : FAMILIAR_WEIGHT + misses / attempts + coverage,
 		};
 	});
+};
 
 /**
  * Which reply the repertoire plays at a position, or null where the line ends.
