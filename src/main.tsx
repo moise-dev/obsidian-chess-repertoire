@@ -120,11 +120,13 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 		// Add command
 		this.addCommand({
-			// Obsidian namespaces this as `chess-repertoire:insert-chess-repertoire`,
-			// so the plugin's name is in there twice. Renaming it would clear the
-			// review's warning and silently drop everyone's hotkey for it, which is
-			// the worse of the two.
-			id: 'insert-chess-repertoire',
+			// Obsidian namespaces this as `chess-repertoire:insert-editor`, so the
+			// id says only what the command does. It used to carry the plugin's
+			// name as well, which the plugin review flags and which read twice over
+			// in the palette. Renaming an id drops any hotkey set against the old
+			// one, so this can only be done before the plugin is in the store, and
+			// never again afterwards.
+			id: 'insert-editor',
 			name: 'Insert FEN/PGN editor at cursor position',
 			editorCallback: (editor: Editor) => {
 				const cursorPosition = editor.getCursor();
@@ -184,8 +186,8 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 		// Combine every repertoire in a note into one
 		this.addCommand({
-			// Kept for the same reason as the id above.
-			id: 'merge-chess-repertoires',
+			// Renamed with the id above, and on the same terms.
+			id: 'merge-repertoires',
 			name: 'Merge every repertoire in this note into one',
 			editorCallback: async (editor: Editor) => {
 				const cursorPosition = editor.getCursor();

@@ -9,6 +9,10 @@
  * conic-gradient (a 25% tile holds a 2x2 block of squares, so the 8x8 grid
  * falls out of it) rather than the base64 SVGs chessground ships, which means
  * a new theme costs two custom properties instead of an encoded asset.
+ *
+ * `cg-board`, `square`, `coords` and `coord` are chessground's own custom
+ * elements. It writes no classes onto them, so naming the elements is the only
+ * handle there is on what it renders.
  */
 
 .chess-repertoire .cs-board,

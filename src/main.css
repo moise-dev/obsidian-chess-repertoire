@@ -770,10 +770,16 @@
  * Repertoire title and unsaved state
  * ------------------------------------------------------------------ */
 
+/*
+ * A border rather than `text-decoration-style: dotted`, which Obsidian only
+ * partially supports. Carried at all times in transparent so that hovering
+ * colours it in rather than adding a pixel and nudging the title.
+ */
 .chess-repertoire .cs-side-subtitle {
 	height: auto;
 	padding: 0;
 	border: none;
+	border-bottom: 1px dotted transparent;
 	border-radius: 3px;
 	background-color: transparent;
 	box-shadow: none;
@@ -783,8 +789,7 @@
 
 .chess-repertoire .cs-side-subtitle:hover {
 	color: var(--text-normal);
-	text-decoration-line: underline;
-	text-decoration-style: dotted;
+	border-bottom-color: currentColor;
 }
 
 .chess-repertoire .cs-side-subtitle.is-empty {

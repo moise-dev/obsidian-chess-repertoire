@@ -4,6 +4,24 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The two commands have shorter ids**: `insert-editor` and
+  `merge-repertoires`, in place of ids that repeated the plugin's own name.
+  Obsidian namespaces them already, so the old ones read as
+  `chess-repertoire:insert-chess-repertoire` in anything that shows an id, and
+  the plugin review asks for them not to. Their names and what they do are
+  unchanged, but a hotkey set against an old id has to be set again. This is
+  the last release that can do it: after the plugin is in the store, renaming
+  an id would take everyone's hotkey with it.
+
+- The repertoire title's hover underline is drawn as a dotted border rather
+  than a `text-decoration`, which the review's CSS lint counts as only
+  partially supported by the Obsidian version it checks against. It sits a
+  pixel lower than it did and is otherwise the same.
+
 ## [1.5.0] - 2026-08-31
 
 ### Added
