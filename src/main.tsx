@@ -14,6 +14,7 @@ import {
 import { PositionView } from './components/PositionView';
 import { ReactView } from './components/ReactView';
 import { ChessStringModal } from './components/obsidian/ChessStringModal';
+import { ConfirmModal } from './components/obsidian/ConfirmModal';
 import {
 	ChessRepertoirePluginSettings,
 	DEFAULT_SETTINGS,
@@ -27,6 +28,15 @@ import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
 import { nanoid } from 'nanoid';
 import { findCodeBlocks } from './lib/blocks';
+import {
+	UnusedRepertoire,
+	UnusedScan,
+	findUnusedRepertoires,
+	isInSearchFolder,
+	isSearchableNote,
+	unusedFileCount,
+	unusedFileLines,
+} from './lib/cleanup';
 import { handleRepertoireKey, releaseOnOutsideClick } from './lib/keyboard';
 import { chessRepertoireKeymap } from './lib/keyboard/extension';
 import { mergeDrillStats, mergeRepertoires } from './lib/merge';
@@ -56,6 +66,10 @@ const mergeNotice = (merged: number, skipped: number): string =>
 	]
 		.filter(Boolean)
 		.join(' ');
+
+/** `2 files`, `1 file`. */
+const plural = (count: number, one: string, many: string): string =>
+	`${count} ${count === 1 ? one : many}`;
 
 export default class ChessRepertoirePlugin extends Plugin {
 	settings: ChessRepertoirePluginSettings;
@@ -267,6 +281,144 @@ export default class ChessRepertoirePlugin extends Plugin {
 					);
 				}
 			}
+		);
+	}
+
+	/**
+	 * Offers to trash every file in the storage folder that no note refers to.
+	 *
+	 * A repertoire's file is written the moment the board is made, before its
+	 * block reaches the note, and nothing takes it away again: a board thought
+	 * better of, a note deleted, or a merge kept for its result all leave one
+	 * behind, under a name that says nothing about what is in it. The folder
+	 * cannot answer which those are - only the notes can, so they are read.
+	 *
+	 * Driven from the settings tab, next to the two folders that decide what it
+	 * looks at and what it reads.
+	 */
+	async cleanUpUnusedRepertoires() {
+		const storageFolder = this.dataAdapter.storagePath;
+		const searchFolder = this.settings.notesFolder.trim();
+
+		// Read lazily, and only up to the point where every repertoire has been
+		// accounted for: a vault whose repertoires are all in use never gets past
+		// the notes holding them.
+		const notes = this.app.vault
+			.getFiles()
+			.filter(
+				(file) =>
+					isSearchableNote(file.extension) &&
+					isInSearchFolder(file.path, searchFolder)
+			)
+			.map((file) => ({
+				path: file.path,
+				read: () => this.app.vault.cachedRead(file),
+			}));
+
+		// A folder with nothing in it to read would call every repertoire unused,
+		// and the folder being wrong is a likelier explanation than the vault
+		// having abandoned all of them. Only when one was named: a vault with no
+		// notes at all really has nothing using its repertoires.
+		if (searchFolder && !notes.length) {
+			new Notice(
+				`Chess Repertoire found no notes in "${searchFolder}", so nothing was checked. Change the notes folder in the settings, or leave it empty to search the whole vault.`,
+				0
+			);
+
+			return;
+		}
+
+		let scan: UnusedScan;
+
+		try {
+			scan = await findUnusedRepertoires(
+				this.app.vault.adapter,
+				storageFolder,
+				notes
+			);
+		} catch (e) {
+			// A note that could not be read is a note that might have been the one
+			// naming a repertoire, so the whole run is abandoned rather than acted
+			// on: the answer this gives is only as good as its reading of the notes.
+			console.error(
+				'chess-repertoire: could not read the notes while looking for unused repertoires',
+				e
+			);
+
+			new Notice(
+				'Chess Repertoire could not read every note it needed to, so nothing was deleted.',
+				0
+			);
+
+			return;
+		}
+
+		const searched = searchFolder ? `"${searchFolder}"` : 'your vault';
+
+		const left = scan.skipped
+			? ` ${plural(scan.skipped, 'other file', 'other files')} in the folder ${
+					scan.skipped === 1 ? 'is' : 'are'
+			  } not something the plugin wrote, and will be left alone.`
+			: '';
+
+		if (!scan.unused.length) {
+			new Notice(
+				`Every repertoire in "${storageFolder}" is used by a note in ${searched}.${left}`,
+				scan.skipped ? 0 : undefined
+			);
+
+			return;
+		}
+
+		const files = unusedFileCount(scan.unused);
+
+		new ConfirmModal(this.app, {
+			title: 'Delete unused repertoire files?',
+			body: `You are about to delete ${plural(
+				files,
+				'unused file',
+				'unused files'
+			)} from "${storageFolder}". No note in ${searched} refers to ${
+				scan.unused.length === 1 ? 'it' : 'them'
+			}, and ${files === 1 ? 'it goes' : 'they go'} to the trash.${left}`,
+			details: {
+				summary: `Show the ${plural(files, 'file', 'files')}`,
+				items: unusedFileLines(scan.unused),
+			},
+			confirmText: 'Move to trash',
+			onConfirm: () => void this.trashUnusedRepertoires(scan.unused),
+		}).open();
+	}
+
+	/** Trashes what the user has just agreed to, and reports what actually went. */
+	private async trashUnusedRepertoires(unused: UnusedRepertoire[]) {
+		let trashed = 0;
+		let failed = 0;
+
+		for (const { paths } of unused)
+			for (const path of paths) {
+				try {
+					await this.dataAdapter.trashFile(path);
+
+					trashed += 1;
+				} catch (e) {
+					console.error(`chess-repertoire: could not delete ${path}`, e);
+
+					failed += 1;
+				}
+			}
+
+		new Notice(
+			[
+				`Chess Repertoire moved ${plural(trashed, 'file', 'files')} to the trash.`,
+				failed &&
+					`${plural(failed, 'file', 'files')} could not be deleted and ${
+						failed === 1 ? 'is' : 'are'
+					} still in the folder.`,
+			]
+				.filter(Boolean)
+				.join(' '),
+			failed ? 0 : undefined
 		);
 	}
 

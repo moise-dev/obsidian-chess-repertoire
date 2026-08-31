@@ -4,6 +4,30 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-31
+
+### Added
+
+- **A way to delete the repertoire files nothing refers to.** A repertoire's
+  file is written the moment the board is made, before its code block reaches
+  the note, and nothing ever took it away again: a board made and thought
+  better of, a note deleted, or a merge kept for its result each left a json
+  behind under a name that means nothing to read. **Find unused files**, in the
+  settings beside the folders it works on, reads your notes, counts an id
+  mentioned anywhere - a block, a template, a canvas card, a line of prose - as
+  still in use, and asks before it takes anything, with every file it would
+  delete listed by name behind a disclosure. What it takes goes to the trash,
+  and a file in the folder the plugin did not write is left alone.
+
+- **A notes folder setting**, for how much of the vault that search reads.
+  Empty, the default, is the whole vault: the only answer that cannot be wrong.
+  A vault that keeps its chess notes in one place can name the folder and have
+  the search read that alone. What it costs is that a note outside the folder
+  is not seen, so the repertoire it uses looks unused - which is why the
+  confirmation names the folder that was searched, and why a folder holding no
+  notes at all stops the search rather than offering up every repertoire in the
+  vault.
+
 ## [1.4.0] - 2026-08-30
 
 ### Fixed
@@ -229,6 +253,7 @@ plugin does; the one user-visible line is the minimum app version.
 Initial release under the name Chess Repertoire, forked from
 [chrislicodes/obsidian-chess-study](https://github.com/chrislicodes/obsidian-chess-study).
 
+[1.5.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.5.0
 [1.4.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.4.0
 [1.3.1]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.3.1
 [1.3.0]: https://github.com/moise-dev/obsidian-chess-repertoire/releases/tag/1.3.0

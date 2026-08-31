@@ -1016,6 +1016,29 @@
 }
 
 /*
+ * What a confirmation is about to delete, listed under its question. Closed to
+ * begin with, and scrollable once open: it is there to be checked before saying
+ * yes, not to push the buttons off a short window.
+ */
+.cs-confirm-details {
+	margin: 0 0 var(--size-4-3);
+}
+
+.cs-confirm-details > summary {
+	cursor: pointer;
+	color: var(--text-muted);
+}
+
+.cs-confirm-details > ul {
+	max-height: 12em;
+	overflow-y: auto;
+	margin: var(--size-4-2) 0 0;
+	padding-left: var(--size-4-4);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+/*
  * The map wants the whole screen: a repertoire is wider than a note column,
  * which is the reason it does not live inside the widget.
  */

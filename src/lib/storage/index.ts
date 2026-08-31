@@ -225,6 +225,21 @@ export class ChessRepertoireDataAdapter {
 	}
 
 	/**
+	 * Moves a file in the storage folder to the trash rather than erasing it.
+	 *
+	 * The system trash when it is available, and the vault's own `.trash` when it
+	 * is not. A repertoire nothing refers to is still a repertoire someone
+	 * wrote, and the only way back from the wrong answer is the copy the trash
+	 * keeps.
+	 */
+	async trashFile(path: string) {
+		const normalized = normalizePath(path);
+
+		if (!(await this.adapter.trashSystem(normalized)))
+			await this.adapter.trashLocal(normalized);
+	}
+
+	/**
 	 * Creates the storage folder and every parent it needs.
 	 *
 	 * The old location sat one level under a folder that already existed; a

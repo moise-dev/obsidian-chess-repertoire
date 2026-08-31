@@ -80,6 +80,7 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 - **Annotations visible from the move list** - a dot for notes, a dot for arrows, without stepping through the game to find them. The orange dot indicate the presence of a comment, a green dot represents the presence of an annotation.
 - **PGN import that keeps your annotations** - comments become notes, glyphs become classifications, and variations import nested, straight from a chess.com or Lichess game.
 - **Merge several repertoires in a note** into one combined tree.
+- **A cleanup button for the repertoire files nothing refers to** - the boards made and thought better of, the notes since deleted, the merges kept for their result. It reads your notes before it offers to delete anything, lists what would go, and moves it to the trash rather than erasing it.
 - **A board with no repertoire behind it**, for showing a bare position in a note.
 - **Autosave**, with a visible indicator whenever there's something unsaved.
 - **A resizable, theme-aware widget** that fills the note's width.
@@ -134,6 +135,12 @@ showCoordinates: false
 Repertoires and their drill history are `.json` files in your vault, one per repertoire, named by the id in the code block. **Repertoire folder** in the plugin settings decides which folder; leave it empty for `Chess Repertoires` in the root of the vault. It is the one setting that cannot be overridden per repertoire.
 
 Changing it moves the files already written into the new folder. A file whose name is already taken in the destination is left where it is rather than overwritten, and anything that could not be moved stays readable in the old folder.
+
+A repertoire's file is written the moment you make the board, before its code block reaches the note, and deleting the block or the note only takes the block away - the file stays where it is, under a name that says nothing about what is in it. Merging leaves the originals behind too, on purpose.
+
+**Find unused files**, under *Unused repertoire files* in the settings, clears those away. It reads your notes first and treats an id mentioned anywhere - in a block, a template, a canvas card, a line of prose - as a repertoire still in use. What is left is counted, listed file by file if you open the list, and moved to the trash rather than erased. A file in the folder that the plugin did not write is never touched.
+
+**Notes folder** decides how much is read. Leave it empty and the whole vault is searched, which is the only answer that cannot be wrong; name a folder and only the notes under it are read, which is quicker on a large vault. The catch is the reason it defaults to empty: a note outside that folder is not seen, so the repertoire it uses looks like one nothing refers to. The confirmation always says which folder was searched, and the search stops rather than offering anything up if the folder it was pointed at holds no notes at all.
 
 Two things worth knowing:
 

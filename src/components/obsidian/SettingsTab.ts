@@ -69,6 +69,15 @@ export interface ChessRepertoirePluginSettings {
 	 */
 	storageFolder: string;
 	/**
+	 * Vault-relative folder searched for the repertoires in use, when clearing
+	 * away the files nothing refers to.
+	 *
+	 * Empty - the default - is the whole vault, which is the only answer that
+	 * cannot be wrong. A vault keeping its chess notes in one place can name it
+	 * and have the search read that folder alone.
+	 */
+	notesFolder: string;
+	/**
 	 * The shape of the data this vault has been migrated to; see
 	 * `CURRENT_DATA_VERSION`. Absent - every vault up to 1.2.0 - means
 	 * `INITIAL_DATA_VERSION`, and the migrations sort out what that vault
@@ -85,6 +94,7 @@ export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 	showCoordinates: true,
 	coordinateColor: '',
 	storageFolder: '',
+	notesFolder: '',
 	dataVersion: INITIAL_DATA_VERSION,
 };
 
@@ -183,6 +193,25 @@ export class SettingsTab extends PluginSettingTab {
 				},
 			},
 			{
+				name: 'Notes folder',
+				desc:
+					'Which notes to search when looking for unused repertoire files. Leave empty to search the whole vault; naming the folder your boards are in is faster on a large vault. Notes outside it are never read, so a repertoire used only by one of them would be listed as unused.',
+				aliases: ['notes', 'search', 'scan'],
+				control: {
+					type: 'folder',
+					key: 'notesFolder',
+					placeholder: 'the whole vault',
+					validate: (value) => validateStorageFolder(value),
+				},
+			},
+			{
+				name: 'Unused repertoire files',
+				desc:
+					'A repertoire file is written when you make the board and stays behind when the block is deleted. This finds the ones no note refers to and offers to move them to the trash.',
+				aliases: ['cleanup', 'unused', 'orphan', 'delete'],
+				render: (setting) => this.renderCleanup(setting),
+			},
+			{
 				name: 'Show comments',
 				desc: 'Show the notes panel underneath the board by default',
 				control: {
@@ -228,6 +257,14 @@ export class SettingsTab extends PluginSettingTab {
 			return;
 		}
 
+		if (key === 'notesFolder') {
+			this.plugin.settings.notesFolder = String(value).trim();
+
+			await this.plugin.saveSettings();
+
+			return;
+		}
+
 		if (key === 'boardSize') {
 			const parsed = Number.parseInt(String(value), 10);
 
@@ -237,6 +274,29 @@ export class SettingsTab extends PluginSettingTab {
 		}
 
 		await this.plugin.saveSettings();
+	}
+
+	/**
+	 * The button that goes looking for unused repertoire files.
+	 *
+	 * Here rather than in the command palette because it belongs with the two
+	 * settings that decide what it does - which folder the files are in, and
+	 * which folder is searched for the ones still in use.
+	 */
+	private renderCleanup(setting: Setting): void {
+		setting.addButton((button) => {
+			const label = 'Find unused files';
+
+			button.setButtonText(label).onClick(() => {
+				// The scan reads every note in the folder, which on a large vault is
+				// long enough to click twice.
+				button.setDisabled(true).setButtonText('Looking...');
+
+				void this.plugin.cleanUpUnusedRepertoires().finally(() => {
+					button.setDisabled(false).setButtonText(label);
+				});
+			});
+		});
 	}
 
 	/**
