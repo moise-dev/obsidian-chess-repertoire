@@ -22,6 +22,13 @@ Notable changes to Chess Repertoire, newest first. The format follows
   partially supported by the Obsidian version it checks against. It sits a
   pixel lower than it did and is otherwise the same.
 
+- **The board's coordinates no longer force themselves with `!important`.**
+  The rules that place them in the gutter already outrank chessground's own by
+  specificity, so an ordinary vault looks exactly as it did. What goes is the
+  guard against another chess plugin shipping unscoped `!important` rules over
+  `.cg-wrap coords`: in a vault running both, the coordinates can now be
+  hidden or tinted by the other plugin.
+
 - The README drops the three `<!-- omit in toc -->` directives, which the
   review reads as template text left unfilled. The table of contents itself is
   written out in the file and is unchanged; regenerating it would now list the

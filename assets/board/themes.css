@@ -118,14 +118,9 @@
 	position: absolute;
 	display: flex;
 	pointer-events: none;
-	/*
-	 * !important because another chess plugin can be installed alongside this
-	 * one, and at least one of them ships an unscoped `.cg-wrap coords {
-	 * opacity: 0 !important }` that reaches every board in the app. Specificity
-	 * cannot answer !important, so this is the only way to keep our own
-	 * coordinates visible when a vault has both.
-	 */
-	opacity: 1 !important;
+	/* Chessground fades its own coordinates to 0.8; out here in the gutter they
+	 * are on the widget's background and want the muted colour at full strength. */
+	opacity: 1;
 	color: var(--text-muted);
 	font-family: inherit;
 	font-size: clamp(10px, 2.3cqw, 15px);
@@ -135,13 +130,11 @@
 
 .chess-repertoire .cs-board .cg-wrap coords coord {
 	/*
-	 * The same arms race as the opacity above. That plugin also carries
-	 * lichess's parity tint - every other label coloured to match the square
-	 * beneath it - at a specificity ours cannot beat, which left half the
-	 * labels dark grey on our widget's background. Out here in the gutter there
-	 * are no squares to match, so one muted colour for all sixteen.
+	 * One muted colour for all sixteen labels. Lichess tints each to match the
+	 * square beneath it, which is what chessground's own stylesheet expects -
+	 * but out here in the gutter there are no squares to match.
 	 */
-	color: var(--cs-coord-color, var(--text-muted)) !important;
+	color: var(--cs-coord-color, var(--text-muted));
 	flex: 1 0 0;
 	display: flex;
 	align-items: center;
