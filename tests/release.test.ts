@@ -49,4 +49,34 @@ describe('release metadata', () => {
 			`CHANGELOG.md has nothing for ${versionOf(manifest)}`
 		);
 	});
+
+	/**
+	 * The release workflow takes the description of a release from this section,
+	 * and refuses to build a tag whose section is empty - a release with nothing
+	 * written about it is one nobody can read before installing it. A heading
+	 * with no body under it is the way that happens: it is written when the
+	 * version is decided and filled in afterwards, or not at all.
+	 */
+	it('says something under that heading', () => {
+		const lines = readFileSync('CHANGELOG.md', 'utf8').split('\n');
+
+		const start = lines.findIndex((line) =>
+			line.startsWith(`## [${versionOf(manifest)}]`)
+		);
+
+		const after = lines.slice(start + 1);
+		const end = after.findIndex((line) => line.startsWith('## ['));
+
+		const body = (end === -1 ? after : after.slice(0, end))
+			// The link definitions at the foot of the file belong to the last
+			// section by position only.
+			.filter((line) => !/^\[[0-9]/.test(line))
+			.join('\n')
+			.trim();
+
+		assert.ok(
+			body,
+			`CHANGELOG.md has a heading for ${versionOf(manifest)} with nothing under it`
+		);
+	});
 });
