@@ -22,6 +22,11 @@ Notable changes to Chess Repertoire, newest first. The format follows
   partially supported by the Obsidian version it checks against. It sits a
   pixel lower than it did and is otherwise the same.
 
+- The README drops the three `<!-- omit in toc -->` directives, which the
+  review reads as template text left unfilled. The table of contents itself is
+  written out in the file and is unchanged; regenerating it would now list the
+  three headings they were hiding.
+
 ## [1.5.0] - 2026-08-31
 
 ### Added

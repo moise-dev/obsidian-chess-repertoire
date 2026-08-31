@@ -1,4 +1,3 @@
-<!-- omit in toc -->
 # Chess Repertoire
 
 A chess repertoire helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
@@ -7,7 +6,6 @@ Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.
 
 ![Chess Repertoire in use](imgs/general-view.png)
 
-<!-- omit in toc -->
 ## Table of contents
 
 - [Trainer](#trainer)
@@ -129,7 +127,6 @@ showCoordinates: false
 | `boardSize`         | number of pixels                             | Widget width. Written automatically when you drag to resize. |
 | `viewComments`      | `true` \| `false`                            | Whether the notes panel starts open                          |
 
-<!-- omit in toc -->
 ### Where repertoires are stored
 
 Repertoires and their drill history are `.json` files in your vault, one per repertoire, named by the id in the code block. **Repertoire folder** in the plugin settings decides which folder; leave it empty for `Chess Repertoires` in the root of the vault. It is the one setting that cannot be overridden per repertoire.
