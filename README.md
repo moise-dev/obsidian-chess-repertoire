@@ -62,7 +62,7 @@ The download button opens the repertoire as text, in either of two formats, with
 
 ![Exporting a repertoire as PGN or FEN](imgs/game-export.png)
 
-**PGN** is the whole repertoire, not just the line you are standing on: variations come out nested in brackets, your notes as `{}` comments, and your classifications as the standard glyphs - `$1`, `$3`, `$4` and so on. It is the exact counterpart of the importer, so a repertoire exported and pasted back in comes out the same repertoire. A repertoire that starts from a position rather than the standard array carries a `[FEN]` header, so it opens where it should.
+**PGN** is the whole repertoire, not just the line you are standing on: variations come out nested in brackets, your notes as `{}` comments, and your classifications as the standard glyphs - `$1`, `$3`, `$4` and so on. It is the exact counterpart of the importer, so a repertoire exported and pasted back in comes out the same repertoire. A repertoire that starts from a position rather than the standard array carries a FEN header tag, so it opens where it should.
 
 **FEN** is the position on the board right now, for pasting into an engine or another board.
 
@@ -135,7 +135,7 @@ Changing it moves the files already written into the new folder. A file whose na
 
 A repertoire's file is written the moment you make the board, before its code block reaches the note, and deleting the block or the note only takes the block away - the file stays where it is, under a name that says nothing about what is in it. Merging leaves the originals behind too, on purpose.
 
-**Find unused files**, under *Unused repertoire files* in the settings, clears those away. It reads your notes first and treats an id mentioned anywhere - in a block, a template, a canvas card, a line of prose - as a repertoire still in use. What is left is counted, listed file by file if you open the list, and moved to the trash rather than erased. A file in the folder that the plugin did not write is never touched.
+**Find unused files**, under *Unused repertoire files* in the settings, clears those away. It reads your notes first and treats an id mentioned anywhere - in a block, a canvas card, a line of prose - as a repertoire still in use. What is left is counted, listed file by file if you open the list, and moved to the trash rather than erased. A file in the folder that the plugin did not write is never touched.
 
 **Notes folder** decides how much is read. Leave it empty and the whole vault is searched, which is the only answer that cannot be wrong; name a folder and only the notes under it are read, which is quicker on a large vault. The catch is the reason it defaults to empty: a note outside that folder is not seen, so the repertoire it uses looks like one nothing refers to. The confirmation always says which folder was searched, and the search stops rather than offering anything up if the folder it was pointed at holds no notes at all.
 

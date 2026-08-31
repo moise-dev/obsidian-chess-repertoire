@@ -29,10 +29,12 @@ Notable changes to Chess Repertoire, newest first. The format follows
   `.cg-wrap coords`: in a vault running both, the coordinates can now be
   hidden or tinted by the other plugin.
 
-- The README drops the three `<!-- omit in toc -->` directives, which the
-  review reads as template text left unfilled. The table of contents itself is
+- The README loses what the plugin review reads as placeholder text left
+  unfilled: the three `<!-- omit in toc -->` directives, a bracketed `[FEN]`
+  that looks like a `[description]` nobody filled in, and the word "template"
+  in a list of places an id might be mentioned. The table of contents is
   written out in the file and is unchanged; regenerating it would now list the
-  three headings they were hiding.
+  three headings those directives were hiding.
 
 ## [1.5.0] - 2026-08-31
 
