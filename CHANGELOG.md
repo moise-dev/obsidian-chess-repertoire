@@ -29,6 +29,11 @@ Notable changes to Chess Repertoire, newest first. The format follows
   `.cg-wrap coords`: in a vault running both, the coordinates can now be
   hidden or tinted by the other plugin.
 
+- The build strips the one `!important` left in the shipped CSS, which came
+  from chessground's own stylesheet. It is there to beat an inline z-index
+  that chessground writes only for 3D piece sets, and this plugin ships 2D
+  pieces and never asks for it, so nothing here was relying on it.
+
 - The README loses what the plugin review reads as placeholder text left
   unfilled: the three `<!-- omit in toc -->` directives, a bracketed `[FEN]`
   that looks like a `[description]` nobody filled in, and the word "template"
