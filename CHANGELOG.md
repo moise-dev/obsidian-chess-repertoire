@@ -4,7 +4,7 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.2] - 2026-09-26
+## [1.5.3] - 2026-09-26
 
 ### Fixed
 
@@ -22,6 +22,8 @@ Notable changes to Chess Repertoire, newest first. The format follows
   facing White after one session drilled as White, and had to be flipped back
   by hand. It is turned back when the session ends, whether it ran out or was
   stopped part way.
+
+## [1.5.2] - 2026-09-26
 
 ### Security
 
