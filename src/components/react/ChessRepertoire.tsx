@@ -880,6 +880,7 @@ export const ChessRepertoire = ({
 		firstPlayer,
 		initialMoveNumber,
 		dispatch,
+		orientation,
 		setOrientation,
 	});
 
