@@ -6,6 +6,7 @@ import { ChessRepertoireMove } from '../src/lib/storage';
 import {
 	buildBranchCue,
 	buildHintStages,
+	colorToRecord,
 	errorShapes,
 	hintShapes,
 	moveNumberLabel,
@@ -171,6 +172,25 @@ describe('buildBranchCue', () => {
 
 	it('says nothing at the end of a line, where there is nothing to ask for', () => {
 		assert.equal(buildBranchCue([mv('Nf3'), mv('Bc4')], null), null);
+	});
+});
+
+describe('colorToRecord', () => {
+	it('records the colour a repertoire has never said', () => {
+		assert.equal(colorToRecord(undefined, 'b'), 'b');
+		assert.equal(colorToRecord(undefined, 'w'), 'w');
+	});
+
+	it('leaves a repertoire that has said its colour alone', () => {
+		// Drilling the other side for one session is a question about the
+		// session. Written back, it turned the colour on the board - and the
+		// side the next drill offers - into whatever was picked last.
+		assert.equal(colorToRecord('b', 'w'), null);
+		assert.equal(colorToRecord('w', 'b'), null);
+	});
+
+	it('writes nothing when the answer is the one already there', () => {
+		assert.equal(colorToRecord('b', 'b'), null);
 	});
 });
 
