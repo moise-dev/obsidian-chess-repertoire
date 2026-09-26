@@ -1,4 +1,4 @@
-import Placeholder from '@tiptap/extension-placeholder';
+import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ChevronDown, ChevronRight } from 'lucide-react';
@@ -34,7 +34,17 @@ export const CommentSection = React.memo(
 
 		const editor = useEditor({
 			extensions: [
-				StarterKit,
+				// Tiptap 3's StarterKit brings three extensions v2's did not, and a
+				// note is a stored document rather than a view, so each of them
+				// would change what is written to disk. Links and underlines are
+				// marks nothing here writes or styles yet; the trailing node adds an
+				// empty paragraph to every document it opens, which the editor then
+				// reports as an edit and autosave writes back over the note.
+				StarterKit.configure({
+					link: false,
+					underline: false,
+					trailingNode: false,
+				}),
 				Placeholder.configure({
 					placeholder: ({ editor: instance }) =>
 						instance.isEditable
@@ -67,11 +77,19 @@ export const CommentSection = React.memo(
 			if (!editor) return;
 			const { from, to } = editor.state.selection;
 			if (currentComment) {
-				editor.commands.setContent(currentComment, false, {
-					preserveWhitespace: true,
+				editor.commands.setContent(currentComment, {
+					// Loading a note into the editor is not an edit of it. Left to
+					// emit, the load is reported as a change and written straight
+					// back, which is how a note was lost on the way out of a drill.
+					emitUpdate: false,
+					parseOptions: { preserveWhitespace: true },
 				});
 			} else {
-				editor.commands.clearContent();
+				// Same again, and this one changed under us: `clearContent` emitted
+				// nothing by default in Tiptap 2 and emits by default in 3, so
+				// landing on a move with no note would report an empty document as
+				// that move's new note.
+				editor.commands.clearContent(false);
 			}
 			editor.commands.setTextSelection({ from, to });
 		}, [currentComment, editor]);
