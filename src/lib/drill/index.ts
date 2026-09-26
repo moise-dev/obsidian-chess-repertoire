@@ -185,7 +185,9 @@ export const weighReplies = (
 			move,
 			unseen: attempts === 0,
 			weight:
-				attempts === 0 ? 1 + coverage : FAMILIAR_WEIGHT + misses / attempts + coverage,
+				attempts === 0
+					? 1 + coverage
+					: FAMILIAR_WEIGHT + misses / attempts + coverage,
 		};
 	});
 };

@@ -1,0 +1,50 @@
+name: Check
+
+on:
+ pull_request:
+ push:
+  branches:
+   - main
+
+# A newer push makes the run already going pointless.
+concurrency:
+ group: check-${{ github.ref }}
+ cancel-in-progress: true
+
+jobs:
+ check:
+  runs-on: ubuntu-latest
+
+  steps:
+   - uses: actions/checkout@v4
+
+   - name: Use Node.js
+     uses: actions/setup-node@v4
+     with:
+      node-version: '22.x'
+      cache: 'npm'
+
+   # `npm ci` rather than `npm install`, and not only because it is faster: it
+   # installs what the lockfile says and refuses a lockfile that disagrees with
+   # package.json. Until this workflow existed the release build was the only
+   # place `npm ci` ran, so a lockfile written over a half-installed
+   # node_modules got as far as a tag before anything noticed.
+   - name: Install
+     run: npm ci
+
+   - name: Lint
+     run: npm run lint
+
+   # The pre-commit hook formats what is staged, which is not the same as the
+   # repo being formatted - a file changed by a tool, or committed with the
+   # hook skipped, slips past it.
+   - name: Format
+     run: npx prettier --check .
+
+   - name: Test
+     run: npm test
+
+   # Carries the `tsc -noEmit` type check, so a branch that does not compile
+   # says so here rather than at the tag.
+   - name: Build
+     run: npm run build

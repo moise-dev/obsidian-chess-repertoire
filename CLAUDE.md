@@ -14,6 +14,10 @@ for the person using it; this says how it is built and released.
 | `npm run dev`    | esbuild in watch mode, writing `main.js` here rather than into a vault.            |
 | `npm run deploy` | Build, then copy into a vault. See below.                                          |
 
+`.github/workflows/check.yml` runs all four of those on every pull request and
+on `main`, installing with `npm ci` so a lockfile that disagrees with
+`package.json` fails there rather than at a tag.
+
 A pre-commit hook runs `pretty-quick --staged`, so anything staged is formatted
 on the way in. Tabs, single quotes, and `proseWrap: preserve`, which is why the
 changelog's hand-wrapped paragraphs survive a format.
