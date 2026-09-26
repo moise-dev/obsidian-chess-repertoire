@@ -87,12 +87,19 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 
 ## Installation
 
-Chess Repertoire is **not in the community plugin store** yet, so install it by hand:
+From **Settings → Community plugins → Browse**, search for **Chess Repertoire**, then Install and Enable. Obsidian keeps it up to date from there.
+
+<!-- omit in toc -->
+### By hand
+
+Still worth knowing, for a version newer than the store is offering or a vault that browses no store:
 
 1. Download `main.js`, `styles.css` and `manifest.json` from the [latest release](../../releases/latest).
 2. Create a folder named `chess-repertoire` in `<vault>/.obsidian/plugins/`.
 3. Drop the three files into it.
 4. Reload Obsidian and enable **Chess Repertoire** under Settings → Community plugins.
+
+A copy installed by hand sits in the same folder as one installed from the store, so the two overwrite each other. Whichever was written last is the one that runs.
 
 > **Upgrading from the original Chess Study?** Copy your old plugin's `storage`
 > folder into `<vault>/.obsidian/plugins/chess-repertoire/` before enabling it, or

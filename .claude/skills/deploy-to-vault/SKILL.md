@@ -52,6 +52,12 @@ Say which change to look for and where: the board is wherever a
 ` ```chessRepertoire ` block is in a note, drills start from the board's own
 controls, and settings are under Community plugins.
 
+Say as well that the vault is now running a build rather than a release. The
+plugin is in the community store, which installs the same three files into the
+same folder, so a deploy replaces the released copy and a store update replaces
+the deploy. Getting back to the release means updating from the store, or
+deploying from `main` at the tag.
+
 ## What this cannot do
 
 You cannot drive the Obsidian UI, so you cannot confirm a change works by

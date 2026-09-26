@@ -36,6 +36,13 @@ Copying the files changes nothing that is already running. Obsidian has to be
 told: toggle Chess Repertoire off and on under Community plugins, or run
 "Reload app without saving" from the command palette.
 
+The plugin is published in the community store, and a store install writes the
+same three files into that same folder. So a deploy overwrites the released
+copy, and the user updating from the store overwrites the deploy: whichever was
+written last is what runs. Worth saying which one a vault is on before reading
+anything into what it does. `manifest.json` is no help there, since a branch
+build carries whatever version the branch says.
+
 ## Where code goes
 
 Logic lives in `src/lib/<name>/index.ts` as plain functions, with its tests in
