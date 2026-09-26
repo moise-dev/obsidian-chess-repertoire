@@ -4,6 +4,34 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Tiptap, which the notes panel is built on, is on 3.31.3.** Every 2.x
+  release of `@tiptap/core` carries GHSA-cp6q-959q-f8rh: `mergeAttributes()`
+  merges a `__proto__` key straight onto the object it is building, so a
+  document written to reach it can hand a node's prototype attributes that
+  ProseMirror's serializer then writes out as real DOM attributes. It is fixed
+  in 3.30.4 and nowhere in the 2.x line, which ends inside the affected range,
+  so the only way out of it is the major version.
+
+  Nothing in a repertoire could reach it: notes are edited with the stock
+  StarterKit schema, which declares the attributes it accepts and drops
+  everything else on the way in, and the only documents the panel loads are
+  the ones the plugin itself wrote. It is fixed here because a dependency with
+  a standing advisory is worth being rid of, not because a note could carry
+  one.
+
+  The notes panel is deliberately unchanged by the move. Tiptap 3's StarterKit
+  adds links, underlines and a trailing paragraph to every document it opens;
+  all three are switched off, since a note is a file on disk rather than a
+  view, and each of them would start writing something new into it. Two
+  defaults that flipped between the versions are now passed explicitly:
+  loading a note and clearing the panel both used to be silent and both now
+  announce an edit unless told not to, which would have had the panel write
+  its own arrival back over the note it had just opened.
+
 ## [1.5.1] - 2026-09-26
 
 ### Fixed

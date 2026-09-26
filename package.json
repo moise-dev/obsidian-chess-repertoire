@@ -20,10 +20,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@tiptap/extension-placeholder": "^2.27.2",
-    "@tiptap/pm": "2.27.2",
-    "@tiptap/react": "2.27.2",
-    "@tiptap/starter-kit": "2.27.2",
+    "@tiptap/extensions": "3.31.3",
+    "@tiptap/pm": "3.31.3",
+    "@tiptap/react": "3.31.3",
+    "@tiptap/starter-kit": "3.31.3",
     "chess.js": "1.0.0-beta.6",
     "chessground": "8.3.7",
     "immer": "^10.0.2",
