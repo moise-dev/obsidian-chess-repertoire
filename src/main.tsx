@@ -1,5 +1,12 @@
 import { Chess } from 'chess.js';
-import { Editor, Notice, Plugin, normalizePath } from 'obsidian';
+import {
+	App,
+	Editor,
+	Notice,
+	Plugin,
+	normalizePath,
+	requestUrl,
+} from 'obsidian';
 import {
 	CURRENT_DRILL_VERSION,
 	CURRENT_STORAGE_VERSION,
@@ -28,6 +35,27 @@ import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
 import { nanoid } from 'nanoid';
 import { findCodeBlocks } from './lib/blocks';
+import {
+	archiveUrlForMonth,
+	dayBefore,
+	dayKey,
+	shouldFetchArchive,
+	shouldImportGame,
+} from './lib/chesscom/fetch';
+import {
+	END_MARKER,
+	START_MARKER,
+	managedSection,
+	mergeManagedSection,
+} from './lib/chesscom/notes';
+import {
+	findBestRepertoireMatch,
+	hashString,
+	parseGame,
+	parseHeaders,
+	repertoireFromGame,
+} from './lib/chesscom/pgn';
+import { ChessComGameRecord } from './lib/chesscom/types';
 import {
 	UnusedRepertoire,
 	UnusedScan,
@@ -74,6 +102,314 @@ const plural = (count: number, one: string, many: string): string =>
 export default class ChessRepertoirePlugin extends Plugin {
 	settings: ChessRepertoirePluginSettings;
 	dataAdapter: ChessRepertoireDataAdapter;
+	private importInProgress = false;
+
+	private registerChessComCommands() {
+		this.addCommand({
+			id: 'import-chess-com-games',
+			name: 'Import Chess.com games into daily notes',
+			callback: () => void this.importChessComGames(),
+		});
+		this.addCommand({
+			id: 'import-chess-com-pgn',
+			name: 'Import Chess.com PGN into daily notes',
+			callback: () =>
+				new ChessStringModal(
+					this.app,
+					(pgn) => void this.importChessComPgn(pgn)
+				).open(),
+		});
+	}
+
+	private async fetchChessComJson(
+		url: string
+	): Promise<Record<string, unknown>> {
+		const response = await requestUrl({
+			url,
+			headers: {
+				Accept: 'application/json',
+				'User-Agent': 'Obsidian Chess Repertoire',
+			},
+		});
+		if (response.status >= 400)
+			throw new Error(`Chess.com returned HTTP ${response.status}`);
+		return response.json as Record<string, unknown>;
+	}
+
+	private async fetchChessComGames(
+		username: string,
+		earliestGameDay: string
+	): Promise<Record<string, unknown>[]> {
+		const archives = await this.fetchChessComJson(
+			`https://api.chess.com/pub/player/${encodeURIComponent(
+				username
+			)}/games/archives`
+		);
+		const listedArchives = Array.isArray(archives.archives)
+			? archives.archives.map(String)
+			: [];
+		const currentMonthArchive = archiveUrlForMonth(username, new Date());
+		const urls = Array.from(
+			new Set([
+				...listedArchives
+					.slice(-Math.min(24, Math.max(1, this.settings.chessComArchiveMonths)))
+					.filter((archive) => shouldFetchArchive(archive, earliestGameDay)),
+				currentMonthArchive,
+			])
+		).filter((archive) => shouldFetchArchive(archive, earliestGameDay));
+		console.info('chess-repertoire: Chess.com archives selected', {
+			username,
+			earliestGameDay,
+			availableArchives: listedArchives.length,
+			currentMonthArchive,
+			selectedArchives: urls,
+		});
+		const games: Record<string, unknown>[] = [];
+		for (const archive of urls) {
+			const result = await this.fetchChessComJson(String(archive));
+			if (Array.isArray(result.games))
+				games.push(...(result.games as Record<string, unknown>[]));
+		}
+		return games;
+	}
+
+	private dailyNotePath(date: Date): string {
+		const dailyNotes = (
+			this.app as App & {
+				internalPlugins?: { getPluginById(id: string): unknown };
+			}
+		).internalPlugins?.getPluginById('daily-notes') as
+			| { instance?: { options?: { folder?: string; format?: string } } }
+			| undefined;
+		const options = dailyNotes?.instance?.options || {};
+		const folder = normalizePath(
+			this.settings.chessComDailyNotesFolder.trim() || options.folder || ''
+		);
+		const format =
+			this.settings.chessComDailyNoteFormat.trim() ||
+			options.format ||
+			'YYYY-MM-DD';
+		const values: Record<string, string> = {
+			YYYY: String(date.getFullYear()).padStart(4, '0'),
+			MM: String(date.getMonth() + 1).padStart(2, '0'),
+			DD: String(date.getDate()).padStart(2, '0'),
+		};
+		const filename = format.replace(/YYYY|MM|DD/g, (token) => values[token]);
+		return normalizePath(`${folder ? `${folder}/` : ''}${filename}.md`);
+	}
+
+	private async ensureChessComFolder(path: string): Promise<void> {
+		let current = '';
+		for (const part of normalizePath(path).split('/')) {
+			if (!part) continue;
+			current = current ? `${current}/${part}` : part;
+			if (!(await this.app.vault.adapter.exists(current))) {
+				try {
+					await this.app.vault.adapter.mkdir(current);
+				} catch (error) {
+					if (
+						!(await this.app.vault.adapter.exists(current)) &&
+						!/already exists/i.test(String(error))
+					)
+						throw error;
+				}
+			}
+		}
+	}
+
+	private async loadedRepertoires(): Promise<
+		Array<{ id: string; repertoire: ChessRepertoireFileData }>
+	> {
+		const files = await this.app.vault.adapter.list(this.storagePath);
+		const entries: Array<{ id: string; repertoire: ChessRepertoireFileData }> =
+			[];
+		for (const path of files.files.filter(
+			(file) => file.endsWith('.json') && !file.endsWith('.drill.json')
+		)) {
+			try {
+				const id = path
+					.split('/')
+					.pop()!
+					.replace(/\.json$/, '');
+				entries.push({ id, repertoire: await this.dataAdapter.loadFile(id) });
+			} catch (error) {
+				console.debug(`chess-repertoire: skipped ${path}`, error);
+			}
+		}
+		return entries;
+	}
+
+	private async writeChessComBoard(game: ChessComGameRecord): Promise<void> {
+		if (!this.settings.chessComIncludeBoards || game.rules !== 'chess') return;
+		const id = `chesscom-${hashString(game.key)}`;
+		const path = normalizePath(`${this.dataAdapter.storagePath}/${id}.json`);
+		if (await this.dataAdapter.adapter.exists(path)) {
+			game.boardId = id;
+			return;
+		}
+		const data = repertoireFromGame(game, id);
+		await this.dataAdapter.createStorageFolderIfNotExists();
+		await this.dataAdapter.saveFile(data, id);
+		game.boardId = id;
+	}
+
+	private async updateChessComDailyNote(
+		path: string,
+		games: ChessComGameRecord[]
+	): Promise<void> {
+		const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
+		if (folder) await this.ensureChessComFolder(folder);
+		const existing = this.app.vault.getAbstractFileByPath(path);
+		const settings = {
+			includePgn: this.settings.chessComIncludePgn,
+			includeAnalysis: this.settings.chessComIncludeAnalysis,
+			includeBoards: this.settings.chessComIncludeBoards,
+		};
+		if (existing && 'extension' in existing && existing.extension === 'md') {
+			const content = await this.app.vault.cachedRead(
+				existing as import('obsidian').TFile
+			);
+			const pattern = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}`);
+			const next = pattern.test(content)
+				? content.replace(pattern, (section) =>
+						mergeManagedSection(section, games, settings)
+				  )
+				: `${content.trimEnd()}${content.trimEnd() ? '\n\n' : ''}${managedSection(
+						games,
+						settings
+				  )}\n`;
+			if (next !== content)
+				await this.app.vault.modify(existing as import('obsidian').TFile, next);
+		} else {
+			await this.app.vault.create(path, `${managedSection(games, settings)}\n`);
+		}
+	}
+
+	private async importChessComGames(): Promise<void> {
+		if (this.importInProgress) return;
+		const username = this.settings.chessComUsername.trim();
+		if (!username) {
+			new Notice('Set a Chess.com username in Chess Repertoire settings.');
+			return;
+		}
+		this.importInProgress = true;
+		const lastFetchedDay = this.settings.chessComLastFetchedDay;
+		try {
+			const importDay = dayKey(new Date());
+			const importFromDay = dayBefore(lastFetchedDay);
+			console.info('chess-repertoire: Chess.com import started', {
+				username,
+				lastFetchedDay,
+				importFromDay,
+				archiveMonths: this.settings.chessComArchiveMonths,
+			});
+			const rawGames = await this.fetchChessComGames(username, importFromDay);
+			const entries = await this.loadedRepertoires();
+			const games: ChessComGameRecord[] = [];
+			const seen = new Set<string>();
+			let unparseable = 0;
+			let olderThanWindow = 0;
+			let duplicates = 0;
+			for (const raw of rawGames) {
+				const game = parseGame(raw, username);
+				if (!game) {
+					unparseable += 1;
+					continue;
+				}
+				if (!shouldImportGame(game.date, importFromDay)) {
+					olderThanWindow += 1;
+					continue;
+				}
+				if (seen.has(game.key)) {
+					duplicates += 1;
+					continue;
+				}
+				seen.add(game.key);
+				game.repertoireMatch =
+					findBestRepertoireMatch(game.parsed.moves, entries) || undefined;
+				await this.writeChessComBoard(game);
+				games.push(game);
+			}
+			console.info('chess-repertoire: Chess.com games fetched', {
+				rawGames: rawGames.length,
+				eligibleGames: games.length,
+				unparseable,
+				olderThanWindow,
+				duplicates,
+			});
+			const grouped = new Map<string, ChessComGameRecord[]>();
+			for (const game of games) {
+				const path = this.dailyNotePath(game.date);
+				grouped.set(path, [...(grouped.get(path) || []), game]);
+			}
+			for (const [path, groupedGames] of grouped)
+				await this.updateChessComDailyNote(path, groupedGames);
+			this.settings.chessComLastFetchedDay = importDay;
+			await this.saveSettings();
+			if (!games.length) {
+				console.warn(
+					'chess-repertoire: Chess.com returned no games in the import window'
+				);
+				new Notice(`No games found for ${username}.`);
+				return;
+			}
+			new Notice(
+				`Imported ${games.length} Chess.com ${
+					games.length === 1 ? 'game' : 'games'
+				}.`
+			);
+		} catch (error) {
+			this.settings.chessComLastFetchedDay = lastFetchedDay;
+			console.error('chess-repertoire: Chess.com import failed', error);
+			new Notice(`Chess.com import failed: ${String(error)}`, 0);
+		} finally {
+			this.importInProgress = false;
+		}
+	}
+
+	private async importChessComPgn(pgn: string): Promise<void> {
+		if (this.importInProgress) return;
+		const username = this.settings.chessComUsername.trim();
+		if (!username) {
+			new Notice('Set a Chess.com username in Chess Repertoire settings.');
+			return;
+		}
+
+		const trimmed = pgn.trim();
+		if (!trimmed) {
+			new Notice('Paste a Chess.com PGN to import.');
+			return;
+		}
+
+		this.importInProgress = true;
+		try {
+			const headers = parseHeaders(trimmed);
+			const game = parseGame(
+				{
+					pgn: trimmed,
+					url: headers.Link || `pgn-${hashString(trimmed)}`,
+					rules: headers.Variant || 'chess',
+				},
+				username
+			);
+			if (!game || !game.parsed.moves.length) {
+				new Notice('The pasted Chess.com PGN could not be parsed.');
+				return;
+			}
+
+			const entries = await this.loadedRepertoires();
+			game.repertoireMatch =
+				findBestRepertoireMatch(game.parsed.moves, entries) || undefined;
+			await this.writeChessComBoard(game);
+			await this.updateChessComDailyNote(this.dailyNotePath(game.date), [game]);
+			new Notice(`Imported ${game.white} vs ${game.black} into the daily note.`);
+		} catch (error) {
+			console.error('chess-repertoire: Chess.com PGN import failed', error);
+			new Notice(`Chess.com PGN import failed: ${String(error)}`, 0);
+		} finally {
+			this.importInProgress = false;
+		}
+	}
 
 	/**
 	 * The folder repertoires are read from and written to.
@@ -117,6 +453,10 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 		// Add settings tab
 		this.addSettingTab(new SettingsTab(this.app, this));
+		this.registerChessComCommands();
+
+		if (this.settings.chessComImportOnStartup)
+			this.app.workspace.onLayoutReady(() => void this.importChessComGames());
 
 		// Add command
 		this.addCommand({

@@ -84,6 +84,15 @@ export interface ChessRepertoirePluginSettings {
 	 * actually has on disk.
 	 */
 	dataVersion: number;
+	chessComUsername: string;
+	chessComArchiveMonths: number;
+	chessComDailyNotesFolder: string;
+	chessComDailyNoteFormat: string;
+	chessComIncludePgn: boolean;
+	chessComIncludeAnalysis: boolean;
+	chessComIncludeBoards: boolean;
+	chessComLastFetchedDay: string;
+	chessComImportOnStartup: boolean;
 }
 
 export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
@@ -96,6 +105,15 @@ export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 	storageFolder: '',
 	notesFolder: '',
 	dataVersion: INITIAL_DATA_VERSION,
+	chessComUsername: '',
+	chessComArchiveMonths: 1,
+	chessComDailyNotesFolder: '',
+	chessComDailyNoteFormat: '',
+	chessComIncludePgn: true,
+	chessComIncludeAnalysis: true,
+	chessComIncludeBoards: true,
+	chessComLastFetchedDay: '',
+	chessComImportOnStartup: false,
 };
 
 type SettingKey = keyof ChessRepertoirePluginSettings;
@@ -220,6 +238,71 @@ export class SettingsTab extends PluginSettingTab {
 					defaultValue: DEFAULT_SETTINGS.viewComments,
 				},
 			},
+			{
+				name: 'Chess.com username',
+				desc: 'Public username whose finished game archives should be imported.',
+				control: {
+					type: 'text',
+					key: 'chessComUsername',
+					placeholder: 'your-username',
+				},
+			},
+			{
+				name: 'Chess.com archive months',
+				desc: 'Number of newest monthly archives to scan when importing games.',
+				control: { type: 'text', key: 'chessComArchiveMonths', placeholder: '1' },
+			},
+			{
+				name: 'Chess.com daily notes folder',
+				desc:
+					'Optional vault folder for imported daily notes. Blank uses the Daily notes folder.',
+				control: {
+					type: 'folder',
+					key: 'chessComDailyNotesFolder',
+					placeholder: 'Daily notes folder',
+				},
+			},
+			{
+				name: 'Chess.com daily note format',
+				desc: 'Date format for imported daily notes, for example YYYY-MM-DD.',
+				control: {
+					type: 'text',
+					key: 'chessComDailyNoteFormat',
+					placeholder: 'YYYY-MM-DD',
+				},
+			},
+			{
+				name: 'Keep imported PGN',
+				desc: 'Keep the source PGN, including comments and variations.',
+				control: { type: 'toggle', key: 'chessComIncludePgn', defaultValue: true },
+			},
+			{
+				name: 'Create game boards',
+				desc: 'Save imported games in the native Chess Repertoire storage format.',
+				control: {
+					type: 'toggle',
+					key: 'chessComIncludeBoards',
+					defaultValue: true,
+				},
+			},
+			{
+				name: 'Include analysis data',
+				desc: 'Show Chess.com accuracy and analysis links in daily notes.',
+				control: {
+					type: 'toggle',
+					key: 'chessComIncludeAnalysis',
+					defaultValue: true,
+				},
+			},
+			{
+				name: 'Import Chess.com games on startup',
+				desc: 'Fetch the selected archives after Obsidian finishes loading.',
+				control: {
+					type: 'toggle',
+					key: 'chessComImportOnStartup',
+					defaultValue: false,
+				},
+			},
 		];
 	}
 
@@ -228,7 +311,9 @@ export class SettingsTab extends PluginSettingTab {
 
 		// The width is stored as a number so the board can use it directly, but
 		// its control is a text field that has to be able to say "empty".
-		return key === 'boardSize' ? value?.toString() ?? '' : value;
+		return key === 'chessComArchiveMonths' || key === 'boardSize'
+			? value?.toString() ?? ''
+			: value;
 	}
 
 	/**
@@ -265,7 +350,15 @@ export class SettingsTab extends PluginSettingTab {
 			return;
 		}
 
-		if (key === 'boardSize') {
+		if (key === 'chessComUsername') {
+			this.plugin.settings.chessComUsername = String(value).trim();
+			this.plugin.settings.chessComLastFetchedDay = '';
+		} else if (key === 'chessComArchiveMonths') {
+			this.plugin.settings.chessComArchiveMonths = Math.min(
+				24,
+				Math.max(1, Number(value) || 1)
+			);
+		} else if (key === 'boardSize') {
 			const parsed = Number.parseInt(String(value), 10);
 
 			this.plugin.settings.boardSize = Number.isFinite(parsed) ? parsed : null;
