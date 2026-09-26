@@ -116,21 +116,22 @@ describe('buildHintStages', () => {
 			comment: note('Develop towards the centre.'),
 		});
 
-		assert.deepEqual(buildHintStages(expected, null), [
+		assert.deepEqual(buildHintStages(expected), [
 			{ kind: 'comment', text: 'Develop towards the centre.' },
 			{ kind: 'piece', from: 'g1' },
 			{ kind: 'arrow', from: 'g1', to: 'f3' },
 		]);
 	});
 
-	it('falls back to the note on the move just played', () => {
-		const previous = mv('e5', { comment: note('Now White must decide.') });
-		const stages = buildHintStages(mv('Nf3', { from: 'g1', to: 'f3' }), previous);
+	it('never quotes the note on the move just played', () => {
+		// That note belongs to the position before this one - usually the other
+		// side's move - so it would answer a question nobody asked.
+		const stages = buildHintStages(mv('Nf3', { from: 'g1', to: 'f3' }));
 
-		assert.deepEqual(stages[0], {
-			kind: 'comment',
-			text: 'Now White must decide.',
-		});
+		assert.deepEqual(
+			stages.map((stage) => stage.kind),
+			['piece', 'arrow']
+		);
 	});
 
 	it('leaves the comment out when there is no note to quote', () => {
@@ -138,8 +139,7 @@ describe('buildHintStages', () => {
 		// comment" is not the same as "has something to say".
 		const empty: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
 		const stages = buildHintStages(
-			mv('Nf3', { from: 'g1', to: 'f3', comment: empty }),
-			null
+			mv('Nf3', { from: 'g1', to: 'f3', comment: empty })
 		);
 
 		assert.deepEqual(
@@ -149,7 +149,7 @@ describe('buildHintStages', () => {
 	});
 
 	it('has nothing to offer at the end of a line', () => {
-		assert.deepEqual(buildHintStages(null, mv('e4')), []);
+		assert.deepEqual(buildHintStages(null), []);
 	});
 });
 
@@ -177,8 +177,7 @@ describe('buildBranchCue', () => {
 describe('board marks', () => {
 	it('draws only the marks for the hints revealed so far', () => {
 		const stages = buildHintStages(
-			mv('Nf3', { from: 'g1', to: 'f3', comment: note('Develop.') }),
-			null
+			mv('Nf3', { from: 'g1', to: 'f3', comment: note('Develop.') })
 		);
 
 		// The comment is text, not a mark, so the first hint leaves the board be.

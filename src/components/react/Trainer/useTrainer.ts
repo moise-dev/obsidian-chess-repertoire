@@ -11,7 +11,7 @@ import {
 	pruneDrillData,
 	recordAttempt,
 } from 'src/lib/drill';
-import { MoveTree, findMovePath, getMoveAtPath } from 'src/lib/move-tree';
+import { MoveTree } from 'src/lib/move-tree';
 import {
 	CURRENT_DRILL_VERSION,
 	ChessRepertoireDataAdapter,
@@ -190,18 +190,7 @@ export const useTrainer = ({
 		[expected, replies]
 	);
 
-	const currentMove = useMemo(() => {
-		if (!currentMoveId) return null;
-
-		const path = findMovePath(tree, currentMoveId);
-
-		return path ? getMoveAtPath(tree, path) : null;
-	}, [currentMoveId, tree]);
-
-	const stages = useMemo(
-		() => buildHintStages(expected, currentMove),
-		[currentMove, expected]
-	);
+	const stages = useMemo(() => buildHintStages(expected), [expected]);
 
 	// A drill ends where the repertoire runs out: nothing prepared here, for either
 	// side to play.

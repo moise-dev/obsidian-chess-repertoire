@@ -4,6 +4,19 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The first hint no longer quotes a note about the position before yours.**
+  Asked for a move it had no note for, the drill fell back to the note on the
+  move just played - which in a session is the reply the repertoire made for the
+  other side, so playing Black was told what White had been thinking. The piece
+  and the arrow were right all along, which made it read as a hint that had not
+  been cleared. A hint now quotes the note on the move being asked for or
+  nothing at all, and where there is nothing the first press goes straight to
+  the piece.
+
 ## [1.5.0] - 2026-08-31
 
 ### Added
