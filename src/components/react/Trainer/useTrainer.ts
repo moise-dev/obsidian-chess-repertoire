@@ -92,6 +92,8 @@ interface UseTrainerOptions {
 	firstPlayer: string;
 	initialMoveNumber: number;
 	dispatch: React.Dispatch<GameActions>;
+	/** Which way the board is facing, so a session can hand it back that way. */
+	orientation: TrainerColor;
 	setOrientation: (color: TrainerColor) => void;
 }
 
@@ -122,6 +124,7 @@ export const useTrainer = ({
 	firstPlayer,
 	initialMoveNumber,
 	dispatch,
+	orientation,
 	setOrientation,
 }: UseTrainerOptions): Trainer => {
 	const [isActive, setIsActive] = useState(false);
@@ -143,6 +146,10 @@ export const useTrainer = ({
 	// answer, so stepping back with the arrow keys reviews the line you played
 	// instead of rerouting it; the next session draws afresh.
 	const repliesRef = useRef<Record<string, string>>({});
+	// Which way the board was facing when the session took it. A ref because
+	// putting it back is not something anything renders, and because the value
+	// has to survive every re-render between the two ends of a session.
+	const orientationBeforeRef = useRef<TrainerColor | null>(null);
 
 	/** The colour whose moves the history is about: the one being drilled. */
 	const userColor = playerColor === 'white' ? 'w' : 'b';
@@ -264,6 +271,11 @@ export const useTrainer = ({
 
 			if (record) dispatch({ type: 'SET_PLAYER_COLOR', color: record });
 
+			// The board turns to the side being drilled, and `endSession` turns it
+			// back. Playing White through a repertoire written for Black is worth
+			// seeing from White's side while it lasts, and worth not being left
+			// with afterwards.
+			orientationBeforeRef.current = orientation;
 			setOrientation(color);
 			setReport(null);
 			setMistakes([]);
@@ -309,6 +321,7 @@ export const useTrainer = ({
 		dataAdapter,
 		dispatch,
 		tree,
+		orientation,
 		setOrientation,
 		repertoireColor,
 	]);
@@ -320,6 +333,12 @@ export const useTrainer = ({
 	const endSession = useCallback(
 		(completed: boolean) => {
 			setIsActive(false);
+
+			if (orientationBeforeRef.current) {
+				setOrientation(orientationBeforeRef.current);
+				orientationBeforeRef.current = null;
+			}
+
 			setReport(
 				completed || mistakes.length
 					? { playerColor, completed, movesPlayed, mistakes }
@@ -338,7 +357,14 @@ export const useTrainer = ({
 					console.error('chess-repertoire: could not save the drill history', e)
 				);
 		},
-		[chessRepertoireId, dataAdapter, mistakes, movesPlayed, playerColor]
+		[
+			chessRepertoireId,
+			dataAdapter,
+			mistakes,
+			movesPlayed,
+			playerColor,
+			setOrientation,
+		]
 	);
 
 	const stop = useCallback(() => endSession(false), [endSession]);

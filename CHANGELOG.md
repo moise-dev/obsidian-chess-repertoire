@@ -16,6 +16,13 @@ Notable changes to Chess Repertoire, newest first. The format follows
   colour every later drill offered first. A repertoire that has already said
   now keeps its answer, and the choice applies to the session alone.
 
+- **A drill hands the board back the way it found it.** The board turns to face
+  the side being drilled, which is what you want while a session is running and
+  not what you want left behind: a repertoire read from Black's side stayed
+  facing White after one session drilled as White, and had to be flipped back
+  by hand. It is turned back when the session ends, whether it ran out or was
+  stopped part way.
+
 ### Security
 
 - **Tiptap, which the notes panel is built on, is on 3.31.3.** Every 2.x
