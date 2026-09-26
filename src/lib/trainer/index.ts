@@ -27,31 +27,25 @@ export type HintStage =
 /**
  * The note to quote for the move being asked for.
  *
- * The move's own note comes first; failing that, the note on the move just
- * played, which is usually where a line's explanation sits ("... and now Black
- * must stop b5"). Anything else would be about a different position.
+ * Only the move's own note will do. The note on the move just played belongs to
+ * the position before this one - usually the other side's move - and quoting it
+ * reads as the answer to a question that was not asked.
  */
-const hintComment = (
-	expected: ChessRepertoireMove,
-	previous: ChessRepertoireMove | null
-): string | null => {
-	const source = [expected.comment, previous?.comment].find(hasComment);
+const hintComment = (expected: ChessRepertoireMove): string | null => {
+	if (!hasComment(expected.comment)) return null;
 
-	if (!source) return null;
-
-	const text = commentToPlainText(source, 400);
+	const text = commentToPlainText(expected.comment, 400);
 
 	return text || null;
 };
 
 /** The hints available for `expected`, in the order they are revealed. */
 export const buildHintStages = (
-	expected: ChessRepertoireMove | null,
-	previous: ChessRepertoireMove | null
+	expected: ChessRepertoireMove | null
 ): HintStage[] => {
 	if (!expected) return [];
 
-	const comment = hintComment(expected, previous);
+	const comment = hintComment(expected);
 
 	return [
 		...(comment ? ([{ kind: 'comment', text: comment }] as HintStage[]) : []),
