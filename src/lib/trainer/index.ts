@@ -159,3 +159,20 @@ export const buildBranchCue = (
 	expected && replies.length > 1
 		? { options: replies.map((reply) => reply.san), expected: expected.san }
 		: null;
+
+/**
+ * The colour to write back to the repertoire when a session starts, or null to
+ * leave what it already says alone.
+ *
+ * Being asked which side to drill is the only place a repertoire that never
+ * said which side it is written for can find out, so an answer given there is
+ * worth keeping. An answer given to a repertoire that has already said is worth
+ * nothing: drilling the black side of a white repertoire for one session is a
+ * question about the session, not a correction of the file. Writing it back
+ * turned the colour shown on the board, and the side every later drill defaults
+ * to, into whatever was picked last.
+ */
+export const colorToRecord = (
+	repertoireColor: 'w' | 'b' | undefined,
+	chosen: 'w' | 'b'
+): 'w' | 'b' | null => (repertoireColor ? null : chosen);

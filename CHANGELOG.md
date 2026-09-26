@@ -6,6 +6,16 @@ Notable changes to Chess Repertoire, newest first. The format follows
 
 ## [1.5.2] - 2026-09-26
 
+### Fixed
+
+- **Drilling the other side for a session no longer rewrites which side the
+  repertoire is for.** Being asked which colour to play is the only place a
+  repertoire that never said gets to find out, so the answer is kept - but it
+  was kept whatever the repertoire already said, so drilling the white side of
+  a black repertoire once left it marked as White's, on the board and in the
+  colour every later drill offered first. A repertoire that has already said
+  now keeps its answer, and the choice applies to the session alone.
+
 ### Security
 
 - **Tiptap, which the notes panel is built on, is on 3.31.3.** Every 2.x

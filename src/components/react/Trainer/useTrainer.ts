@@ -24,6 +24,7 @@ import {
 	TrainerMistake,
 	buildBranchCue,
 	buildHintStages,
+	colorToRecord,
 	errorShapes,
 	hintShapes,
 	moveNumberLabel,
@@ -256,11 +257,12 @@ export const useTrainer = ({
 			setPlayerColor(color);
 
 			// A repertoire that has not said which side it is written for learns it
-			// here, since answering this question is saying so.
-			const chosen = color === 'black' ? 'b' : 'w';
+			// here, since answering this question is saying so. One that has
+			// already said keeps its answer, whichever side this session is drilled
+			// from.
+			const record = colorToRecord(repertoireColor, color === 'black' ? 'b' : 'w');
 
-			if (chosen !== repertoireColor)
-				dispatch({ type: 'SET_PLAYER_COLOR', color: chosen });
+			if (record) dispatch({ type: 'SET_PLAYER_COLOR', color: record });
 
 			setOrientation(color);
 			setReport(null);
