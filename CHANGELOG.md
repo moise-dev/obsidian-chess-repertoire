@@ -21,10 +21,17 @@ Notable changes to Chess Repertoire, newest first. The format follows
   re-renders a code block whenever a note changes mode or scrolls back into
   view, and a lock a scroll can undo protects nothing.
 
-  Arrows are the one thing worth stating outright: they can still be drawn,
-  locked or drilling, and neither state writes them down. An arrow is how you
-  think about the position in front of you, and a drill that saved them would
-  be editing the repertoire it is testing you on.
+  Arrows are the one thing worth stating outright, because the two states
+  answer differently. A drill still draws them and still saves none: an arrow
+  is how you think about the position being asked, and a session hides the
+  move's own arrows anyway, so there is nothing on the board to lose and
+  nothing that could reach the file. A locked repertoire takes none at all.
+  That is not simply the stricter reading - the arrows on a locked board are
+  the real ones, and chessground hangs both the drag that draws an arrow and
+  the click that wipes the board clean off a single flag, so a board that
+  went on accepting arrows lost the move's own to a stray click. Refusing to
+  save that was not enough: the file was right and the board was lying about
+  it.
 
 ## [1.5.3] - 2026-09-26
 

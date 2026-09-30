@@ -26,7 +26,7 @@ import {
 } from 'src/lib/classification';
 import { collectExcludedMoveIds, resolveRepertoireColor } from 'src/lib/drill';
 import { registerRepertoireKeys, setActiveRepertoire } from 'src/lib/keyboard';
-import { isAllowedWhileLocked, shouldSaveShapes } from 'src/lib/lock';
+import { boardDrawing, isAllowedWhileLocked } from 'src/lib/lock';
 import {
 	MAX_VARIATION_DEPTH,
 	ROOT_MOVE_ID,
@@ -936,11 +936,8 @@ export const ChessRepertoire = ({
 		setOrientation,
 	});
 
-	/** Whether an arrow drawn on the board is written onto the move it sits on. */
-	const savesShapes = shouldSaveShapes({
-		isTraining: trainer.isActive,
-		isLocked,
-	});
+	/** Whether the board takes arrows, and whether it keeps the ones it takes. */
+	const drawing = boardDrawing({ isTraining: trainer.isActive, isLocked });
 
 	/**
 	 * A shortcut the repertoire wants, or false to let it pass.
@@ -1091,14 +1088,15 @@ export const ChessRepertoire = ({
 								: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
 						}
 						isViewOnly={trainer.isBoardLocked}
-						savesShapes={savesShapes}
-						// A session neither shows the arrows saved on a move nor
-						// records any drawn during it: they are usually the plan, which
-						// is the thing being asked, and writing them back would mean a
-						// drill could edit the repertoire. A locked repertoire takes
-						// the second half of that bargain - see `shouldSaveShapes`.
+						// A session neither shows the arrows saved on a move nor records
+						// any drawn during it: they are usually the plan, which is the
+						// thing being asked, and writing them back would mean a drill
+						// could edit the repertoire. A locked repertoire goes further
+						// and takes none at all - see `boardDrawing`.
+						canDraw={drawing.enabled}
+						savesShapes={drawing.saved}
 						syncShapes={(shapes: DrawShape[]) => {
-							if (!savesShapes) return;
+							if (!drawing.saved) return;
 
 							dispatch({ type: 'SYNC_SHAPES', shapes });
 						}}

@@ -21,9 +21,15 @@ export interface ChessgroundProps {
 	addMoveToHistory: (move: Move) => void;
 	syncShapes: (shapes: DrawShape[]) => void;
 	/**
-	 * Whether `syncShapes` is being listened to at all. A drill and a locked
-	 * repertoire both let arrows be drawn and write none of them down, and the
-	 * board has to be swept when that ends - see the effect below.
+	 * Whether the board takes arrows at all. Off, chessground refuses the
+	 * right-drag that draws one and the click that wipes the board clean, and
+	 * goes on showing the ones it has been given.
+	 */
+	canDraw: boolean;
+	/**
+	 * Whether `syncShapes` is being listened to. A drill lets arrows be drawn
+	 * and writes none of them down, so the board has to be swept when it ends -
+	 * see the effect below.
 	 */
 	savesShapes: boolean;
 	isViewOnly: boolean;
@@ -45,6 +51,7 @@ export const ChessgroundWrapper = React.memo(
 		chess,
 		addMoveToHistory,
 		syncShapes: setShapes,
+		canDraw,
 		savesShapes,
 		isViewOnly,
 		shapes,
@@ -134,6 +141,13 @@ export const ChessgroundWrapper = React.memo(
 		useEffect(() => {
 			api?.set({ viewOnly: isViewOnly });
 		}, [isViewOnly, api]);
+
+		// Whether arrows can be drawn. Its own effect rather than part of
+		// `config`, which is spread over the initial drawable and would take
+		// `onChange` and `eraseOnClick` with it.
+		useEffect(() => {
+			api?.set({ drawable: { enabled: canDraw } });
+		}, [api, canDraw]);
 
 		// Load Shapes.
 		//

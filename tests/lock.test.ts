@@ -10,7 +10,7 @@
  */
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { isAllowedWhileLocked, shouldSaveShapes } from '../src/lib/lock';
+import { boardDrawing, isAllowedWhileLocked } from '../src/lib/lock';
 
 /** Every action that reaches the repertoire's file. */
 const WRITES_TO_THE_REPERTOIRE = [
@@ -71,23 +71,42 @@ describe('what a locked repertoire allows', () => {
 	});
 });
 
-describe('arrows drawn on the board', () => {
-	it('are saved while the repertoire is being edited', () => {
-		assert.equal(shouldSaveShapes({ isTraining: false, isLocked: false }), true);
+describe('arrows on the board', () => {
+	it('are drawn and kept while the repertoire is being edited', () => {
+		assert.deepEqual(boardDrawing({ isTraining: false, isLocked: false }), {
+			enabled: true,
+			saved: true,
+		});
 	});
 
-	it('are not saved during a drill', () => {
+	it('are drawn but never kept during a drill', () => {
 		// An arrow drawn in a session is usually the plan, which is the thing
 		// being asked. Writing it back would let a drill edit the repertoire it
 		// is testing you on.
-		assert.equal(shouldSaveShapes({ isTraining: true, isLocked: false }), false);
+		assert.deepEqual(boardDrawing({ isTraining: true, isLocked: false }), {
+			enabled: true,
+			saved: false,
+		});
 	});
 
-	it('are not saved while the repertoire is locked', () => {
-		assert.equal(shouldSaveShapes({ isTraining: false, isLocked: true }), false);
+	it('cannot be drawn at all while the repertoire is locked', () => {
+		// Not merely unsaved. Chessground gates the click that wipes the board
+		// on the same flag as the drag that draws, so a board that still took
+		// arrows lost the move's real ones to a stray click - shown as gone,
+		// while the file still held them.
+		assert.deepEqual(boardDrawing({ isTraining: false, isLocked: true }), {
+			enabled: false,
+			saved: false,
+		});
 	});
 
-	it('are not saved by a drill on a locked repertoire', () => {
-		assert.equal(shouldSaveShapes({ isTraining: true, isLocked: true }), false);
+	it('are still drawn by a drill on a locked repertoire, and still not kept', () => {
+		// A session shows none of the move's own arrows and hands the board
+		// back when it ends, so there is nothing on it for a click to wipe and
+		// no reason to refuse the arrow you want to think with.
+		assert.deepEqual(boardDrawing({ isTraining: true, isLocked: true }), {
+			enabled: true,
+			saved: false,
+		});
 	});
 });

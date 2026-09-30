@@ -82,7 +82,7 @@ Two labels are chess.com's own invention rather than standard notation - Excelle
 - **Merge several repertoires in a note** into one combined tree.
 - **A cleanup button for the repertoire files nothing refers to** - the boards made and thought better of, the notes since deleted, the merges kept for their result. It reads your notes before it offers to delete anything, lists what would go, and moves it to the trash rather than erasing it.
 - **A board with no repertoire behind it**, for showing a bare position in a note.
-- **A lock for a repertoire you have finished writing** - read it, play through its lines, flip the board and drill it, and nothing gets written: no new moves, no deletions or promotions, no notes, labels or renames. Arrows can still be drawn while locked, and while drilling, and neither saves them.
+- **A lock for a repertoire you have finished writing** - read it, play through its lines, flip the board and drill it, and nothing gets written: no new moves, no deletions or promotions, no notes, labels or renames. A locked board takes no arrows at all, so nothing it shows can be lost to a stray click; a drill still takes them, and still saves none.
 - **Autosave**, with a visible indicator whenever there's something unsaved.
 - **A resizable, theme-aware widget** that fills the note's width.
 
