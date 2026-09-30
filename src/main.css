@@ -249,9 +249,17 @@
 	cursor: pointer;
 }
 
-.chess-repertoire .cs-color-chip:hover {
+.chess-repertoire .cs-color-chip:hover:not(:disabled) {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-normal);
+}
+
+/* Locked. Stated as a fact rather than greyed out of legibility: which side
+   the repertoire is for still decides what a drill asks, and a drill is one of
+   the things a lock leaves alone. */
+.chess-repertoire .cs-color-chip:disabled {
+	cursor: default;
+	opacity: 0.7;
 }
 
 /* Nothing recorded yet: what is shown is a guess, so it is drawn as one. */
@@ -781,10 +789,16 @@
 	cursor: text;
 }
 
-.chess-repertoire .cs-side-subtitle:hover {
+/* Only the editable one invites a click. A locked repertoire renders its title
+   as a span, which shares the layout above and none of this. */
+.chess-repertoire button.cs-side-subtitle:hover {
 	color: var(--text-normal);
 	text-decoration-line: underline;
 	text-decoration-style: dotted;
+}
+
+.chess-repertoire span.cs-side-subtitle {
+	cursor: default;
 }
 
 .chess-repertoire .cs-side-subtitle.is-empty {

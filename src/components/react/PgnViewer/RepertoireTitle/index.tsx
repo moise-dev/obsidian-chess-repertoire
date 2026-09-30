@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 interface RepertoireTitleProps {
 	title: string | null;
 	onTitleChange: (title: string | null) => void;
+	isLocked: boolean;
 }
 
-/** The repertoire title, editable in place. */
+/** The repertoire title, editable in place unless the repertoire is locked. */
 export const RepertoireTitle = ({
 	title,
 	onTitleChange,
+	isLocked,
 }: RepertoireTitleProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draft, setDraft] = useState(title ?? '');
@@ -29,6 +31,19 @@ export const RepertoireTitle = ({
 		setIsEditing(false);
 		if (trimmed !== (title ?? '')) onTitleChange(trimmed || null);
 	};
+
+	// Not a disabled button: there is nothing to press, and an untitled locked
+	// repertoire should say it has no title rather than invite one.
+	if (isLocked) {
+		return (
+			<span
+				className={`cs-side-subtitle${title ? '' : ' is-empty'}`}
+				title="This repertoire is locked."
+			>
+				{title || 'Untitled'}
+			</span>
+		);
+	}
 
 	if (!isEditing) {
 		return (

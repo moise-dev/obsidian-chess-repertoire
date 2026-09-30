@@ -4,6 +4,28 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **A lock, beside the save button, that makes a repertoire read-only.** A
+  repertoire you have finished writing is mostly one you want to read, and
+  every way of reading it - stepping through a line, following a variation,
+  drilling it - sits one slip of the mouse away from changing it. Locked, it
+  refuses any move it does not already have, along with every deletion,
+  promotion, note, label and rename. What it still does is everything that
+  changes nothing: the lines can be played through on the board, the board can
+  be flipped, and a drill runs exactly as it did.
+
+  The lock is kept in the repertoire rather than in the widget. Obsidian
+  re-renders a code block whenever a note changes mode or scrolls back into
+  view, and a lock a scroll can undo protects nothing.
+
+  Arrows are the one thing worth stating outright: they can still be drawn,
+  locked or drilling, and neither state writes them down. An arrow is how you
+  think about the position in front of you, and a drill that saved them would
+  be editing the repertoire it is testing you on.
+
 ## [1.5.3] - 2026-09-26
 
 ### Fixed

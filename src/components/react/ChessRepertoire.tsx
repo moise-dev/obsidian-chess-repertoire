@@ -26,6 +26,7 @@ import {
 } from 'src/lib/classification';
 import { collectExcludedMoveIds, resolveRepertoireColor } from 'src/lib/drill';
 import { registerRepertoireKeys, setActiveRepertoire } from 'src/lib/keyboard';
+import { isAllowedWhileLocked, shouldSaveShapes } from 'src/lib/lock';
 import {
 	MAX_VARIATION_DEPTH,
 	ROOT_MOVE_ID,
@@ -33,6 +34,7 @@ import {
 	getListAtPath,
 	getMoveAtPath,
 	getParentMovePath,
+	getReplies,
 	getVariationRef,
 	moveVariationAtPath,
 	pathDepth,
@@ -122,7 +124,9 @@ export type GameActions =
 	| { type: 'DELETE_FROM_MOVE'; moveId: string }
 	/** Keep the move but take it, and the line under it, out of drills. */
 	| { type: 'SET_EXCLUDED'; moveId: string; excluded: boolean }
-	| { type: 'REORDER_VARIATION'; moveId: string; delta: number };
+	| { type: 'REORDER_VARIATION'; moveId: string; delta: number }
+	/** Read-only: the repertoire can be read and drilled, but not written to. */
+	| { type: 'SET_LOCKED'; locked: boolean };
 
 export const ChessRepertoire = ({
 	source,
@@ -196,6 +200,39 @@ export const ChessRepertoire = ({
 	const [gameState, dispatch] = useImmerReducer<GameState, GameActions>(
 		(draft, action) => {
 			const hasNoMoves = draft.repertoire.moves.length === 0;
+
+			// A locked repertoire answers navigation and nothing else. The guard
+			// sits here rather than on each button, so an editing path reached
+			// some other way - a keyboard shortcut, a context menu, the board
+			// itself - cannot get around it.
+			if (draft.repertoire.locked && !isAllowedWhileLocked(action.type)) {
+				// A move played on the board is the one action with a reading that
+				// is not an edit: if the repertoire already holds it, playing it is
+				// how a line gets read, so it is followed rather than refused.
+				// Nothing is written either way - the move is already there.
+				if (action.type === 'ADD_MOVE_TO_HISTORY' && chessView) {
+					const reply = getReplies(
+						draft.repertoire,
+						draft.currentMove?.moveId ?? null
+					).find((move) => move.san === action.move.san);
+
+					if (reply) {
+						draft.currentMove = reply;
+
+						return draft;
+					}
+
+					// Chessground has already moved the piece and chess.js has
+					// already played it, so refusing means putting both back - the
+					// same bounce the trainer does with a move it does not know.
+					displayPosition(draft, chessView, setChessLogic, getCurrentMove(draft));
+
+					new Notice('This repertoire is locked.');
+				}
+
+				return draft;
+			}
+
 			switch (action.type) {
 				case 'DISPLAY_NEXT_MOVE_IN_HISTORY': {
 					if (!chessView || hasNoMoves) return draft;
@@ -336,6 +373,14 @@ export const ChessRepertoire = ({
 					else delete move.excluded;
 
 					if (draft.currentMove?.moveId === action.moveId) draft.currentMove = move;
+
+					return draft;
+				}
+				case 'SET_LOCKED': {
+					// Removed rather than set to false, the way `excluded` is, so a
+					// repertoire that was never locked carries no trace of the flag.
+					if (action.locked) draft.repertoire.locked = true;
+					else delete draft.repertoire.locked;
 
 					return draft;
 				}
@@ -869,6 +914,13 @@ export const ChessRepertoire = ({
 
 	const currentMoveId = gameState.currentMove?.moveId ?? null;
 
+	/**
+	 * Read-only. The reducer is what actually enforces it; everything below only
+	 * stops offering what it would refuse, so a locked repertoire says no before
+	 * it is asked rather than after.
+	 */
+	const isLocked = Boolean(gameState.repertoire.locked);
+
 	const trainer = useTrainer({
 		app,
 		dataAdapter,
@@ -882,6 +934,12 @@ export const ChessRepertoire = ({
 		dispatch,
 		orientation,
 		setOrientation,
+	});
+
+	/** Whether an arrow drawn on the board is written onto the move it sits on. */
+	const savesShapes = shouldSaveShapes({
+		isTraining: trainer.isActive,
+		isLocked,
 	});
 
 	/**
@@ -910,7 +968,10 @@ export const ChessRepertoire = ({
 
 			const shortcut = classificationForKey(event.key);
 
-			if (shortcut) {
+			// Left to pass through rather than swallowed: labelling a move is the
+			// one shortcut a locked repertoire cannot carry out, and a key that
+			// does nothing should at least not be taken.
+			if (shortcut && !isLocked) {
 				dispatch({
 					type: 'SET_CLASSIFICATION',
 					classification: shortcut.classification,
@@ -940,7 +1001,7 @@ export const ChessRepertoire = ({
 					return false;
 			}
 		},
-		[dispatch, trainer.isActive]
+		[dispatch, isLocked, trainer.isActive]
 	);
 
 	// On the register for as long as the repertoire is on screen. Module-level, so a
@@ -1030,12 +1091,14 @@ export const ChessRepertoire = ({
 								: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
 						}
 						isViewOnly={trainer.isBoardLocked}
+						savesShapes={savesShapes}
 						// A session neither shows the arrows saved on a move nor
 						// records any drawn during it: they are usually the plan, which
 						// is the thing being asked, and writing them back would mean a
-						// drill could edit the repertoire.
+						// drill could edit the repertoire. A locked repertoire takes
+						// the second half of that bargain - see `shouldSaveShapes`.
 						syncShapes={(shapes: DrawShape[]) => {
-							if (trainer.isActive) return;
+							if (!savesShapes) return;
 
 							dispatch({ type: 'SYNC_SHAPES', shapes });
 						}}
@@ -1055,6 +1118,10 @@ export const ChessRepertoire = ({
 					title={gameState.repertoire.header?.title ?? null}
 					isDirty={isDirty}
 					isTraining={trainer.isActive}
+					isLocked={isLocked}
+					onLockButtonClick={() =>
+						dispatch({ type: 'SET_LOCKED', locked: !isLocked })
+					}
 					onTrainButtonClick={() =>
 						trainer.isActive ? trainer.stop() : trainer.start()
 					}
@@ -1134,6 +1201,7 @@ export const ChessRepertoire = ({
 					onClassify={(classification: MoveClassification | null) =>
 						dispatch({ type: 'SET_CLASSIFICATION', classification })
 					}
+					isLocked={isLocked}
 				/>
 			)}
 

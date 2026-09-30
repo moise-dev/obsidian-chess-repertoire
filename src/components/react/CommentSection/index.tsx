@@ -16,6 +16,8 @@ interface CommentSectionProps {
 	defaultOpen: boolean;
 	classification: MoveClassification | null;
 	onClassify: (classification: MoveClassification | null) => void;
+	/** Read-only: the note is shown but cannot be written to. */
+	isLocked: boolean;
 }
 
 export const CommentSection = React.memo(
@@ -26,11 +28,16 @@ export const CommentSection = React.memo(
 		defaultOpen,
 		classification,
 		onClassify,
+		isLocked,
 	}: CommentSectionProps) => {
 		const [isOpen, setIsOpen] = useState(defaultOpen);
 
-		// The root position has no move to hang a note on.
-		const isEditable = Boolean(moveLabel);
+		// The root position has no move to hang a note on, and a locked
+		// repertoire has no note it will accept. The chip in the header says
+		// which of the two it is, since the placeholder can only speak for the
+		// first: it is read when the editor is built, so it cannot answer for a
+		// lock put on afterwards.
+		const isEditable = Boolean(moveLabel) && !isLocked;
 
 		const editor = useEditor({
 			extensions: [
@@ -107,6 +114,7 @@ export const CommentSection = React.memo(
 					{isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
 					<span className="cs-notes-title">Notes</span>
 					{moveLabel && <span className="cs-notes-chip">{moveLabel}</span>}
+					{isLocked && <span className="cs-notes-chip">Locked</span>}
 					{hasNote && !isOpen && <span className="cs-notes-dot" />}
 				</button>
 				{isOpen && (

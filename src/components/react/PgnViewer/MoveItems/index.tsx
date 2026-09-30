@@ -153,6 +153,8 @@ interface MoveMenuOptions {
 	onSetExcluded?: (excluded: boolean) => void;
 	variation?: VariationPosition;
 	onVariationAction?: (action: VariationAction) => void;
+	/** Read-only. Every item here writes to the repertoire, so none are offered. */
+	isLocked?: boolean;
 }
 
 /**
@@ -168,10 +170,14 @@ const useMoveMenu = ({
 	onSetExcluded,
 	variation,
 	onVariationAction,
+	isLocked,
 }: MoveMenuOptions) =>
 	React.useCallback(
 		(event: React.MouseEvent) => {
-			if (!onClassify) return;
+			// Nothing in this menu is a thing a locked repertoire will do, and a
+			// menu of disabled items says less than no menu at all. Left
+			// unprevented, so Obsidian's own menu opens instead of nothing.
+			if (!onClassify || isLocked) return;
 
 			// Otherwise Obsidian's own editor menu opens on top of ours.
 			event.preventDefault();
@@ -269,6 +275,7 @@ const useMoveMenu = ({
 		[
 			classification,
 			excluded,
+			isLocked,
 			onClassify,
 			onDeleteMove,
 			onSetExcluded,
@@ -286,6 +293,8 @@ interface MoveItemProps extends MoveAnnotations {
 	onClassify?: (classification: MoveClassification | null) => void;
 	onDeleteMove?: () => void;
 	onSetExcluded?: (excluded: boolean) => void;
+	/** Read-only: the right-click menu is not offered. */
+	isLocked?: boolean;
 }
 
 export const MoveItem = ({
@@ -301,6 +310,7 @@ export const MoveItem = ({
 	onClassify,
 	onDeleteMove,
 	onSetExcluded,
+	isLocked,
 }: MoveItemProps) => {
 	const ref = useScrollIntoView<HTMLParagraphElement>(isCurrentMove);
 	const onContextMenu = useMoveMenu({
@@ -309,6 +319,7 @@ export const MoveItem = ({
 		onDeleteMove,
 		excluded,
 		onSetExcluded,
+		isLocked,
 	});
 
 	return (
@@ -356,6 +367,7 @@ export const VariantMoveItem = ({
 	onClassify,
 	onDeleteMove,
 	onSetExcluded,
+	isLocked,
 	variation,
 	onVariationAction,
 	moveIndicator = null,
@@ -369,6 +381,7 @@ export const VariantMoveItem = ({
 		onSetExcluded,
 		variation,
 		onVariationAction,
+		isLocked,
 	});
 
 	return (
