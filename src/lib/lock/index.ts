@@ -47,20 +47,38 @@ const ALLOWED_WHILE_LOCKED: Record<GameActions['type'], boolean> = {
 export const isAllowedWhileLocked = (type: GameActions['type']): boolean =>
 	ALLOWED_WHILE_LOCKED[type];
 
+/** What the board does with arrows. */
+export interface BoardDrawing {
+	/** Whether an arrow may be drawn on the board at all. */
+	enabled: boolean;
+	/** Whether the arrows the board reports are written onto the move. */
+	saved: boolean;
+}
+
 /**
- * Whether arrows drawn on the board are written back to the move they sit on.
+ * What the board does with arrows, in each state the widget can be in.
  *
- * Two states say no, for the same reason. A drill draws freely - an arrow is
- * how you think about the position it is asking you about - and saving those
- * would mean a session quietly edited the repertoire it was testing you on. A
- * locked repertoire makes the same bargain deliberately: scratch arrows are
- * fine, writing them down is the thing the lock refuses.
+ * Editing: drawn and saved. That is what a repertoire's arrows are.
  *
- * Neither is enforced by the board, which goes on drawing either way. What is
- * drawn lives in chessground alone until the position changes and the stored
- * arrows are put back over it.
+ * Drilling: drawn, never saved. An arrow is how you think about the position
+ * you are being asked about, and the session hides the move's own arrows for
+ * that same reason - so writing back the ones you drew would mean a drill
+ * edited the repertoire that was testing you. Drawing stays on even on a
+ * locked repertoire, because a session shows none of its arrows and hands the
+ * board back when it ends.
+ *
+ * Locked, outside a session: neither. Not only a stricter drill, because here
+ * the arrows on the board are the real ones, and chessground hangs two things
+ * off the single `drawable.enabled` flag: the right-drag that draws an arrow,
+ * and the click on an empty square that wipes the board clean. Left on so
+ * that scratch arrows were possible, a stray click cleared the arrows the
+ * move actually carries. Refusing to save that is not enough - the file was
+ * right and the board was lying about it. Off, neither happens.
  */
-export const shouldSaveShapes = (state: {
+export const boardDrawing = (state: {
 	isTraining: boolean;
 	isLocked: boolean;
-}): boolean => !state.isTraining && !state.isLocked;
+}): BoardDrawing => ({
+	enabled: state.isTraining || !state.isLocked,
+	saved: !state.isTraining && !state.isLocked,
+});
