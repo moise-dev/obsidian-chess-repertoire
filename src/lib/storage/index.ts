@@ -14,7 +14,9 @@ import { ROOT_FEN } from 'src/main';
 // is not known yet and the board's orientation stands in.
 // 0.0.7 adds `rootVariants`: alternatives to the repertoire's first move, which
 // have no move to hang off. Backfilled to `[]` on load.
-export const CURRENT_STORAGE_VERSION = '0.0.7';
+// 0.0.8 adds `locked` to the repertoire. Optional, and absent means editable,
+// so there is nothing to migrate.
+export const CURRENT_STORAGE_VERSION = '0.0.8';
 
 /** Drill records are their own file and their own version line. */
 export const CURRENT_DRILL_VERSION = '0.0.1';
@@ -102,6 +104,18 @@ export interface ChessRepertoireFileData {
 	 * orientation stands in until one does.
 	 */
 	playerColor?: 'w' | 'b';
+	/**
+	 * Read-only: the repertoire can be played through, flipped and drilled, but
+	 * nothing written to it.
+	 *
+	 * Kept in the file rather than in the widget's own state because Obsidian
+	 * re-renders a code block whenever the note changes mode or scrolls back
+	 * into view, and a lock that a scroll can undo protects nothing.
+	 *
+	 * Absent rather than `false` when the repertoire is editable, so one that
+	 * has never been locked carries no trace of the flag.
+	 */
+	locked?: boolean;
 }
 
 /**

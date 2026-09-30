@@ -6,9 +6,11 @@ import {
 	Download,
 	FlipVertical2,
 	GraduationCap,
+	Lock,
 	Network,
 	Save,
 	Undo2,
+	Unlock,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -18,6 +20,9 @@ export interface ControlActions {
 	isDirty: boolean;
 	/** A training session is running; the repertoire is read-only while it is. */
 	isTraining: boolean;
+	/** The repertoire is read-only until the lock is taken off again. */
+	isLocked: boolean;
+	onLockButtonClick: () => void;
 	onTrainButtonClick: () => void;
 	onMapButtonClick: () => void;
 	onUndoButtonClick: () => void;
@@ -101,7 +106,7 @@ export const Controls = (props: ControlActions) => {
 				className="cs-icon-button"
 				title="Undo last move"
 				aria-label="Undo the last move"
-				disabled={props.isTraining}
+				disabled={props.isTraining || props.isLocked}
 				onClick={() => props.onUndoButtonClick()}
 			>
 				<Undo2 size={22} />
@@ -113,6 +118,27 @@ export const Controls = (props: ControlActions) => {
 				onClick={() => props.onExportButtonClick()}
 			>
 				<Download size={22} />
+			</button>
+			<button
+				className={`cs-icon-button${props.isLocked ? ' is-active' : ''}`}
+				title={
+					props.isLocked
+						? 'Unlock the repertoire'
+						: 'Lock the repertoire against changes'
+				}
+				aria-label={
+					props.isLocked
+						? 'Unlock the repertoire'
+						: 'Lock the repertoire against changes'
+				}
+				aria-pressed={props.isLocked}
+				// A drill has the board already, and the lock decides what may be
+				// written rather than what may be played, so there is nothing for
+				// it to answer until the session ends.
+				disabled={props.isTraining}
+				onClick={() => props.onLockButtonClick()}
+			>
+				{props.isLocked ? <Lock size={22} /> : <Unlock size={22} />}
 			</button>
 			<button
 				className={`cs-icon-button cs-icon-button--primary${

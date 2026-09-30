@@ -20,6 +20,12 @@ export interface ChessgroundProps {
 	chess: Chess;
 	addMoveToHistory: (move: Move) => void;
 	syncShapes: (shapes: DrawShape[]) => void;
+	/**
+	 * Whether `syncShapes` is being listened to at all. A drill and a locked
+	 * repertoire both let arrows be drawn and write none of them down, and the
+	 * board has to be swept when that ends - see the effect below.
+	 */
+	savesShapes: boolean;
 	isViewOnly: boolean;
 	shapes: DrawShape[];
 	/**
@@ -39,6 +45,7 @@ export const ChessgroundWrapper = React.memo(
 		chess,
 		addMoveToHistory,
 		syncShapes: setShapes,
+		savesShapes,
 		isViewOnly,
 		shapes,
 		autoShapes,
@@ -128,12 +135,19 @@ export const ChessgroundWrapper = React.memo(
 			api?.set({ viewOnly: isViewOnly });
 		}, [isViewOnly, api]);
 
-		// Load Shapes
+		// Load Shapes.
+		//
+		// Re-run when the board starts or stops saving them, and not only when
+		// they change: an arrow drawn while it was not saving lives in
+		// chessground alone, and leaving it on the board once the drill or the
+		// lock is over would mean the next arrow drawn is reported alongside it
+		// and the pair of them saved onto the move. The stored arrows are put
+		// back over it instead.
 		useEffect(() => {
 			if (shapes) {
 				api?.setShapes([...shapes]);
 			}
-		}, [api, shapes]);
+		}, [api, savesShapes, shapes]);
 
 		// Plugin-owned decorations, kept apart from the user's own shapes.
 		useEffect(() => {

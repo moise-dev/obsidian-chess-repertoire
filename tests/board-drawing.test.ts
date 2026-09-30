@@ -89,6 +89,7 @@ const mountBoard = async (dom: JSDOM): Promise<Board> => {
 					stored = shapes;
 					dispatch(shapes);
 				},
+				savesShapes: true,
 				isViewOnly: false,
 				shapes: state.shapes,
 			} as never

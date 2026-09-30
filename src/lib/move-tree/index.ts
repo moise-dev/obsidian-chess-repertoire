@@ -462,15 +462,22 @@ export const getContinuation = (
  *
  * Order is the continuation first, then variations in their stored order, which
  * is the order they are listed in the move list.
+ *
+ * Generic over the move type for the same reason the lookups are: a locked
+ * repertoire asks this of an immer draft and needs draft moves back.
  */
-export const getReplies = (
-	tree: MoveTree,
+export const getReplies = <T extends ChessRepertoireMove>(
+	tree: MoveTree<T>,
 	moveId: string | null
-): ChessRepertoireMove[] => {
-	const firstMoves = (variants: MoveTree['rootVariants']) =>
+): T[] => {
+	// Takes the plain move type and narrows each first move back to `T`, the
+	// same step `getListAtPath` makes on the way down a variation: inside the
+	// function `T` is only known to extend the move type, so a move's own
+	// `variants` reads as the plain one however the tree was handed in.
+	const firstMoves = (variants: { moves: ChessRepertoireMove[] }[]) =>
 		variants
-			.map((variant) => variant.moves[0])
-			.filter((first): first is ChessRepertoireMove => Boolean(first));
+			.map((variant) => variant.moves[0] as T | undefined)
+			.filter((first): first is T => Boolean(first));
 
 	if (!moveId) {
 		return [

@@ -38,6 +38,8 @@ interface MoveListContext {
 	onSetExcluded: (moveId: string, excluded: boolean) => void;
 	/** Moves whose position is drawn, worked out from the board rather than set. */
 	drawnMoveIds: Set<string>;
+	/** Read-only: the move menu offers nothing, since nothing may be changed. */
+	isLocked: boolean;
 }
 
 interface VariationsProps extends MoveListContext {
@@ -105,6 +107,7 @@ const VariationMoves = ({
 				isDraw={context.drawnMoveIds.has(move.moveId)}
 				isUndrilled={context.excludedMoveIds.has(move.moveId)}
 				onSetExcluded={(excluded) => context.onSetExcluded(move.moveId, excluded)}
+				isLocked={context.isLocked}
 				moveIndicator={moveIndicator}
 				variation={{ depth, index, siblingCount }}
 				onMoveItemClick={() => context.onMoveItemClick(move.moveId)}
@@ -196,14 +199,20 @@ interface PgnViewerProps extends ControlActions, MoveListContext {
 const PlayerColorChip = ({
 	playerColor,
 	onPlayerColorChange,
-}: Pick<PgnViewerProps, 'playerColor' | 'onPlayerColorChange'>) => (
+	isLocked,
+}: Pick<PgnViewerProps, 'playerColor' | 'onPlayerColorChange'> & {
+	isLocked: boolean;
+}) => (
 	<button
 		className={`cs-color-chip${playerColor ? '' : ' is-assumed'}`}
 		title={
-			playerColor
+			isLocked
+				? 'The side this repertoire is written for. The repertoire is locked.'
+				: playerColor
 				? 'The side this repertoire is written for. Click to switch.'
 				: 'This repertoire has not said which side it is written for. Click to set it.'
 		}
+		disabled={isLocked}
 		onClick={() => onPlayerColorChange(playerColor === 'b' ? 'w' : 'b')}
 	>
 		<span
@@ -234,7 +243,9 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		...controlActions
 	} = props;
 
-	const { isTraining } = controlActions;
+	// Both arrive with the control actions: they say what the strip may offer,
+	// and the move list has to ask the same questions of them.
+	const { isTraining, isLocked } = controlActions;
 
 	const context: MoveListContext = {
 		currentMoveId,
@@ -247,6 +258,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		excludedMoveIds,
 		onSetExcluded,
 		drawnMoveIds,
+		isLocked,
 	};
 
 	// Pair the moves up by move number, carrying each one's index along so the
@@ -268,10 +280,15 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		<div className="cs-side">
 			<div className="cs-side-header">
 				<span className="cs-side-title">Moves</span>
-				<RepertoireTitle title={title} onTitleChange={onTitleChange} />
+				<RepertoireTitle
+					title={title}
+					onTitleChange={onTitleChange}
+					isLocked={isLocked}
+				/>
 				<PlayerColorChip
 					playerColor={playerColor}
 					onPlayerColorChange={onPlayerColorChange}
+					isLocked={isLocked}
 				/>
 			</div>
 			<div className="move-item-section">
@@ -317,6 +334,7 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 												onSetExcluded={(excluded) =>
 													onSetExcluded(entry.move.moveId, excluded)
 												}
+												isLocked={isLocked}
 												isCurrentMove={entry.move.moveId === currentMoveId}
 												onMoveItemClick={() => onMoveItemClick(entry.move.moveId)}
 												onClassify={(classification) =>
