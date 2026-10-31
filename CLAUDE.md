@@ -1,8 +1,8 @@
 # Working on Chess Repertoire
 
 An Obsidian plugin: a chessboard in a note, backed by a repertoire file, with a
-drill mode that asks the moves back. Desktop only. The README says what it does
-for the person using it; this says how it is built and released.
+drill mode that asks the moves back. Read-only on mobile. The README says what
+it does for the person using it; this says how it is built and released.
 
 ## Commands
 
@@ -68,6 +68,14 @@ out.
 instance, the chessground board, the `ui-state` reducer and the save cycle, and
 hands everything else down. It is long, and adding to it should be the second
 choice.
+
+Mobile reads and drills, and writes nothing but drill history. `Platform.isMobile`
+is read in `ReactView` and `main.tsx` only; the reducer enforces it through
+`isAllowed` in `src/lib/lock`, and `main.tsx` skips the startup writes and the
+editing commands. Anything new that writes - a command, a startup step,
+something a component saves - needs an answer for mobile too. Running
+`app.emulateMobile(true)` in Obsidian's developer console takes the mobile path
+on the desktop.
 
 ## Conventions, stated once
 

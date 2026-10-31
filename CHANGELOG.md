@@ -4,6 +4,28 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Chess Repertoire runs on Obsidian mobile, for reading and drilling.** On
+  a phone or tablet a repertoire can be stepped through, tapped through and
+  played through on the board, flipped, and drilled, with the drill's history
+  saved as it is on the desktop. Everything that writes stays on the desktop:
+  editing, notes, arrows, the lock, the map, export and resizing are not
+  offered there, and neither are the insert and merge commands.
+
+  Read-only is enforced rather than only hidden: the rule that refuses edits
+  to a locked repertoire refuses them on mobile too, without a lock being
+  stored in the file. The file syncs, so a lock the phone set would lock the
+  desktop's copy as well. For the same reason the phone skips what the plugin
+  does when it starts - making the repertoire folder and upgrading old data -
+  since a phone whose plugin settings had not synced yet would have saved its
+  defaults over the desktop's.
+
+  The repertoire folder is a plugin setting, so it has to reach the phone
+  along with the files; the README says how.
+
 ## [1.6.0] - 2026-10-31
 
 ### Added

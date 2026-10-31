@@ -18,6 +18,7 @@ Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.
 - [Usage](#usage)
 - [Settings](#settings)
 - [Keyboard shortcuts](#keyboard-shortcuts)
+- [On mobile](#on-mobile)
 - [Known limitations](#known-limitations)
 - [Credits](#credits)
 - [License](#license)
@@ -170,9 +171,23 @@ Click a repertoire to give it the keys; click away to give them back. Works in b
 A locked repertoire keeps the arrow keys and gives up the classification ones, since it has nothing left to label with.
 
 
+## On mobile
+
+On a phone or tablet a repertoire is for reading and drilling. Step through it with the buttons or by tapping a move, play a recorded move on the board to follow its line, flip the board, and run a drill exactly as on the desktop; the drill's history is saved the same way.
+
+Everything that writes stays on the desktop. Editing, notes, arrows, the lock, the map, export and resizing are not offered, the insert and merge commands are not there, and a repertoire is read-only whether or not it is locked.
+
+For the boards to find their files, two things have to reach the phone besides the notes:
+
+- **The repertoire files.** With Obsidian Sync that takes **All other file types**, as above.
+- **The plugin's settings**, because **Repertoire folder** is one of them. Without them the phone looks in `Chess Repertoires` and finds nothing. With Obsidian Sync, turn on **Installed community plugins** under vault configuration sync, or set the folder by hand in the plugin's settings on the phone.
+
+Upgrading a vault's old data happens on the desktop only, so after updating from an old version, open the vault there first.
+
+
 ## Known limitations
 
-- Desktop only - the widget isn't adapted for touch.
+- Read-only on mobile - see [On mobile](#on-mobile).
 - The map draws a tree, not a graph: transposing lines are two linked cards, not one shared card.
 
 ## Credits
