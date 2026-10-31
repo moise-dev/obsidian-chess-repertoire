@@ -33,6 +33,15 @@ Notable changes to Chess Repertoire, newest first. The format follows
   save that was not enough: the file was right and the board was lying about
   it.
 
+### Fixed
+
+- **Arrows drawn during a drill are no longer saved once it ends.** A drill
+  lets you draw arrows and writes none of them down, but on a move with no
+  arrows of its own they stayed on the board after the session ended, where
+  they looked like the move's, and the next arrow drawn was saved onto the move
+  together with all of them. The board now goes back to the move's own arrows
+  when a drill ends.
+
 ## [1.5.3] - 2026-09-26
 
 ### Fixed
