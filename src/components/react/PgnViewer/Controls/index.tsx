@@ -22,6 +22,8 @@ export interface ControlActions {
 	isTraining: boolean;
 	/** The repertoire is read-only until the lock is taken off again. */
 	isLocked: boolean;
+	/** Obsidian mobile: navigation, flip and drill, and nothing else. */
+	isMobile: boolean;
 	onLockButtonClick: () => void;
 	onTrainButtonClick: () => void;
 	onMapButtonClick: () => void;
@@ -94,64 +96,71 @@ export const Controls = (props: ControlActions) => {
 			>
 				<GraduationCap size={22} />
 			</button>
-			<button
-				className="cs-icon-button"
-				title="Open the repertoire map"
-				aria-label="Open the repertoire map"
-				onClick={() => props.onMapButtonClick()}
-			>
-				<Network size={22} />
-			</button>
-			<button
-				className="cs-icon-button"
-				title="Undo last move"
-				aria-label="Undo the last move"
-				disabled={props.isTraining || props.isLocked}
-				onClick={() => props.onUndoButtonClick()}
-			>
-				<Undo2 size={22} />
-			</button>
-			<button
-				className="cs-icon-button"
-				title="Export repertoire"
-				aria-label="Export the repertoire as PGN or FEN"
-				onClick={() => props.onExportButtonClick()}
-			>
-				<Download size={22} />
-			</button>
-			<button
-				className={`cs-icon-button${props.isLocked ? ' is-active' : ''}`}
-				title={
-					props.isLocked
-						? 'Unlock the repertoire'
-						: 'Lock the repertoire against changes'
-				}
-				aria-label={
-					props.isLocked
-						? 'Unlock the repertoire'
-						: 'Lock the repertoire against changes'
-				}
-				aria-pressed={props.isLocked}
-				// A drill has the board already, and the lock decides what may be
-				// written rather than what may be played, so there is nothing for
-				// it to answer until the session ends.
-				disabled={props.isTraining}
-				onClick={() => props.onLockButtonClick()}
-			>
-				{props.isLocked ? <Lock size={22} /> : <Unlock size={22} />}
-			</button>
-			<button
-				className={`cs-icon-button cs-icon-button--primary${
-					props.isDirty ? ' is-dirty' : ''
-				}`}
-				title={
-					props.isDirty ? 'Save repertoire (unsaved changes)' : 'Save repertoire'
-				}
-				aria-label="Save the repertoire"
-				onClick={() => props.onSaveButtonClick()}
-			>
-				<Save size={22} />
-			</button>
+			{/* Gone on mobile rather than disabled: undo, lock and save only ever
+			    write, and the map zooms with a wheel a phone does not have. Six
+			    buttons fit a phone's row at a finger's size; eleven did not. */}
+			{!props.isMobile && (
+				<>
+					<button
+						className="cs-icon-button"
+						title="Open the repertoire map"
+						aria-label="Open the repertoire map"
+						onClick={() => props.onMapButtonClick()}
+					>
+						<Network size={22} />
+					</button>
+					<button
+						className="cs-icon-button"
+						title="Undo last move"
+						aria-label="Undo the last move"
+						disabled={props.isTraining || props.isLocked}
+						onClick={() => props.onUndoButtonClick()}
+					>
+						<Undo2 size={22} />
+					</button>
+					<button
+						className="cs-icon-button"
+						title="Export repertoire"
+						aria-label="Export the repertoire as PGN or FEN"
+						onClick={() => props.onExportButtonClick()}
+					>
+						<Download size={22} />
+					</button>
+					<button
+						className={`cs-icon-button${props.isLocked ? ' is-active' : ''}`}
+						title={
+							props.isLocked
+								? 'Unlock the repertoire'
+								: 'Lock the repertoire against changes'
+						}
+						aria-label={
+							props.isLocked
+								? 'Unlock the repertoire'
+								: 'Lock the repertoire against changes'
+						}
+						aria-pressed={props.isLocked}
+						// A drill has the board already, and the lock decides what may be
+						// written rather than what may be played, so there is nothing for
+						// it to answer until the session ends.
+						disabled={props.isTraining}
+						onClick={() => props.onLockButtonClick()}
+					>
+						{props.isLocked ? <Lock size={22} /> : <Unlock size={22} />}
+					</button>
+					<button
+						className={`cs-icon-button cs-icon-button--primary${
+							props.isDirty ? ' is-dirty' : ''
+						}`}
+						title={
+							props.isDirty ? 'Save repertoire (unsaved changes)' : 'Save repertoire'
+						}
+						aria-label="Save the repertoire"
+						onClick={() => props.onSaveButtonClick()}
+					>
+						<Save size={22} />
+					</button>
+				</>
+			)}
 		</div>
 	);
 };

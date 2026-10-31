@@ -47,6 +47,24 @@ const ALLOWED_WHILE_LOCKED: Record<GameActions['type'], boolean> = {
 export const isAllowedWhileLocked = (type: GameActions['type']): boolean =>
 	ALLOWED_WHILE_LOCKED[type];
 
+/**
+ * Whether the reducer runs an action, given what is holding the repertoire.
+ *
+ * A device that only reads - Obsidian mobile - is a lock that is never
+ * written down. It cannot live in the repertoire the way `locked` does: the
+ * file syncs, so a phone that locked what it opened would lock it on the
+ * desktop too. It also refuses the one action a lock keeps, `SET_LOCKED`,
+ * because locking or unlocking from the phone is itself a write.
+ */
+export const isAllowed = (
+	type: GameActions['type'],
+	{ isLocked, isReadOnly }: { isLocked: boolean; isReadOnly: boolean }
+): boolean => {
+	if (isReadOnly) return type !== 'SET_LOCKED' && isAllowedWhileLocked(type);
+
+	return !isLocked || isAllowedWhileLocked(type);
+};
+
 /** What the board does with arrows. */
 export interface BoardDrawing {
 	/** Whether an arrow may be drawn on the board at all. */

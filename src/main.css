@@ -1018,6 +1018,33 @@
 }
 
 /* ------------------------------------------------------------------ *
+ * Mobile: browse and drill, with a finger
+ * ------------------------------------------------------------------ */
+
+/*
+ * Keyed off the widget's own `is-mobile`, set from the same flag that makes it
+ * read-only, rather than Obsidian's `body.is-mobile`: the two would only ever
+ * disagree by accident, and this way the CSS cannot. 44px is Apple's smallest
+ * comfortable touch target; the row has room for it now that only six buttons
+ * are left in it.
+ */
+.chess-repertoire.is-mobile .cs-icon-button {
+	flex-basis: 44px;
+	width: 44px;
+	height: 44px;
+}
+
+.chess-repertoire.is-mobile .cs-trainer-button {
+	height: 40px;
+	padding: 0 12px;
+}
+
+/* A move is tapped rather than clicked, so a row is a finger tall. */
+.chess-repertoire.is-mobile .move-item-container {
+	grid-auto-rows: minmax(40px, auto);
+}
+
+/* ------------------------------------------------------------------ *
  * Repertoire map
  * ------------------------------------------------------------------ */
 

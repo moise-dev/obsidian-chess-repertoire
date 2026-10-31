@@ -10,7 +10,7 @@
  */
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { boardDrawing, isAllowedWhileLocked } from '../src/lib/lock';
+import { boardDrawing, isAllowed, isAllowedWhileLocked } from '../src/lib/lock';
 
 /** Every action that reaches the repertoire's file. */
 const WRITES_TO_THE_REPERTOIRE = [
@@ -68,6 +68,54 @@ describe('what a locked repertoire allows', () => {
 		// but refused here, because writing a new move down is what it would
 		// otherwise do.
 		assert.equal(isAllowedWhileLocked('ADD_MOVE_TO_HISTORY'), false);
+	});
+});
+
+describe('what a read-only device allows', () => {
+	const readOnly = { isLocked: false, isReadOnly: true };
+
+	it('refuses every action that writes to the repertoire', () => {
+		for (const action of WRITES_TO_THE_REPERTOIRE)
+			assert.equal(
+				isAllowed(action, readOnly),
+				false,
+				`${action} writes to the repertoire and mobile must refuse it`
+			);
+	});
+
+	it('refuses the lock as well, which would be written down too', () => {
+		// The lock is stored in the repertoire, so a phone that could set it
+		// would lock or unlock the desktop's copy the next time it synced.
+		assert.equal(isAllowed('SET_LOCKED', readOnly), false);
+		assert.equal(isAllowed('SET_LOCKED', { ...readOnly, isLocked: true }), false);
+	});
+
+	it('allows navigation, which changes nothing', () => {
+		for (const action of MOVES_THE_BOARD_ONLY)
+			assert.equal(
+				isAllowed(action, readOnly),
+				true,
+				`${action} only moves the board and should still work on mobile`
+			);
+	});
+});
+
+describe('what the reducer runs', () => {
+	it('runs everything on an unlocked repertoire', () => {
+		for (const action of [...WRITES_TO_THE_REPERTOIRE, 'SET_LOCKED'] as const)
+			assert.equal(
+				isAllowed(action, { isLocked: false, isReadOnly: false }),
+				true
+			);
+	});
+
+	it('runs what a lock allows on a locked one, the way out included', () => {
+		const locked = { isLocked: true, isReadOnly: false };
+
+		for (const action of WRITES_TO_THE_REPERTOIRE)
+			assert.equal(isAllowed(action, locked), false, action);
+
+		assert.equal(isAllowed('SET_LOCKED', locked), true);
 	});
 });
 

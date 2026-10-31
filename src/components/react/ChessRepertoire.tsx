@@ -26,7 +26,7 @@ import {
 } from 'src/lib/classification';
 import { collectExcludedMoveIds, resolveRepertoireColor } from 'src/lib/drill';
 import { registerRepertoireKeys, setActiveRepertoire } from 'src/lib/keyboard';
-import { boardDrawing, isAllowedWhileLocked } from 'src/lib/lock';
+import { boardDrawing, isAllowed } from 'src/lib/lock';
 import {
 	MAX_VARIATION_DEPTH,
 	ROOT_MOVE_ID,
@@ -79,6 +79,11 @@ interface AppProps {
 	pluginSettings: ChessRepertoirePluginSettings;
 	chessRepertoireData: ChessRepertoireFileData;
 	dataAdapter: ChessRepertoireDataAdapter;
+	/**
+	 * Obsidian mobile, where a repertoire is browsed and drilled but never
+	 * written: a lock that is not stored in the file. See `isAllowed`.
+	 */
+	isMobile: boolean;
 }
 
 /** Narrowest the widget may be dragged, in px. */
@@ -136,6 +141,7 @@ export const ChessRepertoire = ({
 	pluginSettings,
 	chessRepertoireData,
 	dataAdapter,
+	isMobile,
 }: AppProps) => {
 	// Parse Obsidian / Code Block Settings
 	const {
@@ -205,7 +211,12 @@ export const ChessRepertoire = ({
 			// sits here rather than on each button, so an editing path reached
 			// some other way - a keyboard shortcut, a context menu, the board
 			// itself - cannot get around it.
-			if (draft.repertoire.locked && !isAllowedWhileLocked(action.type)) {
+			if (
+				!isAllowed(action.type, {
+					isLocked: Boolean(draft.repertoire.locked),
+					isReadOnly: isMobile,
+				})
+			) {
 				// A move played on the board is the one action with a reading that
 				// is not an edit: if the repertoire already holds it, playing it is
 				// how a line gets read, so it is followed rather than refused.
@@ -227,7 +238,11 @@ export const ChessRepertoire = ({
 					// same bounce the trainer does with a move it does not know.
 					displayPosition(draft, chessView, setChessLogic, getCurrentMove(draft));
 
-					new Notice('This repertoire is locked.');
+					new Notice(
+						isMobile
+							? 'Repertoires are read-only on mobile.'
+							: 'This repertoire is locked.'
+					);
 				}
 
 				return draft;
@@ -917,9 +932,10 @@ export const ChessRepertoire = ({
 	/**
 	 * Read-only. The reducer is what actually enforces it; everything below only
 	 * stops offering what it would refuse, so a locked repertoire says no before
-	 * it is asked rather than after.
+	 * it is asked rather than after. Mobile reads as locked to everything
+	 * downstream; only the reducer and the lock button tell the two apart.
 	 */
-	const isLocked = Boolean(gameState.repertoire.locked);
+	const isLocked = Boolean(gameState.repertoire.locked) || isMobile;
 
 	const trainer = useTrainer({
 		app,
@@ -1062,7 +1078,7 @@ export const ChessRepertoire = ({
 
 	return (
 		<div
-			className="chess-repertoire"
+			className={`chess-repertoire${isMobile ? ' is-mobile' : ''}`}
 			ref={rootRef}
 			style={rootStyle}
 			tabIndex={0}
@@ -1117,6 +1133,7 @@ export const ChessRepertoire = ({
 					isDirty={isDirty}
 					isTraining={trainer.isActive}
 					isLocked={isLocked}
+					isMobile={isMobile}
 					onLockButtonClick={() =>
 						dispatch({ type: 'SET_LOCKED', locked: !isLocked })
 					}
@@ -1187,7 +1204,7 @@ export const ChessRepertoire = ({
 					report={trainer.report}
 					onDismiss={trainer.dismissReport}
 				/>
-			) : (
+			) : isMobile ? null : (
 				<CommentSection
 					currentComment={gameState.currentMove?.comment ?? null}
 					setComments={(comment: JSONContent) =>
@@ -1203,11 +1220,15 @@ export const ChessRepertoire = ({
 				/>
 			)}
 
-			<div
-				className="cs-resize-handle"
-				title="Drag to resize"
-				onPointerDown={onResizePointerDown}
-			/>
+			{/* A width dragged out on the phone would be saved into the note,
+			    and a phone is the one screen where the full width is wanted. */}
+			{!isMobile && (
+				<div
+					className="cs-resize-handle"
+					title="Drag to resize"
+					onPointerDown={onResizePointerDown}
+				/>
+			)}
 		</div>
 	);
 };

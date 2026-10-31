@@ -2,6 +2,7 @@ import {
 	App,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
+	Platform,
 } from 'obsidian';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
@@ -51,6 +52,10 @@ export class ReactView extends MarkdownRenderChild {
 					pluginSettings={this.settings}
 					chessRepertoireData={this.data}
 					dataAdapter={this.dataAdapter}
+					// `isMobile` rather than `isMobileApp`, which stays false under
+					// `app.emulateMobile(true)`: the desktop's emulation should run
+					// the same read-only path a phone does.
+					isMobile={Platform.isMobile}
 				/>
 			</React.StrictMode>
 		);

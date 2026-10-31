@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import { Editor, Notice, Plugin, normalizePath } from 'obsidian';
+import { Editor, Notice, Platform, Plugin, normalizePath } from 'obsidian';
 import {
 	CURRENT_DRILL_VERSION,
 	CURRENT_STORAGE_VERSION,
@@ -111,13 +111,32 @@ export default class ChessRepertoirePlugin extends Plugin {
 
 		this.settledStoragePath = this.storagePath;
 
-		await this.dataAdapter.createStorageFolderIfNotExists();
+		// A phone only reads, and both of these can write: the folder when it is
+		// missing, the migrations whenever the settings are behind - which is
+		// every phone the settings have not synced to yet. Its defaults would be
+		// saved and, with plugin settings syncing, sent back over the desktop's.
+		// A vault that still needs migrating is migrated on the desktop.
+		if (!Platform.isMobile) {
+			await this.dataAdapter.createStorageFolderIfNotExists();
 
-		await this.runMigrations();
+			await this.runMigrations();
+		}
 
 		// Add settings tab
 		this.addSettingTab(new SettingsTab(this.app, this));
 
+		// Both of these write a repertoire, which a phone never does.
+		if (!Platform.isMobile) this.registerEditingCommands();
+
+		this.registerRepertoireKeyboard();
+
+		this.registerPositionBlock();
+
+		this.registerRepertoireBlock();
+	}
+
+	/** Making a repertoire from a FEN or PGN, and merging a note's into one. */
+	private registerEditingCommands() {
 		// Add command
 		this.addCommand({
 			// Obsidian namespaces this as `chess-repertoire:insert-chess-repertoire`,
@@ -243,11 +262,9 @@ export default class ChessRepertoirePlugin extends Plugin {
 				}
 			},
 		});
+	}
 
-		this.registerRepertoireKeyboard();
-
-		this.registerPositionBlock();
-
+	private registerRepertoireBlock() {
 		// Add chess repertoire code block processor
 		this.registerMarkdownCodeBlockProcessor(
 			'chessRepertoire',
