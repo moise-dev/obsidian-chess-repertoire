@@ -27,6 +27,7 @@ import 'assets/board/themes.css';
 import 'chessground/assets/chessground.base.css';
 import 'chessground/assets/chessground.cburnett.css';
 import { nanoid } from 'nanoid';
+import { shutdownEngine } from './components/react/EvalBar/engine';
 import { findCodeBlocks } from './lib/blocks';
 import {
 	UnusedRepertoire,
@@ -98,6 +99,10 @@ export default class ChessRepertoirePlugin extends Plugin {
 	 * the first folder and moves nothing out of the ones in between.
 	 */
 	private settledStoragePath: string;
+
+	onunload() {
+		shutdownEngine();
+	}
 
 	async onload() {
 		// Load Settings

@@ -56,6 +56,12 @@ export interface ChessRepertoirePluginSettings {
 	boardSize: number | null;
 	showCoordinates: true | false;
 	/**
+	 * Stockfish's evaluation as a bar beside the board. The engine only starts
+	 * once a board shows the bar, so turning this off means it never runs.
+	 * Never shown in a drill.
+	 */
+	showEvaluation: true | false;
+	/**
 	 * Colour of the a-h / 1-8 labels, as a hex string. Empty means "follow the
 	 * theme", which is the right answer for most vaults and the default.
 	 */
@@ -92,6 +98,7 @@ export const DEFAULT_SETTINGS: ChessRepertoirePluginSettings = {
 	viewComments: true,
 	boardSize: null,
 	showCoordinates: true,
+	showEvaluation: true,
 	coordinateColor: '',
 	storageFolder: '',
 	notesFolder: '',
@@ -159,6 +166,17 @@ export class SettingsTab extends PluginSettingTab {
 					type: 'toggle',
 					key: 'showCoordinates',
 					defaultValue: DEFAULT_SETTINGS.showCoordinates,
+				},
+			},
+			{
+				name: 'Evaluation bar',
+				desc:
+					'Run Stockfish 10 on this device and show its evaluation beside the board, from a quick search of each position. Off, the engine never starts. Hidden during drills.',
+				aliases: ['engine', 'stockfish', 'eval'],
+				control: {
+					type: 'toggle',
+					key: 'showEvaluation',
+					defaultValue: DEFAULT_SETTINGS.showEvaluation,
 				},
 			},
 			{

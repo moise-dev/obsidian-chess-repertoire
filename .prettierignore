@@ -11,3 +11,6 @@ package.json
 package-lock.json
 
 data.json
+
+# Import attributes, which Prettier 2 cannot parse. The file holds nothing else.
+src/components/react/EvalBar/bundled.ts

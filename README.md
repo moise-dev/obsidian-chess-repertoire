@@ -13,6 +13,7 @@ Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.
 - [Trainer](#trainer)
 - [The map](#the-map)
 - [Export](#export)
+- [Evaluation bar](#evaluation-bar)
 - [Minor features](#minor-features)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -70,6 +71,23 @@ The download button opens the repertoire as text, in either of two formats, with
 **FEN** is the position on the board right now, for pasting into an engine or another board.
 
 Two labels are chess.com's own invention rather than standard notation - Excellent and Good - and have no glyph to be written as, so they are left off the move rather than guessed at.
+
+## Evaluation bar
+
+On by default. A bar to the left of the board shows Stockfish's score for the position on it: mostly white when White is better, mostly dark when Black is, with the number at the end of whoever is ahead - `3.9`, or `M2` for a forced mate. Hover it for the signed score. Turn it off under **Evaluation bar** in the settings, or for one board with `showEvaluation: false` in its block.
+
+It is a score and nothing else - no best move, no lines - and it is hidden during a drill, where the bar falling after a move would give the answer away. The engine runs in the background on your own device and sends nothing anywhere. It only starts once a board shows the bar, is shared by every board on the screen, and stops thirty seconds after the last one closes. With the setting off it never starts at all.
+
+<!-- omit in toc -->
+### Why Stockfish 10, and what that means
+
+The engine is **Stockfish 10**, from 2018, not a current release, and the numbers are not the ones Lichess or chess.com would show you. That is a deliberate trade:
+
+- **It fits inside the plugin.** A community plugin is installed as three files and nothing else, so the engine has to travel inside `main.js`. Stockfish 10 is about half a megabyte. Every version since 12 evaluates with a neural network that is tens of megabytes on its own, which would mean either a plugin that size loaded on every Obsidian start, or a download from the internet the first time the bar is used.
+- **It is enough for what the bar is for.** The bar is for learning: whether a line leaves you better, level or worse, and by roughly how much. "Black is about two pawns down" reads the same whether a stronger engine says 2.0 or 2.6.
+- **It looks twelve half-moves ahead and stops.** That takes a fraction of a second, so stepping through a line costs almost nothing, and nothing keeps running in the background. A deeper search would mostly move the second decimal.
+
+Expect the numbers to be in the right direction and of the right size, not exact. Stockfish 10's scale also runs a little generous: the starting position reads around `+0.7`, where modern engines say `+0.2` or `+0.3`. Its "contempt" setting, which tilts scores toward the side to move when playing, is turned off. For a precise evaluation or the best move, use Lichess or chess.com.
 
 ## Minor features
 
@@ -134,6 +152,7 @@ showCoordinates: false
 | `boardOrientation`  | `white` \| `black`                           | Which way round the board starts                            |
 | `boardColor`        | `blue` \| `blue-soft` \| `green` \| `brown`  | Board theme                                                  |
 | `showCoordinates`   | `true` \| `false`                            | Show the a-h / 1-8 labels                                   |
+| `showEvaluation`    | `true` \| `false`                            | Show the [evaluation bar](#evaluation-bar). On by default.  |
 | `coordinateColor`   | hex colour, e.g. `"#d08770"`                 | Colour of those labels. Leave unset to follow the theme.    |
 | `boardSize`         | number of pixels                             | Widget width. Written automatically when you drag to resize. |
 | `viewComments`      | `true` \| `false`                            | Whether the notes panel starts open                          |
@@ -196,6 +215,7 @@ Chess Repertoire is a fork of [chrislicodes/obsidian-chess-study](https://github
 
 - Chess visuals are powered by [Chessground](https://github.com/lichess-org/chessground)
 - Chess logic is powered by [Chess.js](https://github.com/jhlywa/chess.js)
+- The evaluation bar is [Stockfish](https://stockfishchess.org) 10, as built for the web by [stockfish.js](https://github.com/nmrugg/stockfish.js) (GPL-3.0)
 - The notes editor is powered by [TipTap](https://github.com/ueberdosis/tiptap)
 - Icons are provided by [Lucide](https://github.com/lucide-icons/lucide)
 - Everything is tied together by [React](https://github.com/facebook/react)

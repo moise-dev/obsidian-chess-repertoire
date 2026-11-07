@@ -66,6 +66,7 @@ import { ExportModal } from '../obsidian/ExportModal';
 import { MoveMapModal } from '../obsidian/MoveMapModal';
 import { ChessgroundProps, ChessgroundWrapper } from './ChessgroundWrapper';
 import { CommentSection } from './CommentSection';
+import { EvalBar } from './EvalBar';
 import { PgnViewer } from './PgnViewer';
 import { VariationAction } from './PgnViewer/MoveItems';
 import { RepertoireTitle } from './RepertoireTitle';
@@ -152,6 +153,7 @@ export const ChessRepertoire = ({
 		viewComments,
 		boardSize,
 		showCoordinates,
+		showEvaluation,
 		coordinateColor,
 		chessRepertoireId,
 	} = parseUserConfig(pluginSettings, source);
@@ -1107,36 +1109,45 @@ export const ChessRepertoire = ({
 			/>
 
 			<div className="cs-main">
-				<div className="cs-board-wrap">
-					<ChessgroundWrapper
-						api={chessView}
-						setApi={setChessView}
-						config={chessgroundConfig}
-						boardColor={boardColor}
-						chess={chessLogic}
-						addMoveToHistory={(move: Move) =>
-							trainer.isActive
-								? trainer.submitMove(move)
-								: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
-						}
-						isViewOnly={trainer.isBoardLocked}
-						// A session neither shows the arrows saved on a move nor records
-						// any drawn during it: they are usually the plan, which is the
-						// thing being asked, and writing them back would mean a drill
-						// could edit the repertoire. A locked repertoire goes further
-						// and takes none at all - see `boardDrawing`.
-						canDraw={drawing.enabled}
-						savesShapes={drawing.saved}
-						syncShapes={(shapes: DrawShape[]) => {
-							if (!drawing.saved) return;
+				<div className="cs-board-row">
+					{/* Not in a drill: even without a best move, the bar dropping after
+					    a wrong move is the answer to the question being asked. */}
+					{showEvaluation && !trainer.isActive && (
+						<EvalBar fen={chessLogic.fen()} orientation={orientation} />
+					)}
+					<div className="cs-board-wrap">
+						<ChessgroundWrapper
+							api={chessView}
+							setApi={setChessView}
+							config={chessgroundConfig}
+							boardColor={boardColor}
+							chess={chessLogic}
+							addMoveToHistory={(move: Move) =>
+								trainer.isActive
+									? trainer.submitMove(move)
+									: dispatch({ type: 'ADD_MOVE_TO_HISTORY', move })
+							}
+							isViewOnly={trainer.isBoardLocked}
+							// A session neither shows the arrows saved on a move nor records
+							// any drawn during it: they are usually the plan, which is the
+							// thing being asked, and writing them back would mean a drill
+							// could edit the repertoire. A locked repertoire goes further
+							// and takes none at all - see `boardDrawing`.
+							canDraw={drawing.enabled}
+							savesShapes={drawing.saved}
+							syncShapes={(shapes: DrawShape[]) => {
+								if (!drawing.saved) return;
 
-							dispatch({ type: 'SYNC_SHAPES', shapes });
-						}}
-						shapes={
-							trainer.isActive ? NO_SHAPES : gameState.currentMove?.shapes ?? NO_SHAPES
-						}
-						autoShapes={autoShapes}
-					/>
+								dispatch({ type: 'SYNC_SHAPES', shapes });
+							}}
+							shapes={
+								trainer.isActive
+									? NO_SHAPES
+									: gameState.currentMove?.shapes ?? NO_SHAPES
+							}
+							autoShapes={autoShapes}
+						/>
+					</div>
 				</div>
 
 				<PgnViewer
