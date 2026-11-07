@@ -67,6 +67,7 @@ import { ChessgroundProps, ChessgroundWrapper } from './ChessgroundWrapper';
 import { CommentSection } from './CommentSection';
 import { PgnViewer } from './PgnViewer';
 import { VariationAction } from './PgnViewer/MoveItems';
+import { RepertoireTitle } from './RepertoireTitle';
 import { TrainerBar, TrainerReportPanel, useTrainer } from './Trainer';
 
 export type ChessRepertoireConfig = ChessgroundProps;
@@ -1090,6 +1091,14 @@ export const ChessRepertoire = ({
 			}}
 			onPointerDownCapture={onPointerDownCapture}
 		>
+			<RepertoireTitle
+				title={gameState.repertoire.header?.title ?? null}
+				onTitleChange={(title: string | null) =>
+					dispatch({ type: 'SET_TITLE', title })
+				}
+				isLocked={isLocked}
+			/>
+
 			<div className="cs-main">
 				<div className="cs-board-wrap">
 					<ChessgroundWrapper
@@ -1129,7 +1138,6 @@ export const ChessRepertoire = ({
 					currentMoveId={currentMoveId}
 					firstPlayer={firstPlayer}
 					initialMoveNumber={initialMoveNumber}
-					title={gameState.repertoire.header?.title ?? null}
 					isDirty={isDirty}
 					isTraining={trainer.isActive}
 					isLocked={isLocked}
@@ -1141,9 +1149,6 @@ export const ChessRepertoire = ({
 						trainer.isActive ? trainer.stop() : trainer.start()
 					}
 					onMapButtonClick={onOpenMap}
-					onTitleChange={(title: string | null) =>
-						dispatch({ type: 'SET_TITLE', title })
-					}
 					playerColor={gameState.repertoire.playerColor}
 					onPlayerColorChange={(color: 'w' | 'b') =>
 						dispatch({ type: 'SET_PLAYER_COLOR', color })

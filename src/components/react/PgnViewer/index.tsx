@@ -5,7 +5,6 @@ import { moveNumberAtPly } from 'src/lib/move-tree';
 import { ChessRepertoireMove, Variant } from 'src/lib/storage';
 import { ControlActions, Controls } from './Controls';
 import { MoveItem, VariantMoveItem, VariationAction } from './MoveItems';
-import { RepertoireTitle } from './RepertoireTitle';
 
 const chunkArray = <T,>(array: T[], chunkSize: number, offsetByOne = false) => {
 	return array.reduce((resultArray, item, index) => {
@@ -182,8 +181,6 @@ interface PgnViewerProps extends ControlActions, MoveListContext {
 	 * hang off, so the tree keeps them itself.
 	 */
 	rootVariants: Variant[];
-	title: string | null;
-	onTitleChange: (title: string | null) => void;
 	/** The side the repertoire is written for, or undefined until it has said. */
 	playerColor: 'w' | 'b' | undefined;
 	onPlayerColorChange: (color: 'w' | 'b') => void;
@@ -229,8 +226,6 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		currentMoveId,
 		firstPlayer,
 		initialMoveNumber,
-		title,
-		onTitleChange,
 		playerColor,
 		onPlayerColorChange,
 		onMoveItemClick,
@@ -280,11 +275,6 @@ export const PgnViewer = React.memo((props: PgnViewerProps) => {
 		<div className="cs-side">
 			<div className="cs-side-header">
 				<span className="cs-side-title">Moves</span>
-				<RepertoireTitle
-					title={title}
-					onTitleChange={onTitleChange}
-					isLocked={isLocked}
-				/>
 				<PlayerColorChip
 					playerColor={playerColor}
 					onPlayerColorChange={onPlayerColorChange}

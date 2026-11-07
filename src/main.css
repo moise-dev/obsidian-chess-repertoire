@@ -217,16 +217,6 @@
 	color: var(--text-muted);
 }
 
-.chess-repertoire .cs-side-subtitle {
-	flex: 1;
-	min-width: 0;
-	font-size: 15px;
-	color: var(--text-faint);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
 /*
  * Which side the repertoire is written for. Small and quiet: it is a fact about the
  * repertoire rather than a control you reach for, but it decides what the drill asks
@@ -778,44 +768,58 @@
  * Repertoire title and unsaved state
  * ------------------------------------------------------------------ */
 
-.chess-repertoire .cs-side-subtitle {
+.chess-repertoire .cs-repertoire-title {
+	/* A line of its own above the board rather than a squeeze in the move
+	   list header, where it shared a row with "Moves" and the colour chip and
+	   was the first thing to be truncated. */
+	align-self: center;
+	max-width: 100%;
 	height: auto;
-	padding: 0;
+	padding: 0 4px;
 	border: none;
 	border-radius: 3px;
 	background-color: transparent;
 	box-shadow: none;
-	text-align: left;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.5;
+	color: var(--text-normal);
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	cursor: text;
 }
 
 /* Only the editable one invites a click. A locked repertoire renders its title
    as a span, which shares the layout above and none of this. */
-.chess-repertoire button.cs-side-subtitle:hover {
-	color: var(--text-normal);
+.chess-repertoire button.cs-repertoire-title:hover {
 	text-decoration-line: underline;
 	text-decoration-style: dotted;
 }
 
-.chess-repertoire span.cs-side-subtitle {
+.chess-repertoire span.cs-repertoire-title {
 	cursor: default;
 }
 
-.chess-repertoire .cs-side-subtitle.is-empty {
+.chess-repertoire .cs-repertoire-title.is-empty {
+	font-weight: 400;
 	font-style: italic;
+	color: var(--text-faint);
 	opacity: 0.7;
 }
 
-.chess-repertoire .cs-side-subtitle-input {
-	flex: 1;
-	min-width: 0;
+.chess-repertoire .cs-repertoire-title-input {
+	align-self: center;
+	width: min(100%, 28em);
 	height: auto;
 	padding: 1px 4px;
 	border: 1px solid var(--cs-border);
 	border-radius: 4px;
 	background-color: var(--background-primary);
 	color: var(--text-normal);
-	font-size: 15px;
+	font-size: 16px;
+	text-align: center;
 }
 
 .chess-repertoire .cs-icon-button--primary.is-dirty {
