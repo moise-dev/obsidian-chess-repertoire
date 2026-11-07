@@ -1,4 +1,3 @@
-<!-- omit in toc -->
 # Chess Repertoire
 
 A chess repertoire helper, PGN viewer/editor and opening trainer for [Obsidian](https://obsidian.md/).
@@ -7,7 +6,6 @@ Chess Repertoire is a fork of [Obsidian Chess Study](https://community.obsidian.
 
 ![Chess Repertoire in use](imgs/general-view.png)
 
-<!-- omit in toc -->
 ## Table of contents
 
 - [Trainer](#trainer)
@@ -78,7 +76,6 @@ On by default. A bar to the left of the board shows Stockfish's score for the po
 
 It is a score and nothing else - no best move, no lines - and it is hidden during a drill, where the bar falling after a move would give the answer away. The engine runs in the background on your own device and sends nothing anywhere. It only starts once a board shows the bar, is shared by every board on the screen, and stops thirty seconds after the last one closes. With the setting off it never starts at all.
 
-<!-- omit in toc -->
 ### Why Stockfish 10, and what that means
 
 The engine is **Stockfish 10**, from 2018, not a current release, and the numbers are not the ones Lichess or chess.com would show you. That is a deliberate trade:
@@ -109,7 +106,6 @@ Expect the numbers to be in the right direction and of the right size, not exact
 
 From **Settings → Community plugins → Browse**, search for **Chess Repertoire**, then Install and Enable. Obsidian keeps it up to date from there.
 
-<!-- omit in toc -->
 ### By hand
 
 Still worth knowing, for a version newer than the store is offering or a vault that browses no store:
@@ -157,7 +153,6 @@ showCoordinates: false
 | `boardSize`         | number of pixels                             | Widget width. Written automatically when you drag to resize. |
 | `viewComments`      | `true` \| `false`                            | Whether the notes panel starts open                          |
 
-<!-- omit in toc -->
 ### Where repertoires are stored
 
 Repertoires and their drill history are `.json` files in your vault, one per repertoire, named by the id in the code block. **Repertoire folder** in the plugin settings decides which folder; leave it empty for `Chess Repertoires` in the root of the vault. It is the one setting that cannot be overridden per repertoire.
