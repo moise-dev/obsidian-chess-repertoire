@@ -44,7 +44,8 @@ import {
 	removeMovesFromPath,
 	removeVariationAtPath,
 } from 'src/lib/move-tree';
-import { parseUserConfig } from 'src/lib/obsidian';
+import { parseBlockConfig, parseUserConfig } from 'src/lib/obsidian';
+import { initialOrientation, orientationFor } from 'src/lib/orientation';
 import { exportPgn } from 'src/lib/pgn';
 import {
 	ChessRepertoireDataAdapter,
@@ -161,8 +162,14 @@ export const ChessRepertoire = ({
 	// Orientation lives in state rather than being read straight from the
 	// config on every render: ChessgroundWrapper re-applies its `config` prop
 	// to the board, so a plain api.toggleOrientation() would be undone by the
-	// next render.
-	const [orientation, setOrientation] = useState(boardOrientation);
+	// next render. What it starts as is `initialOrientation`'s call.
+	const [orientation, setOrientation] = useState(() =>
+		initialOrientation({
+			blockOrientation: parseBlockConfig(source).boardOrientation,
+			playerColor: chessRepertoireData.playerColor,
+			defaultOrientation: boardOrientation,
+		})
+	);
 
 	const chessgroundConfig = useMemo(
 		() => ({ orientation, coordinates: showCoordinates }),
@@ -1150,9 +1157,14 @@ export const ChessRepertoire = ({
 					}
 					onMapButtonClick={onOpenMap}
 					playerColor={gameState.repertoire.playerColor}
-					onPlayerColorChange={(color: 'w' | 'b') =>
-						dispatch({ type: 'SET_PLAYER_COLOR', color })
-					}
+					onPlayerColorChange={(color: 'w' | 'b') => {
+						dispatch({ type: 'SET_PLAYER_COLOR', color });
+						// The board is turned for the repertoire's side when it opens, so
+						// it follows a change of side now rather than on the next visit.
+						// Not during a drill, which has turned the board itself and turns
+						// it back when it ends.
+						if (!trainer.isActive) setOrientation(orientationFor(color));
+					}}
 					onClassify={(moveId: string, classification: MoveClassification | null) =>
 						dispatch({ type: 'SET_CLASSIFICATION', classification, moveId })
 					}

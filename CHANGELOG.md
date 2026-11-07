@@ -13,6 +13,15 @@ Notable changes to Chess Repertoire, newest first. The format follows
   a long title was the first thing cut short. It is still renamed by clicking
   it, and shown without the invitation when the repertoire is locked.
 
+- **A repertoire's board opens turned for the side it is written for.** A
+  repertoire for Black used to come back turned for White whenever its note
+  was left and opened again, or Obsidian restarted, because the board always
+  started from the default orientation. It now starts from the side the
+  White/Black chip records, and turns with the chip when the side is changed.
+  A `boardOrientation` written in the block still wins, the plugin's default
+  still applies to a repertoire that has not said which side it is for, and
+  flipping the board is still only for as long as the note is open.
+
 ## [1.7.0] - 2026-10-31
 
 ### Added
