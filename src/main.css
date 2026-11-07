@@ -120,6 +120,21 @@
 	container-type: inline-size;
 }
 
+/* The board and, when it is shown, the evaluation bar on its left, outside
+   the rank labels. A flex row rather than a two-column grid: with the bar
+   gone - in a drill, or turned off - a grid would put the board in the bar's
+   column. */
+.chess-repertoire .cs-board-row {
+	display: flex;
+	gap: 4px;
+	min-width: 0;
+}
+
+.chess-repertoire .cs-board-row > .cs-board-wrap {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
 /* The square the board actually occupies, now that the wrapper is padded.
    Positioned so the promotion picker below can place itself in percentages
    of this box instead of measuring pixels. */
@@ -188,6 +203,79 @@
 	.chess-repertoire .cs-side {
 		max-height: 240px;
 	}
+}
+
+/* ------------------------------------------------------------------ *
+ * Evaluation bar
+ * ------------------------------------------------------------------ */
+
+/*
+ * Fixed board colours rather than theme ones: the two halves stand for the
+ * two sides, and a theme's background and text colours would make "White"
+ * dark in a dark theme.
+ */
+.chess-repertoire .cs-eval-bar {
+	position: relative;
+	/* Wide enough for "10.5" in the interface font, which is narrower than
+	   the monospace one some themes give the note. */
+	flex: 0 0 22px;
+	/* Level with the board, not with its coordinate gutter underneath. */
+	margin-bottom: var(--cs-coord-offset);
+	overflow: hidden;
+	border: 1px solid var(--cs-border);
+	border-radius: 4px;
+	background-color: #403d39;
+}
+
+.chess-repertoire .cs-eval-fill {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #f0eee9;
+	transition: height 0.25s ease-out;
+}
+
+/* White's share fills from the side the board is turned for White at. */
+.chess-repertoire .cs-eval-bar.is-black .cs-eval-fill {
+	top: 0;
+	bottom: auto;
+}
+
+/* Searching the next position: the last answer stays, a little quieter. */
+.chess-repertoire .cs-eval-bar.is-pending .cs-eval-label {
+	opacity: 0.55;
+}
+
+.chess-repertoire .cs-eval-label {
+	position: absolute;
+	left: 0;
+	right: 0;
+	font-family: var(--font-interface);
+	font-size: 9px;
+	white-space: nowrap;
+	font-weight: 700;
+	line-height: 1;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.02em;
+}
+
+.chess-repertoire .cs-eval-label.is-bottom {
+	bottom: 4px;
+}
+
+.chess-repertoire .cs-eval-label.is-top {
+	top: 4px;
+}
+
+/* On its own side's colour, so it reads as that side's number. */
+.chess-repertoire .cs-eval-label.is-white {
+	color: #403d39;
+}
+
+.chess-repertoire .cs-eval-label.is-black {
+	color: #f0eee9;
 }
 
 /* ------------------------------------------------------------------ *

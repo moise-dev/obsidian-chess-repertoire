@@ -6,6 +6,25 @@ Notable changes to Chess Repertoire, newest first. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **An evaluation bar to the left of the board.** Stockfish scores the position on
+  the board from a search twelve half-moves deep, enough to say who stands
+  better and by roughly how much, and the bar shows it with the number at the
+  end of whoever is ahead. It gives no best move and no lines, and it is
+  hidden during a drill, where the bar falling after a wrong move would be the
+  answer. On by default; turned off under **Evaluation bar** in the
+  settings, or for one board with `showEvaluation: false`, and then the
+  engine never starts.
+
+  The engine is Stockfish 10, from before Stockfish evaluated with a neural
+  network, so that it fits inside the plugin: about half a megabyte, where
+  current versions need tens of megabytes that a store install has nowhere to
+  put. The README says what that costs in accuracy. It
+  runs in a background worker, so the note stays responsive while it thinks,
+  starts when the first board needs it, and stops thirty seconds after the
+  last one closes. One engine is shared by every board on the screen.
+
 ### Changed
 
 - **The repertoire's title sits on its own line, centred above the board.** It
