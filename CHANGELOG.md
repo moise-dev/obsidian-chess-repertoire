@@ -4,6 +4,15 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The repertoire's title sits on its own line, centred above the board.** It
+  used to share the move list's header with "Moves" and the colour chip, where
+  a long title was the first thing cut short. It is still renamed by clicking
+  it, and shown without the invitation when the repertoire is locked.
+
 ## [1.7.0] - 2026-10-31
 
 ### Added

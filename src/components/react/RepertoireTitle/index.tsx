@@ -37,7 +37,7 @@ export const RepertoireTitle = ({
 	if (isLocked) {
 		return (
 			<span
-				className={`cs-side-subtitle${title ? '' : ' is-empty'}`}
+				className={`cs-repertoire-title${title ? '' : ' is-empty'}`}
 				title="This repertoire is locked."
 			>
 				{title || 'Untitled'}
@@ -48,7 +48,7 @@ export const RepertoireTitle = ({
 	if (!isEditing) {
 		return (
 			<button
-				className={`cs-side-subtitle${title ? '' : ' is-empty'}`}
+				className={`cs-repertoire-title${title ? '' : ' is-empty'}`}
 				title="Rename this repertoire"
 				onClick={() => setIsEditing(true)}
 			>
@@ -60,7 +60,7 @@ export const RepertoireTitle = ({
 	return (
 		<input
 			ref={inputRef}
-			className="cs-side-subtitle-input"
+			className="cs-repertoire-title-input"
 			value={draft}
 			placeholder="Repertoire title"
 			onChange={(e) => setDraft(e.target.value)}
