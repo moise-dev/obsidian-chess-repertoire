@@ -4,6 +4,20 @@ Notable changes to Chess Repertoire, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **1.8.0 failed Obsidian's plugin review, which takes it out of the
+  community plugin search; this release passes it.** The review fails any
+  plugin whose code creates `<script>` elements, and the Stockfish loader
+  added in 1.8.0 carries one: an old Internet Explorer fallback inside the
+  `setImmediate` polyfill it bundles. That fallback can never run here - the
+  engine runs in a worker, which has no page to add a script to and takes an
+  earlier fallback - so the build now cuts it out of the loader, and a test
+  checks the shipped loader creates no script elements and still runs.
+  Nothing about the evaluation bar changes.
+
 ## [1.8.0] - 2026-11-07
 
 ### Added
